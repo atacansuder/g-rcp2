@@ -100,10 +100,10 @@ func _process(_delta:float) -> void:
 	if not current_trail_node == null:
 		if inserting:
 			current_trail_node.delete_wait = 180
-			if len(vertices) > 0:
-				vertices[len(vertices) - 1][0] = ((ppos.origin + ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
-				vertices[len(vertices) - 1][1] = ((ppos.origin - ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
-				vertices[len(vertices) - 1][2] = ppos.origin
+			if vertices.size() > 0:
+				vertices[vertices.size() - 1].x = ((ppos.origin + ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
+				vertices[vertices.size() - 1].y = ((ppos.origin - ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
+				vertices[vertices.size() - 1].z = ppos.origin
 		
 		current_trail_node.global_transform.basis = ViVeEnvironment.get_singleton().scene.global_transform.basis
 		#current_trail_node.global_transform.basis = get_tree().get_current_scene().global_transform.basis
@@ -112,17 +112,8 @@ func _process(_delta:float) -> void:
 		if vertices.size() > 0 : # check if we actually got stuff to make
 			current_trail.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 			for i:Basis in vertices:
-				if true:
-				#if len(i) > 0:
-					# with the vulkan renderer (forward+ and mobile) you will get the following error
-					## "draw_list_draw: Too few vertices (2) for the render primitive set in the render pipeline (3)."
-					
-					current_trail.surface_add_vertex(i[0] - global_transform.origin)
-					current_trail.surface_add_vertex(i[1] - global_transform.origin)
-			
+				current_trail.surface_add_vertex(i.x - global_transform.origin)
+				current_trail.surface_add_vertex(i.y - global_transform.origin)
+				current_trail.surface_add_vertex(i.x - global_transform.origin)
+				current_trail.surface_add_vertex(i.y - global_transform.origin)
 			current_trail.surface_end()
-
-
-
-
-

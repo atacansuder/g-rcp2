@@ -6,21 +6,21 @@ res://MAIN/misc/tyre marks/tyremark.tscn::fd1ac179cf4c8903c9d139a915f55a3a::1710
 res://MAIN/misc/tyre smoke/smoke.tscn::ce77e1f834a87d4ca94e6a80bbf7af51::1710049438::res://.godot/exported/133200997/export-0f769ac9883c79aed2debff6a799aab0-smoke.scn
 res://MAIN/misc/tyre sounds/tyres.tscn::e6c73a263a5d4b57626240252aad87e1::1711128189::res://.godot/exported/133200997/export-3212aeac7485460838279a1990a21779-tyres.scn
 res://MAIN/wheel.tscn::259ab02f7069a13832a5e6e89a43a4f2::1711090582::res://.godot/exported/133200997/export-bf0f571b65ff847d7d9cd1ccf6c0fb1a-wheel.scn
-res://MISC/car swapper/cars/Eclipse SRC/scene.tscn::e5874cdb1e26d571debd637816702d18::1711140435::res://.godot/exported/133200997/export-882ca33447c8abf4d6a8f769192760a1-scene.scn
+res://MISC/car swapper/cars/Eclipse SRC/scene.tscn::e5874cdb1e26d571debd637816702d18::1711144268::res://.godot/exported/133200997/export-882ca33447c8abf4d6a8f769192760a1-scene.scn
 res://MISC/graph/display.tscn::96a4541f5d06e27f64e19e24bf512792::1711092557::res://.godot/exported/133200997/export-3a1fcb3b5da44dfed7e40a10c704f2ae-display.scn
-res://MISC/mobile controls/mobile.tscn::ce631f81085bbaf4a314367aa3ba86fd::1711140436::res://.godot/exported/133200997/export-c316eeec03a9367f96df6b3088202e96-mobile.scn
+res://MISC/mobile controls/mobile.tscn::ce631f81085bbaf4a314367aa3ba86fd::1711140924::res://.godot/exported/133200997/export-c316eeec03a9367f96df6b3088202e96-mobile.scn
 res://MISC/scene swapper/scenes/RCP Proving Grounds/scene.tscn::355e0dc66a79daae4b673dff1366ec61::1709585237::res://.godot/exported/133200997/export-7ccbc04579141391a8ccac99efdfc3c2-scene.scn
 res://MISC/scene swapper/scenes/Test Scene/scene.tscn::f4350c77d9fe87f9c5d49fdba93abcb0::1710036882::res://.godot/exported/133200997/export-c2fecad3b346cab48d4e174722e7e0d2-scene.scn
 res://MISC/scene swapper/scenes/unfinished test track/scene.tscn::16b55444468b1a18c11c17f478d3072f::1709585238::res://.godot/exported/133200997/export-61c1680c4915fb7d77fb33e3321061c9-scene.scn
 res://MISC/tachometre/tacho.tscn::e8aea4867d2eeaaff06f882362cadb2c::1710899960::res://.godot/exported/133200997/export-985bfb688cb1fe8a908f16cb86f7760f-tacho.scn
 res://MISC/vertical progress bar/bar.tscn::2e725128935e7332b3ac7e4fb0661045::1709585239::res://.godot/exported/133200997/export-0b187ff44579968b38dc0ec309aa9ea8-bar.scn
-res://MISC/visual gravity system/vgs.tscn::dc30a0e19378dd7e4d28bfd165fa833d::1710388750::res://.godot/exported/133200997/export-ebfec4f9c30cc230d55a58b9c68e6610-vgs.scn
-res://MISC/debugger.tscn::dec16321261ddd295c9440fbe98519da::1711140435::res://.godot/exported/133200997/export-d094ba1cd934c4bef793b4f6bf452a7f-debugger.scn
-res://base car.tscn::765f1d2c7024cde3f8ecf3562f913af9::1711140435::res://.godot/exported/133200997/export-026cb21117f3c25b78ff942ea6c05ae2-base car.scn
+res://MISC/visual gravity system/vgs.tscn::dc30a0e19378dd7e4d28bfd165fa833d::1711154570::res://.godot/exported/133200997/export-ebfec4f9c30cc230d55a58b9c68e6610-vgs.scn
+res://MISC/debugger.tscn::e4fbc8f90fd98f84d3b636f3eb0115be::1711154569::res://.godot/exported/133200997/export-d094ba1cd934c4bef793b4f6bf452a7f-debugger.scn
+res://base car.tscn::765f1d2c7024cde3f8ecf3562f913af9::1711144268::res://.godot/exported/133200997/export-026cb21117f3c25b78ff942ea6c05ae2-base car.scn
 res://default_bus_layout.tres::ce20afade43f3ae3724a73a884a274aa::1711139087::res://.godot/exported/133200997/export-19246414aa9fb561ced4b8dce477acec-default_bus_layout.res
-res://default_env.tres::7d8d5b865cda114726a6783fc199afd7::1711140436::res://.godot/exported/133200997/export-7cf3fd67ad9f55210191d77b582b8209-default_env.res
+res://default_env.tres::7d8d5b865cda114726a6783fc199afd7::1711154570::res://.godot/exported/133200997/export-7cf3fd67ad9f55210191d77b582b8209-default_env.res
 res://TEMPLATE.tscn::3d1b7aa274e95f29d495598e7c27414c::1709585239::res://.godot/exported/133200997/export-4b19e2ad053ba18d054506cd1da3d7a4-TEMPLATE.scn
-res://world.tscn::ba917641ea72ba48b87afed313db6457::1711140435::res://.godot/exported/133200997/export-76e0adcbc83681695885bae615f516ae-world.scn
+res://world.tscn::ba917641ea72ba48b87afed313db6457::1711154570::res://.godot/exported/133200997/export-76e0adcbc83681695885bae615f516ae-world.scn
 res://addons/vitavehicle_ui/portable_graph/power_graph.tscn::b1dcec2efa438fcf20062668fbbf7353::1710898132::res://.godot/exported/133200997/export-e6a0b6d9a78ce02bd926fc4bc1ac3bb3-power_graph.scn
 res://addons/vitavehicle_ui/portable_graph/power_graph_ui.tscn::7c39ca3bc4348276cd8827237f98f5c0::1710879804::res://.godot/exported/133200997/export-2ab3e5300cbd7053282113f9995dfe65-power_graph_ui.scn
 res://addons/vitavehicle_ui/collision.tscn::c7c444cc23be41bae029086e8466b14e::1710895361::res://.godot/exported/133200997/export-2d7689780c25cb899725b88df7680c51-collision.scn
