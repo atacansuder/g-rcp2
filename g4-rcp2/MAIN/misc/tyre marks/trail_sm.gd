@@ -29,7 +29,7 @@ func add_segment() -> void:
 	var ppos:Transform3D = global_transform
 	var new_basis:Basis
 	new_basis.x = ppos.origin + (ppos.basis.orthonormalized() * Vector3(wid, 0, 0))
-	new_basis.y = ppos.origin - (ppos.basis.orthonormalized() * Vector3(wid,0,0))
+	new_basis.y = ppos.origin - (ppos.basis.orthonormalized() * Vector3(wid, 0, 0))
 	new_basis.z = ppos.origin
 #	vertices.append( [
 #		ppos.origin + (ppos.basis.orthonormalized() * Vector3(wid,0,0)),
@@ -65,7 +65,7 @@ func _process(_delta:float) -> void:
 	
 	inserting = wheel_parent.slip_perc.length() > wheel_parent.stress + 20.0 and wheel_parent.is_colliding()
 	
-	position.y = -wheel_parent.w_size + 0.025
+	position.y = - wheel_parent.w_size + 0.025
 	wid = wheel_parent.TyreSettings.Width_mm / 750.0
 	
 	if not inserting2 == inserting:
@@ -92,7 +92,7 @@ func _process(_delta:float) -> void:
 	
 	ran = true
 	if (global_transform.origin - g).length_squared() > 0.01:
-		look_at(g,Vector3(0, 1, 0))
+		look_at(g, Vector3(0, 1, 0))
 	
 	g = global_transform.origin
 	var ppos:Transform3D = global_transform

@@ -49,7 +49,9 @@ func swapcar(naem:String) -> void:
 		#default_position = get_parent().get_node(get_parent().car).global_position
 		default_position = ViVeEnvironment.singleton.car.global_position
 		
-		ViVeEnvironment.singleton.car.queue_free()
+		var control_cache:ViVeCarControls = ViVeEnvironment.get_singleton().car.car_controls
+		
+		ViVeEnvironment.get_singleton().car.queue_free()
 		
 		await get_tree().create_timer(1.0).timeout
 		
@@ -61,12 +63,14 @@ func swapcar(naem:String) -> void:
 		else:
 			d = load_and_cache(pathh + "cars/"+ naem + "/scene.tscn").instantiate()
 		
-		ViVeEnvironment.singleton.add_child(d)
-		ViVeEnvironment.singleton.car = d
+		ViVeEnvironment.get_singleton().add_child(d)
+		ViVeEnvironment.get_singleton().car = d
+		
+		ViVeEnvironment.get_singleton().car.car_controls = control_cache
 		
 		d.global_position = default_position + Vector3(0,5,0)
 		
-		var debug_child:Control = ViVeDebug.singleton.get_node("tacho")
+		var debug_child:ViVeTachometer = ViVeDebug.singleton.get_node("tacho")
 		
 		debug_child.Redline = int(float(d.RPMLimit / 1000.0)) * 1000
 		debug_child.RPM_Range = int(float(d.RPMLimit / 1000.0)) * 1000 + 2000

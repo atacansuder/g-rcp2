@@ -1,15 +1,15 @@
 fc8a56933c4b1c8d796fdb8f7a9f9475
-::res://::1712194910
+::res://::1712351812
 base car.tscn::PackedScene::6006632351280429546::1711144268::0::1::::<><>::uid://df2i30irlljkl::::res://MAIN/wheel.tscn<>res://MAIN/car.gd<>uid://c7m04qiimdydw::::res://MAIN/misc/engine sound/engine.tscn<>uid://del2h14nydk3g::::res://MAIN/misc/textures/rim.jpg<>uid://d1vmrvs3aj84o::::res://MAIN/misc/tyre sounds/tyres.tscn<>uid://bvqp2v3vmlgcn::::res://MAIN/misc/mechanical sounds/other_sounds.tscn<>uid://kb7hq7qvuul3::::res://MAIN/misc/backfire_particles/fire.tscn<>uid://1a0k3s3amej8::::res://MAIN/misc/backfire_particles/backfire.png
 default_bus_layout.tres::AudioBusLayout::843813187252370841::1711139087::0::1::::<><>::
-default_env.tres::Environment::3574772965805249146::1711265479::0::1::::<><>::
+default_env.tres::Environment::3574772965805249146::1712203595::0::1::::<><>::
 export_presets.cfg::TextFile::-1::1710789161::0::1::::<><>::
 Grid.png::CompressedTexture2D::787967628881786892::1681240534::1709856878::1::::<><>::
 icon.png::CompressedTexture2D::5086476943662964858::1681240534::1709573525::1::::<><>::
 logo.png::CompressedTexture2D::4407219616870203296::1681240534::1709573525::1::::<><>::
 TEMPLATE.tscn::PackedScene::7693953741836897403::1709585239::0::1::::<><>::uid://crtwme8ggggra::::res://base car.tscn<>res://MAIN/misc/camera.gd<>res://MAIN/ground_surface_variables.gd<>uid://cv0iolhv1qxsn::::res://MISC/scene swapper/scenes/Test Scene/assets/Grid.png
 vlogo.png::CompressedTexture2D::523242545232981908::1710558062::1710558205::1::::<><>::
-world.tscn::PackedScene::5607897601783510848::1711263619::0::1::::<><>::uid://crtwme8ggggra::::res://base car.tscn<>res://MISC/misc scripts/world_root.gd<>res://MAIN/misc/camera.gd<>uid://b77dj0608nvq0::::res://MISC/debugger.tscn<>uid://diafjore21wn::::res://MISC/scene swapper/scenes/Test Scene/scene.tscn<>uid://b3exh7m2ddrcy::::res://MISC/mobile controls/mobile.tscn<>uid://b315i7ikjj32c::::res://logo.png
+world.tscn::PackedScene::5607897601783510848::1712203595::0::1::::<><>::uid://crtwme8ggggra::::res://base car.tscn<>res://MISC/misc scripts/world_root.gd<>res://MAIN/misc/camera.gd<>uid://b77dj0608nvq0::::res://MISC/debugger.tscn<>uid://diafjore21wn::::res://MISC/scene swapper/scenes/Test Scene/scene.tscn<>uid://b3exh7m2ddrcy::::res://MISC/mobile controls/mobile.tscn<>uid://b315i7ikjj32c::::res://logo.png
 ::res://addons/::25200
 ::res://addons/vitavehicle_ui/::1710968597
 collision.tscn::PackedScene::8482006128480112482::1710895361::0::1::::<><>::uid://btyvoi7jkhec0::::res://FONT/DroidSans.ttf
@@ -77,9 +77,9 @@ whine_low.ogg::AudioStreamOggVorbis::2580212319211604451::1681240534::1709573524
 rim.jpg::CompressedTexture2D::7464378851317413854::1681240534::1709856878::1::::<><>::
 sw.png::CompressedTexture2D::6028701875901194249::1681240534::1709573526::1::::<><>::
 sw_desired.png::CompressedTexture2D::4672329365470834247::1681240534::1709573526::1::::<><>::
-::res://MAIN/misc/tyre marks/::1710966859
+::res://MAIN/misc/tyre marks/::1712197802
 trail_clean.gd::GDScript::-1::1710827712::0::1::::ViVeWheelMark<>MeshInstance3D<>::
-trail_sm.gd::GDScript::-1::1710966859::0::1::::<>Node3D<>::
+trail_sm.gd::GDScript::-1::1712197802::0::1::::<>Node3D<>::
 tyremark.tscn::PackedScene::2866253888803911060::1710828358::0::1::::<><>::res://MAIN/misc/tyre marks/trail_clean.gd<>res://MAIN/misc/tyre marks/trail_sm.gd
 ::res://MAIN/misc/tyre smoke/::1710049438
 smoke.png::CompressedTexture2D::6119217112610577315::1681240534::1709856878::1::::<><>::
@@ -98,12 +98,12 @@ roll2.ogg::AudioStreamOggVorbis::8856070905148784731::1681240534::1709573524::1:
 tyres.gd::GDScript::-1::1711128183::0::1::::<>Node3D<>::
 tyres.tscn::PackedScene::9028284012982398516::1711128189::0::1::::<><>::res://MAIN/misc/tyre sounds/tyres.gd<>res://MAIN/misc/tyre sounds/vars.gd<>uid://gjka6jqu3b8p::::res://MAIN/misc/tyre sounds/offroad.ogg<>uid://crqq84gd1fbsh::::res://MAIN/misc/tyre sounds/peel0.ogg<>uid://04ebjdn23ih8::::res://MAIN/misc/tyre sounds/roll0.ogg<>uid://7pqd0tyxcjgj::::res://MAIN/misc/tyre sounds/roll1.ogg<>uid://dp1pkuseb4gfn::::res://MAIN/misc/tyre sounds/peel1.ogg<>uid://dyf7guf22o6t0::::res://MAIN/misc/tyre sounds/roll2.ogg<>uid://d3b45tmngsrf2::::res://MAIN/misc/tyre sounds/peel2.ogg
 vars.gd::GDScript::-1::1711090361::0::1::::ViVeWheelSFX<>AudioStreamPlayer3D<>::
-::res://MISC/::1711265479
-debugger.tscn::PackedScene::4698723353516704613::1711265479::0::1::::<><>::uid://b315i7ikjj32c::::res://logo.png<>res://MISC/misc scripts/debug.gd<>res://MISC/scene swapper/scene swapper.gd<>res://MISC/graphics_config/graphics config.gd<>res://MISC/controls config/slider_variables.gd<>uid://btyvoi7jkhec0::::res://FONT/DroidSans.ttf<>res://MISC/controls config/run.gd<>res://MISC/controls config/check_variables.gd<>res://MISC/misc scripts/option_control.gd<>res://MISC/car swapper/car swapper.gd<>uid://cr5l3r8wqkyn6::::res://MAIN/misc/textures/sw.png<>uid://b7tkt12prqch8::::res://MAIN/misc/textures/sw_desired.png<>res://MISC/controls config/option_variables.gd<>uid://b1vo60v1pjs6w::::res://MISC/tachometre/tacho.tscn<>uid://cbskusbekrb4l::::res://MISC/vertical progress bar/bar.tscn<>uid://cnjbclsh2lklc::::res://MISC/visual gravity system/vgs.tscn<>uid://2ojbutsqhnh4::::res://MISC/graph/display.tscn
+::res://MISC/::1712203594
+debugger.tscn::PackedScene::4698723353516704613::1712203594::0::1::::<><>::uid://b315i7ikjj32c::::res://logo.png<>res://MISC/misc scripts/debug.gd<>res://MISC/scene swapper/scene swapper.gd<>res://MISC/graphics_config/graphics config.gd<>res://MISC/controls config/slider_variables.gd<>uid://btyvoi7jkhec0::::res://FONT/DroidSans.ttf<>res://MISC/controls config/run.gd<>res://MISC/controls config/check_variables.gd<>res://MISC/misc scripts/option_control.gd<>res://MISC/car swapper/car swapper.gd<>uid://cr5l3r8wqkyn6::::res://MAIN/misc/textures/sw.png<>uid://b7tkt12prqch8::::res://MAIN/misc/textures/sw_desired.png<>res://MISC/controls config/option_variables.gd<>uid://b1vo60v1pjs6w::::res://MISC/tachometre/tacho.tscn<>uid://cbskusbekrb4l::::res://MISC/vertical progress bar/bar.tscn<>uid://cnjbclsh2lklc::::res://MISC/visual gravity system/vgs.tscn<>uid://2ojbutsqhnh4::::res://MISC/graph/display.tscn
 ::res://MISC/autoload/::1711093467
 graphics.gd::GDScript::-1::1711093467::0::1::::<>Node<>::
-::res://MISC/car swapper/::1711049364
-car swapper.gd::GDScript::-1::1711049364::0::1::::<>ScrollContainer<>::
+::res://MISC/car swapper/::1712203594
+car swapper.gd::GDScript::-1::1712203594::0::1::::<>ScrollContainer<>::
 ::res://MISC/car swapper/cars/::1710483629
 ::res://MISC/car swapper/cars/Eclipse SRC/::1711144268
 scene.tscn::PackedScene::6631471648446349857::1711144268::0::1::::<><>::uid://df2i30irlljkl::::res://MAIN/wheel.tscn<>res://MAIN/car.gd<>uid://c7m04qiimdydw::::res://MAIN/misc/engine sound/engine.tscn<>uid://d1vmrvs3aj84o::::res://MAIN/misc/tyre sounds/tyres.tscn<>uid://bvqp2v3vmlgcn::::res://MAIN/misc/mechanical sounds/other_sounds.tscn
@@ -158,8 +158,8 @@ gas.png::CompressedTexture2D::2010718230084388682::1666411458::1709573527::1::::
 hb.png::CompressedTexture2D::6315996373007646024::1666411454::1709573527::1::::<><>::
 sd.png::CompressedTexture2D::4971818151040538909::1666411470::1709573527::1::::<><>::
 su.png::CompressedTexture2D::5717273821161555443::1666411420::1709573527::1::::<><>::
-::res://MISC/scene swapper/::1711121079
-scene swapper.gd::GDScript::-1::1711121079::0::1::::<>ScrollContainer<>::
+::res://MISC/scene swapper/::1712203328
+scene swapper.gd::GDScript::-1::1712203328::0::1::::<>ScrollContainer<>::
 ::res://MISC/scene swapper/scenes/::1710484664
 ::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/::1710531536
 scene.tscn::PackedScene::909335909103475734::1710531536::0::1::::<><>::res://MAIN/ground_surface_variables.gd<>uid://b6u1i4ao1jldk::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/roadsurface5spaced.jpg<>uid://cqui7rb47l88x::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/2.png<>uid://du7j7jtpvsdpi::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/0.png<>uid://80k22cfgqcys::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/4.png<>uid://bcqn56y60i6ii::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/1.png<>uid://dsjxpvx6n2yi0::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/metalframe.png<>uid://dymc7ny8gih2l::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/tree.png<>uid://cexkkprlosvys::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/guardrail.png<>uid://du0tjvpl0tc70::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/lamppole.png<>uid://bkrakque4homr::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/backgroundtrees.png<>uid://ciafp6cmju103::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/3.png<>uid://dhucyg4gfut8v::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/rock2_hd.png<>uid://bgnq444t4eavk::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/grass.png<>uid://bstff1bmu1nvp::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/scissor_shadows.tres<>res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/water_reflection.gd<>uid://b0gfwwwwjeyqm::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/concrete.jpg<>uid://bfwa3rih5mff4::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/roadsurfaceunmarked.jpg<>uid://cthr6jhaye8h7::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/concretewall2.jpg<>uid://chfpp0t1jf1e1::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/signboard1.png<>uid://b6i0los78p11j::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/signboard2.png<>uid://dq353yx0pfmh1::::res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/signboard3.png<>res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/buoyancy.gd
@@ -240,8 +240,8 @@ tacho.tscn::PackedScene::4255589295353368628::1710899960::0::1::::<><>::uid://bt
 ::res://MISC/vertical progress bar/::1710898614
 bar.gd::GDScript::-1::1710898614::0::1::::<>ColorRect<>::
 bar.tscn::PackedScene::4880832843563955409::1709585239::0::1::::<><>::res://MISC/vertical progress bar/bar.gd
-::res://MISC/visual gravity system/::1711263619
+::res://MISC/visual gravity system/::1712203595
 circle.png::CompressedTexture2D::3070311884076357464::1607222000::1709573526::1::::<><>::
 vgs.gd::GDScript::-1::1711144424::0::1::::ViVeVGS<>Control<>::
-vgs.tscn::PackedScene::5703940628965641736::1711263619::0::1::::<><>::uid://bj0jt850o26wy::::res://MISC/visual gravity system/circle.png<>res://MISC/visual gravity system/vgs.gd<>res://MISC/visual gravity system/wheel_variables.gd
+vgs.tscn::PackedScene::5703940628965641736::1712203595::0::1::::<><>::uid://bj0jt850o26wy::::res://MISC/visual gravity system/circle.png<>res://MISC/visual gravity system/vgs.gd<>res://MISC/visual gravity system/wheel_variables.gd
 wheel_variables.gd::GDScript::-1::1709837490::0::1::::ViVeDebugWheel<>Polygon2D<>::

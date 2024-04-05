@@ -57,7 +57,7 @@ func _ready() -> void:
 	var d:PackedStringArray = list_files_in_directory(pathh + "scenes")
 	
 	for i:String in d:
-		var but:Node = button.duplicate()
+		var but:Button = button.duplicate()
 		$container.add_child(but)
 		but.get_node("mapname").text = i
 		but.get_node("icon").texture = load(pathh + "scenes/" + i + "/thumbnail.png")
