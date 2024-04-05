@@ -39,11 +39,10 @@ func load_and_cache(path:String) -> PackedScene:
 
 
 func swapcar(naem:String) -> void:
-	#get_parent().get_node("swap car").visible = false
 	if canclick:
 		canclick = false
 		
-		#TODO: reimplement
+		ViVeDebug.singleton.get_node("vgs").clear()
 		#get_parent().get_node("vgs").clear()
 		
 		#default_position = get_parent().get_node(get_parent().car).global_position
@@ -79,7 +78,7 @@ func swapcar(naem:String) -> void:
 		
 		debug_child._ready()
 		
-		
+		ViVeDebug.singleton.setup()
 		canclick = true
 #	get_parent().get_node("swap car").visible = true
 
