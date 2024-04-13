@@ -339,10 +339,10 @@ mesh = SubResource( 13 )
 scale_amount_curve = SubResource( 14 )
 
 [editable path="fr"]
-[editable path="fr/animation/fixed/smoke_dirt"]
+[editable path="fr/animation/camber/smoke_dirt"]
 [editable path="fl"]
-[editable path="fl/animation/fixed/smoke_dirt"]
+[editable path="fl/animation/camber/smoke_dirt"]
 [editable path="rr"]
-[editable path="rr/animation/fixed/smoke_dirt"]
+[editable path="rr/animation/camber/smoke_dirt"]
 [editable path="rl"]
-[editable path="rl/animation/fixed/smoke_dirt"]
+[editable path="rl/animation/camber/smoke_dirt"]

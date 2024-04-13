@@ -8,14 +8,26 @@
 
 config_version=4
 
-_global_script_classes=[  ]
+_global_script_classes=[ {
+"base": "RigidBody",
+"class": "ViVeCar",
+"language": "GDScript",
+"path": "res://MAIN/car.gd"
+}, {
+"base": "RayCast",
+"class": "ViVeWheel",
+"language": "GDScript",
+"path": "res://MAIN/wheel.gd"
+} ]
 _global_script_class_icons={
+"ViVeCar": "",
+"ViVeWheel": ""
 }
 
 [application]
 
 config/name="VitaVehicle"
-run/main_scene="res://TEMPLATE.tscn"
+run/main_scene="res://world.tscn"
 config/icon="res://icon.png"
 
 [autoload]
