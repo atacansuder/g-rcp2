@@ -72,9 +72,7 @@ func _physics_process(_delta:float) -> void:
 	fueltrace += (car._throttle) * backfire_FuelRichness
 	air = (car._throttle * car._rpm) * backfire_Air + car._turbopsi
 	
-	fueltrace -= fueltrace * backfire_FuelDecay
-	
-	fueltrace = maxf(fueltrace, 0.0)
+	fueltrace = maxf(fueltrace - (fueltrace * backfire_FuelDecay), 0.0)
 	
 	engine_node = get_node(engine_sound)
 	
@@ -87,8 +85,7 @@ func _physics_process(_delta:float) -> void:
 			var ft:float = maxf(fueltrace, 10.0)
 			
 			backfire.play()
-			var yed:float = 1.5 - ft * 0.1
-			yed = maxf(yed, 1.0)
+			var yed:float = maxf(1.5 - ft * 0.1, 1.0)
 			
 			backfire.pitch_scale = randf_range(yed * 1.25, yed * 1.5)
 			backfire.volume_db = linear_to_db((ft * backfire_Volume) * 0.1)
@@ -100,8 +97,7 @@ func _physics_process(_delta:float) -> void:
 			for i:CPUParticles3D in exhaust_particles:
 				i.emitting = false
 	
-	var wh:float = abs(car._rpm / 10000.0) * WhinePitch
-	wh = maxf(wh, 0.0)
+	var wh:float = maxf((abs(car._rpm / 10000.0) * WhinePitch), 0.0)
 	
 	if wh > 0.01:
 		scwhine.volume_db = linear_to_db(WhineVolume * volume)
@@ -110,7 +106,7 @@ func _physics_process(_delta:float) -> void:
 	else:
 		scwhine.volume_db = linear_to_db(0.0)
 	
-	var dist:float = blow_psi - car._turbopsi
+	var blowvol:float = clampf(blow_psi - car._turbopsi, 0.0, 1.0)
 	blow_psi -= (blow_psi - car._turbopsi) * BlowOffWhineReduction
 	blow_inertia += blow_psi - car._turbopsi
 	blow_inertia -= (blow_inertia - (blow_psi - car._turbopsi)) * BlowDamping
@@ -118,33 +114,18 @@ func _physics_process(_delta:float) -> void:
 	
 	blow_psi = minf(blow_psi, car.MaxPSI)
 	
-	var blowvol:float = dist
+	var spoolvol:float = clampf(car._turbopsi / 10.0, 0.0, 1.0)
 	
-	blowvol = clampf(blowvol, 0.0, 1.0)
+	spoolvol += (absf(car._rpm) * (TurboNoiseRPMAffection / 1000.0)) * spoolvol
 	
-	var spoolvol:float = car._turbopsi / 10.0
-	
-	spoolvol = clampf(spoolvol, 0.0, 1.0)
-	
-	spoolvol += (abs(car._rpm) * (TurboNoiseRPMAffection / 1000.0)) * spoolvol
-	
-	var blow_local:float = linear_to_db(volume * (blowvol * BlowOffVolume2))
-	blow_local = maxf(blow_local, -60.0)
-	
-	var spool_local:float = linear_to_db(volume * (spoolvol * SpoolVolume))
-	spool_local = maxf(spool_local, -60.0)
-	
-	blow.volume_db = blow_local
-	spool.volume_db = spool_local
+	blow.volume_db = maxf(linear_to_db(volume * (blowvol * BlowOffVolume2)), -60.0)
+	spool.volume_db = maxf(linear_to_db(volume * (spoolvol * SpoolVolume)), -60.0)
 	
 	blow.max_db = blow.volume_db
 	spool.max_db = spool.volume_db
-	var yes:float = blowvol * BlowOffVolume
-	yes = clampf(yes, 0.0, 1.0)
-	var whistle_local:float = linear_to_db(yes)
-	whistle_local = maxf(whistle_local, -60.0)
 	
-	whistle.volume_db = whistle_local
+	#Take (blowvol * BlowOffVolume), clamp it between 0 and 1, convert to db, make sure it's above -60.0 db
+	whistle.volume_db = maxf(linear_to_db(clampf(blowvol * BlowOffVolume, 0.0, 1.0) ), -60.0)
 	whistle.max_db = whistle.volume_db
 	
 	var wps:float = 1.0
@@ -152,14 +133,12 @@ func _physics_process(_delta:float) -> void:
 		wps = blowvol * BlowOffPitch2 + car._turbopsi * 0.05 + BlowOffPitch1
 	else:
 		wps = blowvol * BlowOffPitch2 + BlowOffPitch1
-	wps = minf(wps, MaxWhinePitch)
 	
-	whistle.pitch_scale = wps
+	whistle.pitch_scale =  minf(wps, MaxWhinePitch)
 	spool.pitch_scale = SpoolPitch + spoolvol * 0.5
 	blow.pitch_scale = BlowPitch
 	
-	var h:float = car._whinepitch / 200.0
-	h = clampf(h, 0.5, 1.0)
+	var h:float = clampf(car._whinepitch / 200.0, 0.5, 1.0)
 	
 	var wlow_local:float = linear_to_db(((car._gearstress * car.GearGap) / 160000.0) * ((1.0 - h) * 0.5))
 	wlow_local = maxf(wlow_local, -60.0)
@@ -169,9 +148,8 @@ func _physics_process(_delta:float) -> void:
 	if car._whinepitch / 50.0 > 0.0001:
 		wlow.pitch_scale = car._whinepitch / 50.0
 	var whigh_local:float = linear_to_db(((car._gearstress * car.GearGap) / 80000.0) * 0.5)
-	whigh_local = maxf(whigh_local, -60.0)
 	
-	whigh.volume_db = whigh_local
+	whigh.volume_db = maxf(whigh_local, -60.0)
 	whigh.max_db = whigh.volume_db
 	if car._whinepitch / 100.0 > 0.0001:
 		whigh.pitch_scale = car._whinepitch / 100.0

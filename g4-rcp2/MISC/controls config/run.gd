@@ -29,4 +29,4 @@ func setup() -> void:
 				i.button_pressed = car.car_controls.get(i.var_name)
 				i.get_node("amount").text = str(i.button_pressed)
 			_:
-				pass
+				continue

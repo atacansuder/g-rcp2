@@ -262,6 +262,7 @@ var _rvelocity:Vector3 = Vector3(0,0,0)
 
 var _stalled:float = 0.0
 
+#Is this even needed anymore? Godot 4 doesn't have bullet-
 func bullet_fix() -> void:
 	var offset:Vector3 = drag_center.position
 	AckermannPoint -= offset.z
@@ -507,8 +508,7 @@ func transmission() -> void:
 		elif GearAssist.assist_level == 1:
 			if _rpm < GearAssist.clutch_out_RPM:
 				var irga_ca:float = (GearAssist.clutch_out_RPM - _rpm) / (GearAssist.clutch_out_RPM - IdleRPM)
-				_clutchpedalreal = pow(irga_ca, 2)
-				_clutchpedalreal = minf(1.0, _clutchpedalreal)
+				_clutchpedalreal = minf(pow(irga_ca, 2), 1.0)
 			else:
 				if not car_controls.gasrestricted and not car_controls.revmatch:
 					car_controls.clutchin = false
@@ -569,8 +569,7 @@ func transmission() -> void:
 			if _sassiststep == 0:
 				if _rpm < GearAssist.clutch_out_RPM:
 					var irga_ca:float = (GearAssist.clutch_out_RPM - _rpm) / (GearAssist.clutch_out_RPM - IdleRPM)
-					_clutchpedalreal = irga_ca * irga_ca
-					_clutchpedalreal = minf(_clutchpedalreal, 1.0)
+					_clutchpedalreal = minf(irga_ca * irga_ca, 1.0)
 					
 				else:
 					car_controls.clutchin = false
@@ -702,9 +701,7 @@ func transmission() -> void:
 		
 		_cvtaccel -= (_cvtaccel - (car_controls.gaspedal * CVTSettings.throt_eff_thresh + (1.0 - CVTSettings.throt_eff_thresh))) * CVTSettings.accel_rate
 		
-		var a:float = CVTSettings.iteration_3 / ((absf(wv) / 10.0) * _cvtaccel + 1.0)
-		
-		a = maxf(a, CVTSettings.iteration_4)
+		var a:float = maxf(CVTSettings.iteration_3 / ((absf(wv) / 10.0) * _cvtaccel + 1.0), CVTSettings.iteration_4)
 		
 		_ratio = (CVTSettings.iteration_1 * 10000000.0) / (absf(wv) * (_rpm * a) + 1.0)
 		
@@ -758,7 +755,6 @@ func transmission() -> void:
 	car_controls.clutchpedal = clampf(car_controls.clutchpedal, 0.0, 1.0)
 
 func drivetrain() -> void:
-	
 		_rpmcsm -= (_rpmcs - _resistance)
 	
 		_rpmcs += _rpmcsm * ClutchElasticity
@@ -788,8 +784,7 @@ func drivetrain() -> void:
 			ClutchFloatReduction = 0.0
 		
 		_gearstress = (absf(_resistance) * StressFactor) * car_controls.clutchpedal
-		var stabled:float = _ratio * 0.9 + 0.1
-		_ds_weight = DSWeight / stabled
+		_ds_weight = DSWeight / (_ratio * 0.9 + 0.1)
 		
 		_whinepitch = absf(_rpm / _ratio) * 1.5
 		
@@ -804,15 +799,18 @@ func drivetrain() -> void:
 			_c_locked = absf(_wv_difference) * (Centre_CoastLocking / 10.0) + Centre_Preload
 		else:
 			_c_locked = absf(_wv_difference) * (Centre_Locking / 10.0) + Centre_Preload
-		if _c_locked < 0.0 or len(c_pws) < 4:
+		
+		_c_locked = clampf(_c_locked, 0.0, 1.0)
+		if len(c_pws) < 4:
 			_c_locked = 0.0
-		elif _c_locked > 1.0:
-			_c_locked = 1.0
-		#_c_locked = minf(_c_locked, 1.0)
+		#if _c_locked < 0.0 or len(c_pws) < 4:
+		#	_c_locked = 0.0
+		#elif _c_locked > 1.0:
+		#	_c_locked = 1.0
 		
 		var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(c_pws)
 		#var mind:ViVeWheel = VitaVehicleSimulation.slowest_wheel(c_pws)
-		var what:float = 0.0
+		
 		
 		var floatreduction:float = ClutchFloatReduction
 		
@@ -826,6 +824,8 @@ func drivetrain() -> void:
 		
 		_currentstable = ClutchStable + stabling
 		_currentstable *= (RevSpeed / 1.475)
+		
+		var what:float = 0.0
 		
 		if _dsweightrun > 0.0:
 			what = (_rpm -(((_rpmforce * floatreduction) * pow(_currentstable, 1.0)) / (_ds_weight / _dsweightrun)))
@@ -1023,14 +1023,12 @@ func _physics_process(_delta:float) -> void:
 	else:
 		torque_local = torque_norm
 	
-	var f:float = _rpm - torque_local.RiseRPM
-	f = maxf(f, 0.0)
+	var f:float = maxf(_rpm - torque_local.RiseRPM, 0.0)
 	
 	torque = (_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + (f * f) * (torque_local.TorqueRise / 10000000.0)) * _throttle
 	torque += ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * 0.609) )
 	
-	var j:float = _rpm - torque_local.DeclineRPM
-	j = maxf(j, 0.0)
+	var j:float = maxf(_rpm - torque_local.DeclineRPM, 0.0)
 	
 	torque /= (j * (j * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	torque /= absf(_rpm * absf(_rpm)) * (torque_local.FloatRate / 10000000.0) + 1.0
@@ -1098,18 +1096,14 @@ func multivariate() -> float:
 	
 	var value:float = 0.0
 	
-	var maxpsi:float = 0.0
-	var scrpm:float = 0.0
-	var f:float = 0.0
-	var j:float = 0.0
-	
 	#if car.SCEnabled:
 	if SuperchargerEnabled:
-		maxpsi = _turbopsi
-		scrpm = _rpm
-		scrpm = _rpm * SCRPMInfluence
-		_turbopsi = (scrpm / 10000.0) * BlowRate - SCThreshold
-		_turbopsi = clampf(_turbopsi, 0.0, maxpsi)
+		var maxpsi:float = _turbopsi
+		#scrpm = _rpm
+		var scrpm:float = _rpm * SCRPMInfluence
+		#_turbopsi = (scrpm / 10000.0) * BlowRate - SCThreshold
+		#_turbopsi = clampf(_turbopsi, 0.0, maxpsi)
+		_turbopsi = clampf((scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, maxpsi)
 	
 	#if not car.SCEnabled and not car.TEnabled:
 	if not SuperchargerEnabled and not TurboEnabled:
@@ -1122,12 +1116,14 @@ func multivariate() -> float:
 		torque_local = torque_norm
 	
 	value = (_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * 0.609) )
-	f = _rpm - torque_local.RiseRPM
-	f = maxf(f, 0.0)
+	var f:float = maxf(_rpm - torque_local.RiseRPM, 0.0)
+	#f = _rpm - torque_local.RiseRPM
+	#f = maxf(f, 0.0)
 	
 	value += (f * f) * (torque_local.TorqueRise / 10000000.0)
-	j = _rpm - torque_local.DeclineRPM
-	j = maxf(j, 0.0)
+	var j:float = maxf(_rpm - torque_local.DeclineRPM, 0.0)
+	#j = _rpm - torque_local.DeclineRPM
+	#j = maxf(j, 0.0)
 	
 	value /= (j * (j * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	value /= pow(_rpm, 2) * (torque_local.FloatRate / 10000000.0) + 1.0

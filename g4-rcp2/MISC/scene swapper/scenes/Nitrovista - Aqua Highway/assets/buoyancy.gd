@@ -1,17 +1,18 @@
 extends Area3D
 
 
-var bodies:Array = []
+var bodies:Array[Node3D] = []
 
-func _on_Area_body_entered(body) -> void:
+func _on_Area_body_entered(body:Node3D) -> void:
 	if not body in bodies:
 		print(body.get_class())
 		bodies.append(body)
 
-func _on_Area_body_exited(body) -> void:
+func _on_Area_body_exited(body:Node3D) -> void:
 	if not body in bodies:
 		bodies.append(body)
 
+#I am 90% sure there's something in Godot that can do most of this manually...?
 func _physics_process(_delta:float) -> void:
 	for i in bodies:
 		if is_instance_valid(i):

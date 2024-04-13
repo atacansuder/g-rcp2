@@ -144,8 +144,8 @@ var rollvol:float = 0.0
 var sl:float = 0.0
 var skvol:float = 0.0
 var skvol_d:float = 0.0
-var velocity:Vector3 = Vector3(0,0,0)
-var velocity2:Vector3 = Vector3(0,0,0)
+var velocity:Vector3 = Vector3.ZERO
+var velocity2:Vector3 = Vector3.ZERO
 var compress:float = 0.0
 var compensate:float = 0.0
 var axle_position:float = 0.0
@@ -156,7 +156,7 @@ var ground_bump_frequency:float = 0.0
 
 var surface_vars:ViVeSurfaceVars = ViVeSurfaceVars.new()
 
-var hitposition:Vector3 = Vector3(0,0,0)
+var hitposition:Vector3 = Vector3.ZERO
 
 var cache_tyrestiffness:float = 0.0
 var cache_friction_action:float = 0.0
@@ -167,13 +167,10 @@ func _ready() -> void:
 func power() -> void:
 	if not c_p == 0:
 		dist *= pow(car.car_controls.clutchpedal, 2) / (car._currentstable)
-		var dist_cache:float = dist
 		
 		var tol:float = (0.1475 / 1.3558) * car.ClutchGrip
 		
-		dist_cache = clampf(dist_cache, -tol, tol)
-		
-		var dist2:float = dist_cache
+		var dist2:float = clampf(dist, -tol, tol)
 		
 		car._dsweight += c_p
 		car._stress += stress * c_p
@@ -181,7 +178,7 @@ func power() -> void:
 		if car._dsweightrun > 0.0:
 			if car._rpm > car.DeadRPM:
 				wheelpower -= (((dist2 / car._ds_weight) / (car._dsweightrun / 2.5)) * c_p) / w_weight
-			car._resistance += (((dist_cache * (10.0)) / car._dsweightrun) * c_p)
+			car._resistance += (((dist2 * (10.0)) / car._dsweightrun) * c_p)
 
 func diffs() -> void:
 	if car._locked > 0.0:
@@ -202,30 +199,33 @@ func sway() -> void:
 		var linkedwheel:ViVeWheel = car.get_node(SwayBarConnection)
 		rolldist = rd - linkedwheel.rd
 
-var directional_force:Vector3 = Vector3(0,0,0)
+var directional_force:Vector3 = Vector3.ZERO
 var slip_perc:Vector2 = Vector2(0,0)
 var slip_perc2:float = 0.0
 var slip_percpre:float = 0.0
 
-var velocity_last:Vector3 = Vector3(0,0,0)
-var velocity2_last:Vector3 = Vector3(0,0,0)
+var velocity_last:Vector3 = Vector3.ZERO
+var velocity2_last:Vector3 = Vector3.ZERO
 
 func _physics_process(_delta:float) -> void:
-	var translation:Vector3 = position
-	var cast_to:Vector3 = target_position
+	#var translation:Vector3 = position
+	
+	#var cast_to:Vector3 = target_position
 #	var global_translation:Vector3 = global_position
 	var last_translation:Vector3 = position
 	
-	var x_pos:float = float(translation.x > 0)
-	var x_neg:float = float(translation.x < 0)
+	#var x_pos:float = float(translation.x > 0)
+	var x_pos:float = float(position.x > 0)
+	#var x_neg:float = float(translation.x < 0)
+	var x_neg:float = float(position.x < 0)
 	
 	if Steer and absf(car.car_controls.steer) > 0:
 		#var form1 :float = 0.0
 		#var form2 :float = car.steering_geometry[1] -translation.x
 		var lasttransform:Transform3D = global_transform
 		
-		look_at_from_position(translation, Vector3(car._steering_geometry[0], 0.0, car._steering_geometry[1]))
-		
+		#look_at_from_position(translation, Vector3(car._steering_geometry[0], 0.0, car._steering_geometry[1]))
+		look_at_from_position(position, Vector3(car._steering_geometry[0], 0.0, car._steering_geometry[1]))
 		
 		# just making this use origin fixed it. lol
 		global_transform.origin = lasttransform.origin
@@ -237,8 +237,8 @@ func _physics_process(_delta:float) -> void:
 		
 		var roter:float = global_rotation.y
 		
-		look_at_from_position(translation, Vector3(car.Steer_Radius, 0 ,car._steering_geometry[1]))
-		
+		#look_at_from_position(translation, Vector3(car.Steer_Radius, 0 ,car._steering_geometry[1]))
+		look_at_from_position(position, Vector3(car.Steer_Radius, 0 ,car._steering_geometry[1]))
 		
 		# this one too
 		global_transform.origin = lasttransform.origin #This little thing keeps the car from launching into orbit
@@ -256,13 +256,15 @@ func _physics_process(_delta:float) -> void:
 	else:
 		rotation_degrees = Vector3(0,- ((Toe * x_pos - Toe * x_neg)),0)
 	
-	translation = last_translation
+	#translation = last_translation
+	position = last_translation
 	
-	c_camber = Camber + Caster * rotation.y * float(translation.x > 0.0) -Caster * rotation.y * float(translation.x < 0.0)
+	#c_camber = Camber + Caster * rotation.y * float(translation.x > 0.0) -Caster * rotation.y * float(translation.x < 0.0)
+	c_camber = Camber + Caster * rotation.y * float(position.x > 0.0) -Caster * rotation.y * float(position.x < 0.0)
 	
-	directional_force = Vector3(0,0,0)
+	directional_force = Vector3.ZERO
 	
-	velo_1.position = Vector3(0,0,0)
+	velo_1.position = Vector3.ZERO
 	
 	
 	#w_size = ((absi(TyreSettings.Width_mm) * ((absi(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * 0.003269) * 0.5
@@ -283,27 +285,31 @@ func _physics_process(_delta:float) -> void:
 	velocity = -velo_1_step.position * 60.0
 	velocity2 = -velo_2_step.position * 60.0
 	
-	velo_1.rotation = Vector3(0,0,0)
-	velo_2.rotation = Vector3(0,0,0)
-	
-	# VARS
-	var elasticity:float = S_Stiffness
-	var damping:float = S_Damping
-	var damping_rebound:float = S_ReboundDamping
-	
+	velo_1.rotation = Vector3.ZERO
+	velo_2.rotation = Vector3.ZERO
 	
 	rolldist_clamped = clampf(rolldist, -1.0, 1.0)
 	
+	# VARS
+	#var elasticity:float = S_Stiffness
+	var elasticity:float = maxf(S_Stiffness * AR_Elast * rolldist_clamped + 1.0, 0.0)
+	#var damping:float = S_Damping
+	var damping:float = maxf(S_Damping * AR_Stiff * rolldist_clamped + 1.0, 0.0)
+	#var damping_rebound:float = S_ReboundDamping
+	var damping_rebound:float = maxf(S_ReboundDamping * AR_Stiff * rolldist_clamped + 1.0, 0.0)
 	
-	elasticity *= AR_Elast * rolldist_clamped + 1.0
-	damping *= AR_Stiff * rolldist_clamped + 1.0
-	damping_rebound *= AR_Stiff * rolldist_clamped + 1.0
 	
-	elasticity = maxf(elasticity, 0.0)
 	
-	damping = maxf(damping, 0.0)
 	
-	damping_rebound = maxf(damping_rebound, 0.0)
+	#elasticity *= AR_Elast * rolldist_clamped + 1.0
+	#damping *= AR_Stiff * rolldist_clamped + 1.0
+	#damping_rebound *= AR_Stiff * rolldist_clamped + 1.0
+	
+	#elasticity = maxf(elasticity, 0.0)
+	
+	#damping = maxf(damping, 0.0)
+	
+	#damping_rebound = maxf(damping_rebound, 0.0)
 	
 	sway()
 	
@@ -567,24 +573,28 @@ func _physics_process(_delta:float) -> void:
 	var inned:float = (absf(cambered) + A_Geometry4) / 90.0
 	
 	inned *= inned - A_Geometry4 / 90.0
-	geometry.position.x = -inned * translation.x
-	anim_camber.rotation.z = - (deg_to_rad(- c_camber * float(translation.x < 0.0) + c_camber * float(translation.x > 0.0)) - deg_to_rad( - cambered * float(translation.x < 0.0) + cambered * float(translation.x > 0.0)) * A_Geometry2)
+	#geometry.position.x = -inned * translation.x
+	geometry.position.x = -inned * position.x
+	#anim_camber.rotation.z = - (deg_to_rad(- c_camber * float(translation.x < 0.0) + c_camber * float(translation.x > 0.0)) - deg_to_rad( - cambered * float(translation.x < 0.0) + cambered * float(translation.x > 0.0)) * A_Geometry2)
+	anim_camber.rotation.z = - (deg_to_rad(- c_camber * float(position.x < 0.0) + c_camber * float(position.x > 0.0)) - deg_to_rad( - cambered * float(position.x < 0.0) + cambered * float(position.x > 0.0)) * A_Geometry2)
 	var g:float
 	
 	axle_position = geometry.position.y
 	if not Solidify_Axles: #If the NodePath is null
-		g = (geometry.position.y + (absf(cast_to.y) - A_Geometry1)) / (absf(translation.x) + A_Geometry3 + 1.0)
+		#g = (geometry.position.y + (absf(cast_to.y) - A_Geometry1)) / (absf(translation.x) + A_Geometry3 + 1.0)
+		g = (geometry.position.y + (absf(target_position.y) - A_Geometry1)) / (absf(position.x) + A_Geometry3 + 1.0)
 		g /= absf(g) + 1.0
 		cambered = (g * 90.0) - A_Geometry4
 	else:
-		g = (geometry.position.y - get_node(Solidify_Axles).axle_position) / (absf(translation.x) + 1.0)
+		#g = (geometry.position.y - get_node(Solidify_Axles).axle_position) / (absf(translation.x) + 1.0)
+		g = (geometry.position.y - get_node(Solidify_Axles).axle_position) / (absf(position.x) + 1.0)
 		g /= absf(g) + 1.0
 		cambered = (g * 90.0)
 	
 	anim.position = geometry.position
 	
 #	var forces = $velocity2.global_transform.basis.orthonormalized().xform(Vector3(0,0,1))*directional_force.z + $velocity2.global_transform.basis.orthonormalized().xform(Vector3(1,0,0))*directional_force.x + $velocity2.global_transform.basis.orthonormalized().xform(Vector3(0,1,0))*directional_force.y
-	var forces:Vector3 = (velo_2.global_transform.basis.orthonormalized() * (Vector3(0,0,1))) * directional_force.z + (velo_2.global_transform.basis.orthonormalized() * (Vector3(1,0,0))) * directional_force.x + (velo_2.global_transform.basis.orthonormalized() * (Vector3(0,1,0))) * directional_force.y
+	var forces:Vector3 = (velo_2.global_transform.basis.orthonormalized() * (Vector3.BACK)) * directional_force.z + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_LEFT)) * directional_force.x + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP)) * directional_force.y
 	
 #	car.apply_impulse(hitposition-car.global_transform.origin,forces)
 	car.apply_impulse(forces, hitposition - car.global_transform.origin)
@@ -616,12 +626,11 @@ func suspension() -> float:
 	angle = (geometry.rotation_degrees.z - ( - c_camber * positive_pos + c_camber * negative_pos) + ( - cambered * positive_pos + cambered * negative_pos) * A_Geometry2) / 90.0
 	
 #	var incline = (own.get_collision_normal()-own.global_transform.basis.orthonormalized().xform(Vector3(0,1,0))).length()
-	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3(0,1,0))).length()
+	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.MODEL_TOP)).length()
 	
 	incline /= 1 - A_InclineArea
 	
 	incline = maxf(incline - A_InclineArea, 0.0)
-	
 	incline = minf(incline * A_ImpactForce, 1.0)
 	
 	geometry.position.y = minf(geometry.position.y, - g_range + S_MaxCompression * (1.0 - incline))

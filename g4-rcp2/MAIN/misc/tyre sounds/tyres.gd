@@ -63,9 +63,7 @@ func _physics_process(_delta:float) -> void:
 	for i:ViVeWheel in wheels:
 		total += i.skvol
 	
-	total /= 10.0
-	
-	total = minf(total, 1.0)
+	total = minf(total / 10.0, 1.0)
 	
 	var mult:float = (parent.linear_velocity.length() / 5000.0 + 1.0)
 	
@@ -76,14 +74,9 @@ func _physics_process(_delta:float) -> void:
 	peel1.pitch_scale = 1.0 / mult
 	peel2.pitch_scale =  1.1 - total * 0.1 / mult
 	
+	var drit:float = minf((parent.linear_velocity.length() * wheel.stress) / 1000.0 - 0.1, 0.5)
 	
-	var drit:float = (parent.linear_velocity.length() * wheel.stress) / 1000.0 - 0.1
-	
-	drit = minf(drit, 0.5)
-	
-	drit += wheel.skvol / 2.0 - 0.1
-	
-	drit = clampf(drit, 0.0, 1.0)
+	drit = clampf(drit + wheel.skvol / 2.0 - 0.1, 0.0, 1.0)
 	
 	drit *= dirt
 	
@@ -93,14 +86,10 @@ func _physics_process(_delta:float) -> void:
 			i.max_db = i.volume_db
 			i.pitch_scale = 1.0 + length * 0.05 + absf(roll / 100.0)
 		else:
-			var dist:float = absf(i.length - length)
-			var dist2:float = absf(i.width - width)
+			var dist:float = pow(absf(i.length - length), 2)
+			var dist2:float = pow(absf(i.width - width), 2)
 			
-			dist *= absf(dist)
-			dist2 *= absf(dist2)
-			
-			var vol:float = 1.0 - (dist + dist2)
-			vol = clampf(vol, 0.0, 1.0)
+			var vol:float = clampf(1.0 - (dist + dist2), 0.0, 1.0)
 			
 			i.volume_db = linear_to_db(((vol * (1.0 - dirt)) * i.volume) * 0.35)
 			i.max_db = i.volume_db

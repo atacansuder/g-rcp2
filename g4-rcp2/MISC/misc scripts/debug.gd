@@ -55,7 +55,7 @@ func _process(delta:float) -> void:
 		
 		$sw.rotation_degrees = car_node.car_controls.steer * 380.0
 		$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
-		if ViVeEnvironment.singleton.Debug_Mode:
+		if ViVeEnvironment.get_singleton().Debug_Mode:
 			weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
 		else:
 			weight_dist.text = "[ enable Debug_Mode or press F to\nfetch weight distribution ]"
@@ -106,9 +106,9 @@ func _process(delta:float) -> void:
 	tacho_rpm.text = str(int(car_node._rpm))
 	
 	if car_node._rpm < 0:
-		tacho_rpm.self_modulate = Color(1,0,0)
+		tacho_rpm.self_modulate = Color.RED
 	else:
-		tacho_rpm.self_modulate = Color(1,1,1)
+		tacho_rpm.self_modulate = Color.WHITE
 	
 	if car_node.car_controls.gear == 0:
 		tacho_gear.text = "N"

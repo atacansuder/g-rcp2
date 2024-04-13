@@ -57,13 +57,9 @@ func _physics_process(_delta:float) -> void:
 	
 	fade = clampf(fade, childcount - 1, 0.0)
 	
-	vacuum = (car.car_controls.gaspedal - car._throttle) * 4
+	vacuum = clampf((car.car_controls.gaspedal - car._throttle) * 4, 0, 1)
 	
-	vacuum = clampf(vacuum, 0, 1)
-	
-	var sfk:float = 1.0 - (vacuum * car._throttle)
-	
-	sfk = maxf(sfk, vacuum_crossfade)
+	var sfk:float = maxf(1.0 - (vacuum * car._throttle), vacuum_crossfade)
 	
 	fade *= sfk
 	
@@ -81,11 +77,7 @@ func _physics_process(_delta:float) -> void:
 		
 		var vol:float = clampf(1.0 - dist, 0.0, 1.0)
 		
-		var db:float = linear_to_db((vol * maxvol) * (volume * (overall_volume)))
-		
-		db = maxf(db, -60.0)
-		
-		i.volume_db = db
+		i.volume_db = maxf(linear_to_db((vol * maxvol) * (volume * (overall_volume))), -60.0)
 		i.max_db = i.volume_db
 		var pit:float = clampf(absf(pitch * maxpitch), 0.01, 5.0)
 		

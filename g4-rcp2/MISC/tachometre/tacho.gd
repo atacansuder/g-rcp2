@@ -2,13 +2,13 @@ extends Control
 
 class_name ViVeTachometer
 
-var currentrpm :float = 0.0
-var currentpsi :float = 0.0
+var currentrpm:float = 0.0
+var currentpsi:float = 0.0
 
-@export var Turbo_Visible :bool = false
-@export var Max_PSI :float = 13.0
-@export var RPM_Range :float = 9000.0
-@export var Redline :float = 7000.0
+@export var Turbo_Visible:bool = false
+@export var Max_PSI:float = 13.0
+@export var RPM_Range:float = 9000.0
+@export var Redline:float = 7000.0
 
 var generated:Array[ColorRect] = []
 
@@ -40,7 +40,7 @@ func _ready() -> void:
 		
 		var d:ColorRect = $tacho/major.duplicate(true)
 		$tacho.add_child(d)
-		d.rotation_degrees = lowangle * (1.0-dist) + highangle * dist
+		d.rotation_degrees = lowangle * (1.0 - dist) + highangle * dist
 		d.visible = true
 		var tetx:Label = d.get_node("tetx")
 		tetx.text = str(i)
@@ -56,7 +56,7 @@ func _ready() -> void:
 		if not i == maximum:
 			d = $tacho/minor.duplicate(true)
 			$tacho.add_child(d)
-			d.rotation_degrees = lowangle*(1.0-dist2) + highangle*dist2
+			d.rotation_degrees = lowangle * (1.0 - dist2) + highangle * dist2
 			d.visible = true
 			generated.append(d)
 			if float(i + 0.25) > red:
@@ -80,9 +80,4 @@ func _ready() -> void:
 
 func _process(_delta:float) -> void:
 	tacho_needle.rotation_degrees = - 120.0 + 240.0 * (absf(currentrpm) / RPM_Range)
-	
-	turbo_needle.rotation_degrees = - 90.0 + 180.0 * (currentpsi / Max_PSI)
-	
-	turbo_needle.rotation_degrees = maxf(turbo_needle.rotation_degrees, - 90.0)
-#	if $turbo/needle.rotation_degrees < - 90.0:
-#		$turbo/needle.rotation_degrees = - 90.0
+	turbo_needle.rotation_degrees = maxf(- 90.0 + 180.0 * (currentpsi / Max_PSI), - 90.0)

@@ -1,7 +1,7 @@
 extends Node3D
 
 var last_pos:Transform3D = transform
-var g:Vector3 = Vector3(0,0,0)
+var g:Vector3 = Vector3.ZERO
 
 var vertices:Array[Basis] = []
 
@@ -89,21 +89,19 @@ func _process(_delta:float) -> void:
 			add_child(current_trail_node)
 			drawers.append(current_trail_node)
 	
-	
 	ran = true
 	if (global_transform.origin - g).length_squared() > 0.01:
-		look_at(g, Vector3(0, 1, 0))
+		look_at(g, Vector3.MODEL_TOP)
 	
 	g = global_transform.origin
-	var ppos:Transform3D = global_transform
 	
 	if not current_trail_node == null:
 		if inserting:
 			current_trail_node.delete_wait = 180
 			if vertices.size() > 0:
-				vertices[vertices.size() - 1].x = ((ppos.origin + ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
-				vertices[vertices.size() - 1].y = ((ppos.origin - ppos.basis.orthonormalized() * Vector3(wid, 0, 0)))
-				vertices[vertices.size() - 1].z = ppos.origin
+				vertices[vertices.size() - 1].x = ((g + global_transform.basis.orthonormalized() * Vector3(wid, 0, 0)))
+				vertices[vertices.size() - 1].y = ((g - global_transform.basis.orthonormalized() * Vector3(wid, 0, 0)))
+				vertices[vertices.size() - 1].z = g
 		
 		current_trail_node.global_transform.basis = ViVeEnvironment.get_singleton().scene.global_transform.basis
 		#current_trail_node.global_transform.basis = get_tree().get_current_scene().global_transform.basis
@@ -112,8 +110,8 @@ func _process(_delta:float) -> void:
 		if vertices.size() > 0 : # check if we actually got stuff to make
 			current_trail.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 			for i:Basis in vertices:
-				current_trail.surface_add_vertex(i.x - global_transform.origin)
-				current_trail.surface_add_vertex(i.y - global_transform.origin)
-				current_trail.surface_add_vertex(i.x - global_transform.origin)
-				current_trail.surface_add_vertex(i.y - global_transform.origin)
+				current_trail.surface_add_vertex(i.x - g)
+				current_trail.surface_add_vertex(i.y - g)
+				current_trail.surface_add_vertex(i.x - g)
+				current_trail.surface_add_vertex(i.y - g)
 			current_trail.surface_end()

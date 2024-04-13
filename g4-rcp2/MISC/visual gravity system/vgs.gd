@@ -47,20 +47,19 @@ func _physics_process(_delta:float) -> void:
 		i.position = size * 0.5
 		i.position += ((i.pos * (64.0 / vgs_scale)) / 9.806)
 		
-		i.slippage.scale.y = (i.node.slip_percpre) * 0.8
+		i.slippage.scale.y = maxf((i.node.slip_percpre) * 0.8, 0.0)
 		
 		i.rotation_degrees = - i.node.rotation_degrees.y
 		
 		i.self_modulate = Color.WHITE
 		
-		i.slippage.scale.y = clampf(i.slippage.scale.y, 0.0, 0.8)
-		if i.slippage.scale.y == 0.8:
+		if i.slippage.scale.y > 0.8:
+			i.slippage.scale.y = 0.8
 			if absf(i.node.wv * i.node.w_size) > i.node.velocity.length():
-				i.self_modulate = Color(1,0,0)
-			
+				i.self_modulate = Color.RED
 	
-	var vector_cache:float = Vector2(absf(gforce.x), absf(gforce.y)).length()
-	#glength = vector_cache / vgs_scale - 1.0
+	
+	var vector_cache:float = gforce.abs().length()
 	glength = maxf(vector_cache / vgs_scale - 1.0, 0.0)
 	if vector_cache > MaxG:
 		$centre/Circle.modulate = Color.KHAKI #Color(1.0, 1.0, 0.5, 1.0)
