@@ -225,36 +225,39 @@ func _physics_process(_delta:float) -> void:
 		var lasttransform:Transform3D = global_transform
 		
 		#look_at_from_position(translation, Vector3(car._steering_geometry[0], 0.0, car._steering_geometry[1]))
-		look_at_from_position(position, Vector3(car._steering_geometry[0], 0.0, car._steering_geometry[1]))
+		#The y value should be 0; this use case works
+		#because it never gets set to anything other than 0
+		look_at_from_position(position, car._steering_geometry)
 		
 		# just making this use origin fixed it. lol
 		global_transform.origin = lasttransform.origin
 		
 		if car.car_controls.steer > 0.0:
-			rotate_object_local(Vector3(0, 1, 0), - deg_to_rad(90.0))
+			rotate_object_local(Vector3.MODEL_TOP, - deg_to_rad(90.0))
 		else:
-			rotate_object_local(Vector3(0, 1, 0), deg_to_rad(90.0))
+			rotate_object_local(Vector3.MODEL_TOP, deg_to_rad(90.0))
 		
 		var roter:float = global_rotation.y
 		
 		#look_at_from_position(translation, Vector3(car.Steer_Radius, 0 ,car._steering_geometry[1]))
-		look_at_from_position(position, Vector3(car.Steer_Radius, 0 ,car._steering_geometry[1]))
+		look_at_from_position(position, Vector3(car.Steer_Radius, 0 ,car._steering_geometry.z))
 		
 		# this one too
 		global_transform.origin = lasttransform.origin #This little thing keeps the car from launching into orbit
 		
-		rotate_object_local(Vector3(0,1,0), deg_to_rad(90.0))
+		rotate_object_local(Vector3.MODEL_TOP, deg_to_rad(90.0))
 		
-		car._steering_angles.append(rad_to_deg(global_rotation.y))
+		#car._steering_angles.append(rad_to_deg(global_rotation.y))
+		car._steering_angles.append(global_rotation_degrees.y)
 		
-		rotation_degrees = Vector3(0, 0, 0)
-		rotation = Vector3(0, 0, 0)
+		rotation_degrees = Vector3.ZERO
+		rotation = Vector3.ZERO
 		
 		rotation.y = roter
 		
-		rotation_degrees += Vector3(0,- ((Toe * x_pos - Toe * x_neg)),0)
+		rotation_degrees += Vector3(0,- ((Toe * x_pos - Toe * x_neg)), 0)
 	else:
-		rotation_degrees = Vector3(0,- ((Toe * x_pos - Toe * x_neg)),0)
+		rotation_degrees = Vector3(0,- ((Toe * x_pos - Toe * x_neg)), 0)
 	
 	#translation = last_translation
 	position = last_translation

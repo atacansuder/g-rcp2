@@ -59,7 +59,7 @@ var _control_func:Callable = car_controls.controls_keyboard_mouse
 @export var FinalDriveRatio:float = 4.250
 ##A set of gears a vehicle%ss transmission has in order. [br]
 ##A gear ratio is the ratio of the number of rotations of a driver gear to the number of rotations of a driven gear.
-@export var GearRatios :Array[float] = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
+@export var GearRatios:PackedFloat32Array = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
 ##The reversed equivalent to GearRatios, only containing one gear.
 @export var ReverseRatio:float = 3.153
 ##Similar to FinalDriveRatio, but this should not relate to any real-life data. You may keep the value as it is.
@@ -239,7 +239,8 @@ var _boosting:float = 0.0
 var _rpmcs:float = 0.0
 var _rpmcsm:float = 0.0
 var _currentstable:float = 0.0
-var _steering_geometry:Array[float] = [0.0,0.0] #0 is x, 1 is z?
+#var _steering_geometry:Array[float] = [0.0,0.0] #0 is x, 1 is z?
+var _steering_geometry:Vector3 = Vector3.ZERO #Only x and z are used, it's not a Vec2 for consistency
 var _resistance:float = 0.0
 var _wob:float = 0.0
 var _ds_weight:float = 0.0
@@ -247,18 +248,18 @@ var _steer_torque:float = 0.0
 
 var _drivewheels_size:float = 1.0
 
-var _steering_angles:Array[float] = []
+var _steering_angles:PackedFloat32Array = []
 var _max_steering_angle:float = 0.0
 
 
-var _pastvelocity:Vector3 = Vector3(0,0,0)
-var _gforce:Vector3 = Vector3(0,0,0)
+var _pastvelocity:Vector3 = Vector3.ZERO
+var _gforce:Vector3 = Vector3.ZERO
 var _clock_mult:float = 1.0
 var _dist:float = 0.0
 var _stress:float = 0.0
 
-var _velocity:Vector3 = Vector3(0,0,0)
-var _rvelocity:Vector3 = Vector3(0,0,0)
+var _velocity:Vector3 = Vector3.ZERO
+var _rvelocity:Vector3 = Vector3.ZERO
 
 var _stalled:float = 0.0
 
@@ -877,14 +878,19 @@ func aero() -> void:
 	var vx:float = veloc.x * 0.15
 	var vy:float = veloc.z * 0.15
 	var vz:float = veloc.y * 0.15
+	
 	var vl:float = veloc.length() * 0.15
 	
-#	var forc = global_transform.basis.orthonormalized().xform(Vector3(1,0,0))*(-vx*drag)
-	var forc:Vector3 = global_transform.basis.orthonormalized() * (Vector3(1, 0, 0)) * (- vx * drag)
-#	forc += global_transform.basis.orthonormalized().xform(Vector3(0,0,1))*(-vy*drag)
-	forc += global_transform.basis.orthonormalized() * (Vector3(0, 0, 1)) * (- vy * drag)
-#	forc += global_transform.basis.orthonormalized().xform(Vector3(0,1,0))*(-vl*df -vz*drag)
-	forc += global_transform.basis.orthonormalized() * (Vector3(0, 1, 0)) * (- vl * Downforce - vz * drag)
+	var v:Vector3 = veloc * 0.15 
+	
+	#var forc = global_transform.basis.orthonormalized().xform(Vector3(1,0,0))*(-vx*drag)
+	var forc:Vector3 = global_transform.basis.orthonormalized() * (Vector3.RIGHT) * (- vx * drag)
+	#forc += global_transform.basis.orthonormalized().xform(Vector3(0,0,1))*(-vy*drag)
+	forc += global_transform.basis.orthonormalized() * (Vector3.BACK) * (- vy * drag)
+	#forc += global_transform.basis.orthonormalized().xform(Vector3(0,1,0))*(-vl*df -vz*drag)
+	forc += global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP) * (- vl * Downforce - vz * drag)
+	
+	
 	
 	if has_node("DRAG_CENTRE"):
 #		apply_impulse(global_transform.basis.orthonormalized().xform($DRAG_CENTRE.position),forc)
@@ -893,11 +899,10 @@ func aero() -> void:
 		apply_central_impulse(forc)
 
 func _physics_process(_delta:float) -> void:
-	
 	if len(_steering_angles) > 0:
 		_max_steering_angle = 0.0
 		for i:float in _steering_angles:
-			_max_steering_angle = maxf(_max_steering_angle,i)
+			_max_steering_angle = maxf(_max_steering_angle, i)
 		
 		car_controls.assistance_factor = 90.0 / _max_steering_angle
 	_steering_angles = []
@@ -908,9 +913,9 @@ func _physics_process(_delta:float) -> void:
 		
 		GearAssist.assist_level = VitaVehicleSimulation.GearAssistant
 	
-#	velocity = global_transform.basis.orthonormalized().xform_inv(linear_velocity)
+#	_velocity = global_transform.basis.orthonormalized().xform_inv(linear_velocity)
 	_velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
-#	rvelocity = global_transform.basis.orthonormalized().xform_inv(angular_velocity)
+#	_rvelocity = global_transform.basis.orthonormalized().xform_inv(angular_velocity)
 	_rvelocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
 	
 	#if not mass == Weight / 10.0:
@@ -951,12 +956,7 @@ func _physics_process(_delta:float) -> void:
 	steeroutput *= absf(car_controls.steer) * (uhh) + (1.0 - uhh)
 	
 	if absf(steeroutput) > 0.0:
-		_steering_geometry = [ 
-			- Steer_Radius / steeroutput, 
-			AckermannPoint
-		]
-		#steering_geometry[0] = (- Steer_Radius / steeroutput)
-		#steering_geometry[1] = AckermannPoint
+		_steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
 	
 	_abspump -= 1    
 	
@@ -967,9 +967,7 @@ func _physics_process(_delta:float) -> void:
 	
 	_brake_allowed = clampf(_brake_allowed, 0.0, 1.0)
 	
-	_brakeline = car_controls.brakepedal * _brake_allowed
-	
-	_brakeline = maxf(_brakeline, 0.0)
+	_brakeline = maxf(car_controls.brakepedal * _brake_allowed, 0.0)
 	
 	_limdel -= 1
 	
@@ -998,17 +996,11 @@ func _physics_process(_delta:float) -> void:
 		 
 		_turbopsi += (_boosting * _rpm) / ((TurboSize / Compressor) * 60.9)
 		
-		_turbopsi -= _turbopsi * BlowoffRate
-		
-		_turbopsi = minf(_turbopsi, MaxPSI)
-		
-		_turbopsi = maxf(_turbopsi, -TurboVacuum)
+		_turbopsi = clampf(_turbopsi - (_turbopsi * BlowoffRate), -TurboVacuum, MaxPSI)
 	
 	elif SuperchargerEnabled:
 		_scrpm = _rpm * SCRPMInfluence
-		_turbopsi = (_scrpm / 10000.0) * BlowRate - SCThreshold
-		
-		_turbopsi = clampf(_turbopsi, 0.0, MaxPSI)
+		_turbopsi = clampf((_scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, MaxPSI)
 	
 	else:
 		_turbopsi = 0.0

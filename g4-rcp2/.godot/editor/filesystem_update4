@@ -1,5 +1,16 @@
 res://default_env.tres
-res://MISC/debugger.tscn
-res://MISC/car swapper/car swapper.gd
+res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/scene.tscn
+res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/scissor_shadows.tres
 res://world.tscn
-res://MISC/visual gravity system/vgs.tscn
+res://MAIN/wheel.tscn
+res://MISC/mobile controls/mobile.tscn
+res://base car.tscn
+res://MISC/scene swapper/scenes/Nitrovista - Aqua Highway/assets/water_reflection.gd
+res://MISC/car swapper/cars/Synic EKI [Rally]/scene.tscn
+res://MAIN/misc/engine sound/engine.tscn
+res://MAIN/misc/mechanical sounds/other_sounds.tscn
+res://MAIN/misc/tyre sounds/tyres.tscn
+res://default_bus_layout.tres
+res://MAIN/car.gd
+res://MAIN/misc/camera.gd
+res://MAIN/wheel.gd

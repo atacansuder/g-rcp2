@@ -21,8 +21,8 @@ func _ready() -> void:
 	default_zoom = default_cam_pos.z
 
 func _process(_delta:float) -> void:
-	if has_node(debugger):
-		car = get_node(debugger).car
+	#if has_node(debugger):
+	#	car = get_node(debugger).car
 	if has_node(car):
 		
 		if get_node(car).has_node("CAMERA_CENTRE"):
