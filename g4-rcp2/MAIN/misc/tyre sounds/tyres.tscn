@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://d1vmrvs3aj84o"]
 
-[ext_resource type="Script" path="res://MAIN/misc/tyre sounds/tyres.gd" id="1"]
+[ext_resource type="Script" path="res://MAIN/misc/tyre sounds/tyre_sounds.gd" id="1"]
 [ext_resource type="Script" path="res://MAIN/misc/tyre sounds/vars.gd" id="2"]
 [ext_resource type="AudioStream" uid="uid://gjka6jqu3b8p" path="res://MAIN/misc/tyre sounds/offroad.ogg" id="3"]
 [ext_resource type="AudioStream" uid="uid://crqq84gd1fbsh" path="res://MAIN/misc/tyre sounds/peel0.ogg" id="4"]
