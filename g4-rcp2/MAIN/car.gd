@@ -201,6 +201,8 @@ enum TransmissionTypes {
 ## Deadzone before boost.
 @export var SCThreshold:float = 6.0
 
+const magic_1:float = 0.609
+
 var _rpm:float = 0.0
 var _rpmspeed:float = 0.0
 var _resistancerpm:float = 0.0
@@ -866,13 +868,10 @@ func aero() -> void:
 	var drag:float = DragCoefficient
 	#var df:float = Downforce
 	
-#	var veloc = global_transform.basis.orthonormalized().xform_inv(linear_velocity)
 	var veloc:Vector3 = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
 	
-#	var torq = global_transform.basis.orthonormalized().xform_inv(Vector3(1,0,0))
 	#var torq = global_transform.basis.orthonormalized().transposed() * (Vector3(1,0,0))
 	
-#	apply_torque_impulse(global_transform.basis.orthonormalized().xform( Vector3(((-veloc.length()*0.3)*LiftAngle),0,0)  ) )
 	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3(((-veloc.length() * 0.3) * LiftAngle), 0, 0) ) )
 	
 	var vx:float = veloc.x * 0.15
@@ -883,17 +882,15 @@ func aero() -> void:
 	
 	var v:Vector3 = veloc * 0.15 
 	
-	#var forc = global_transform.basis.orthonormalized().xform(Vector3(1,0,0))*(-vx*drag)
-	var forc:Vector3 = global_transform.basis.orthonormalized() * (Vector3.RIGHT) * (- vx * drag)
-	#forc += global_transform.basis.orthonormalized().xform(Vector3(0,0,1))*(-vy*drag)
-	forc += global_transform.basis.orthonormalized() * (Vector3.BACK) * (- vy * drag)
-	#forc += global_transform.basis.orthonormalized().xform(Vector3(0,1,0))*(-vl*df -vz*drag)
-	forc += global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP) * (- vl * Downforce - vz * drag)
+	var forc:Vector3 #= global_transform.basis.orthonormalized() * (Vector3.RIGHT) * (- vx * drag)
+	#forc += global_transform.basis.orthonormalized() * (Vector3.BACK) * (- vy * drag)
+	#forc += global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP) * (- vl * Downforce - vz * drag)
 	
+	var vec:Vector3 = Vector3(- vx * drag, - vy * drag, - vl * Downforce - vz * drag)
+	forc = global_transform.basis.orthonormalized() * vec
 	
 	
 	if has_node("DRAG_CENTRE"):
-#		apply_impulse(global_transform.basis.orthonormalized().xform($DRAG_CENTRE.position),forc)
 		apply_impulse(forc, global_transform.basis.orthonormalized() * (drag_center.position))
 	else:
 		apply_central_impulse(forc)
@@ -949,11 +946,11 @@ func _physics_process(_delta:float) -> void:
 	car_controls.handbrakepull = clampf(car_controls.handbrakepull, 0.0, car_controls.MaxHandbrake)
 	car_controls.steer = clampf(car_controls.steer, -1.0, 1.0)
 	
-	var steeroutput:float = car_controls.steer
 	
-	var uhh:float = pow((_max_steering_angle / 90.0), 2)
-	uhh *= 0.5
-	steeroutput *= absf(car_controls.steer) * (uhh) + (1.0 - uhh)
+	
+	var uhh:float = pow((_max_steering_angle / 90.0), 2) * 0.5
+	
+	var steeroutput:float = car_controls.steer * (absf(car_controls.steer) * (uhh) + (1.0 - uhh))
 	
 	if absf(steeroutput) > 0.0:
 		_steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
@@ -1018,7 +1015,7 @@ func _physics_process(_delta:float) -> void:
 	var f:float = maxf(_rpm - torque_local.RiseRPM, 0.0)
 	
 	torque = (_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + (f * f) * (torque_local.TorqueRise / 10000000.0)) * _throttle
-	torque += ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * 0.609) )
+	torque += ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * magic_1) )
 	
 	var j:float = maxf(_rpm - torque_local.DeclineRPM, 0.0)
 	
@@ -1107,7 +1104,7 @@ func multivariate() -> float:
 	else:
 		torque_local = torque_norm
 	
-	value = (_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * 0.609) )
+	value = (_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * magic_1) )
 	var f:float = maxf(_rpm - torque_local.RiseRPM, 0.0)
 	#f = _rpm - torque_local.RiseRPM
 	#f = maxf(f, 0.0)

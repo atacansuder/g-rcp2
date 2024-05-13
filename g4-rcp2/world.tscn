@@ -57,7 +57,6 @@ visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -15)
 script = ExtResource("2")
 mobile_controls = NodePath("../mobile_ctrls")
-debugger = NodePath("../debug")
 
 [node name="orbit" type="Marker3D" parent="cam_chase"]
 

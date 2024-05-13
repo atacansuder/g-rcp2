@@ -8,18 +8,15 @@ extends MeshInstance3D
 @onready var lateral:MeshInstance3D = $"lateral"
 
 func _physics_process(_delta:float) -> void:
-	wheel_parent = get_parent()
+	wheel_parent = get_parent() #ViVeWheel
 	visible = ViVeEnvironment.get_singleton().Debug_Mode
-	#visible = wheel_parent.get_parent().Debug_Mode
 	if visible:
-		#compress.visible = wheel_parent.is_colliding()
-		#longi.visible = wheel_parent.is_colliding()
-		#lateral.visible = wheel_parent.is_colliding()
+		compress.visible = wheel_parent.is_colliding()
+		longi.visible = wheel_parent.is_colliding()
+		lateral.visible = wheel_parent.is_colliding()
 		
 		rotation = wheel_parent.velo_1.rotation
-		#rotation = wheel_parent.get_node("velocity").rotation
 		position = wheel_parent.anim.position
-		#position = wheel_parent.get_node("animation").position
 		
 		position.y -= wheel_parent.w_size
 		

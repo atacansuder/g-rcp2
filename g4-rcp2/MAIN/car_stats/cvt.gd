@@ -1,5 +1,5 @@
 extends Resource
-## Settings for CVT.
+## Settings for a Continuously Variable Transmission.
 class_name ViVeCVT
 ## Throttle efficiency threshold.
 @export_range(0.0, 1.0) var throt_eff_thresh:float = 0.75 #0

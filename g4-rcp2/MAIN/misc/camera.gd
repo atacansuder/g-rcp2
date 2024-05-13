@@ -8,8 +8,8 @@ var just_resetted:bool = false
 @export var car :NodePath = NodePath("../car")
 @export var debugger:NodePath = NodePath()
 
-var drag_velocity:Vector2 = Vector2(0,0)
-var last_pos:Vector2 = Vector2(0,0)
+var drag_velocity:Vector2 = Vector2.ZERO
+var last_pos:Vector2 = Vector2.ZERO
 var x_drag_unlocked:bool = false
 var y_drag_unlocked:bool = false
 
@@ -21,20 +21,20 @@ func _ready() -> void:
 	default_zoom = default_cam_pos.z
 
 func _process(_delta:float) -> void:
-	#if has_node(debugger):
-	#	car = get_node(debugger).car
+	if has_node(debugger):
+		car = get_node(debugger).car
 	if has_node(car):
 		
 		if get_node(car).has_node("CAMERA_CENTRE"):
-			look_at(get_node(car).get_node("CAMERA_CENTRE").global_position,Vector3(0,1,0))
+			look_at(get_node(car).get_node("CAMERA_CENTRE").global_position)
 			position = get_node(car).get_node("CAMERA_CENTRE").global_position
 		else:
-			look_at(get_node(car).position,Vector3(0,1,0))
+			look_at(get_node(car).position)
 			position = get_node(car).position
-		translate_object_local(Vector3(0,0,14.5))
+		translate_object_local(Vector3(0, 0, 14.5))
 		
 		$orbit.global_position = get_node(car).global_position
-		$orbit/Camera.position = default_cam_pos -$orbit.position
+		$orbit/Camera.position = default_cam_pos - $orbit.position
 
 func _physics_process(_delta:float) -> void:
 	if Input.is_action_pressed("zoom_out"):
@@ -43,9 +43,9 @@ func _physics_process(_delta:float) -> void:
 		default_cam_pos.z -= 0.05
 	
 	if Input.is_action_pressed("CAM_orbit_left"):
-		$orbit.rotation_degrees.y += 1
-	elif Input.is_action_pressed("CAM_orbit_right"):	
-		$orbit.rotation_degrees.y -= 1
+		$orbit.rotation_degrees.y += Input.get_action_strength("CAM_orbit_left")
+	elif Input.is_action_pressed("CAM_orbit_right"):
+		$orbit.rotation_degrees.y -= Input.get_action_strength("CAM_orbit_right")
 	
 	if Input.is_action_pressed("CAM_orbit_reset"):
 		$orbit.rotation_degrees.y = 0.0
@@ -54,7 +54,7 @@ func _physics_process(_delta:float) -> void:
 	resetdel -= 1
 
 func _input(event:InputEvent) -> void:
-	if not str(mobile_controls) == "":
+	if mobile_controls: #NodePath will be true if not ""
 		if get_node(mobile_controls).visible:
 			can_drag = true
 			for i in get_node(mobile_controls).get_children():
@@ -90,4 +90,3 @@ func _input(event:InputEvent) -> void:
 			if event.is_action_released("gas_mouse"):
 				x_drag_unlocked = false
 				y_drag_unlocked = false
-			
