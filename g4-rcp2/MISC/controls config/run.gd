@@ -3,16 +3,16 @@ extends ScrollContainer
 var car:ViVeCar
 
 func setcar() -> void:
-	car = ViVeEnvironment.singleton.car
+	car = ViVeEnvironment.get_singleton().car
 	ViVeCarControlOption.control_ref = car.car_controls
 
 func _ready() -> void:
-	ViVeEnvironment.singleton.connect("ready", setup)
-	ViVeEnvironment.singleton.connect("car_changed", setcar)
+	ViVeEnvironment.get_singleton().connect("ready", setup)
+	ViVeEnvironment.get_singleton().connect("car_changed", setcar)
 
 func setup() -> void:
 	setcar()
-	for i in $container.get_children():
+	for i:Control in $container.get_children():
 		match i.get_class():
 			"HSlider":
 				if i.treat_as_int:

@@ -86,8 +86,8 @@ func _physics_process(_delta:float) -> void:
 			i.max_db = i.volume_db
 			i.pitch_scale = 1.0 + length * 0.05 + absf(roll / 100.0)
 		else:
-			var dist:float = pow(absf(i.length - length), 2)
-			var dist2:float = pow(absf(i.width - width), 2)
+			var dist:float = pow(absf(i.length - length), 2.0)
+			var dist2:float = pow(absf(i.width - width), 2.0)
 			
 			var vol:float = clampf(1.0 - (dist + dist2), 0.0, 1.0)
 			

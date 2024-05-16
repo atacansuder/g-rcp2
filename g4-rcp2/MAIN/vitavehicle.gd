@@ -4,8 +4,6 @@ extends Node
 class_name ViVeSimulation
 #This is VitaVehicleSimulation
 
-var misc_smoke:bool = false
-
 enum GearAssist {
 	Manual = 0,
 	Semi_manual = 1,
@@ -17,13 +15,13 @@ var GearAssistant:int = 2 # 0 = manual, 1 = semi-manual, 2 = auto
 @export var universal_controls:ViVeCarControls = ViVeCarControls.new()
 
 func fastest_wheel(array:Array[ViVeWheel]) -> ViVeWheel:
-	var val:float = -10000000000000000000000000000000000.0
+	var val:float = -INF
 	var obj:ViVeWheel
 	
 	for i:ViVeWheel in array:
-		val = max(val, abs(i.absolute_wv))
+		val = maxf(val, absf(i.absolute_wv))
 		
-		if val == abs(i.absolute_wv):
+		if val == absf(i.absolute_wv):
 			obj = i
 	
 	return obj
@@ -33,9 +31,9 @@ func slowest_wheel(array:Array[ViVeWheel]) -> ViVeWheel:
 	var obj:ViVeWheel
 	
 	for i:ViVeWheel in array:
-		val = min(val, abs(i.absolute_wv))
+		val = minf(val, absf(i.absolute_wv))
 		
-		if val == abs(i.absolute_wv):
+		if val == absf(i.absolute_wv):
 			obj = i
 	
 	return obj

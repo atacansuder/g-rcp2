@@ -5,7 +5,7 @@ class_name ViVeDebug
 ##The debug panel singleton
 static var singleton:ViVeDebug = null
 
-var changed_graph_size:Vector2 = Vector2(0,0)
+var changed_graph_size:Vector2 = Vector2.ZERO
 
 @onready var car_node:ViVeCar
 @onready var tacho:ViVeTachometer = $"tacho"
@@ -64,7 +64,7 @@ func _process(delta:float) -> void:
 		changed_graph_size = power_graph.size
 		power_graph.draw_graph()
 	
-	$"fix engine".visible = car_node._rpm < car_node.DeadRPM
+	$"fix engine".visible = car_node.rpm < car_node.DeadRPM
 	
 	$throttle.bar_scale = car_node.car_controls.gaspedal
 	$brake.bar_scale = car_node.car_controls.brakepedal
@@ -96,16 +96,16 @@ func _process(delta:float) -> void:
 	$tq.text = "Torque: %s%s @ %s RPM" % [str(int(power_graph.peaktq[0] * 10.0) / 10.0 ), tqunit, str(int(power_graph.peaktq[1] * 10.0) / 10.0)]
 	#end unneeded value setting
 	
-	$power_graph/rpm.position.x = (car_node._rpm / power_graph.Generation_Range) * power_graph.size.x - 1.0
+	$power_graph/rpm.position.x = (car_node.rpm / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	$power_graph/redline.position.x = (car_node.RPMLimit / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	
-	$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node._gforce.x * 100.0) / 100.0), str(int(car_node._gforce.y * 100.0) / 100.0), str(int(car_node._gforce.z * 100.0) / 100.0)]
+	$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node.gforce.x * 100.0) / 100.0), str(int(car_node.gforce.y * 100.0) / 100.0), str(int(car_node.gforce.z * 100.0) / 100.0)]
 	
 	tacho.currentpsi = car_node._turbopsi * (car_node.TurboAmount)
-	tacho.currentrpm = car_node._rpm
-	tacho_rpm.text = str(int(car_node._rpm))
+	tacho.currentrpm = car_node.rpm
+	tacho_rpm.text = str(int(car_node.rpm))
 	
-	if car_node._rpm < 0:
+	if car_node.rpm < 0:
 		tacho_rpm.self_modulate = Color.RED
 	else:
 		tacho_rpm.self_modulate = Color.WHITE
@@ -123,7 +123,7 @@ func _process(delta:float) -> void:
 func _physics_process(_delta:float) -> void:
 	if car_node == null:
 		return
-	vgs.gforce -= (vgs.gforce - Vector2(car_node._gforce.x, car_node._gforce.z)) * 0.5
+	vgs.gforce -= (vgs.gforce - Vector2(car_node.gforce.x, car_node.gforce.z)) * 0.5
 	
 	var tacho_label:Label = $tacho/abs
 	tacho_label.visible = car_node._abspump > 0 and car_node.car_controls.brakepedal > 0.1
@@ -135,7 +135,7 @@ func _physics_process(_delta:float) -> void:
 ##Restarts the car's engine. Needed if the RPM dips to low and it stalls.
 func engine_restart() -> void:
 	if car_node != null:
-		car_node._rpm = car_node.IdleRPM
+		car_node.rpm = car_node.IdleRPM
 
 func toggle_forces() -> void:
 	Input.action_press("toggle_debug_mode")

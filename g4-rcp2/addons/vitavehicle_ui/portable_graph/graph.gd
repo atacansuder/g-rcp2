@@ -40,8 +40,8 @@ func draw_graph() -> void:
 	if not is_instance_valid(car):
 		print("Car instance is not valid")
 		return
-#	elif car.get("_rpm") == null:
-#		print("'_rpm' could not be found in given car, drawing cannot proceed.")
+#	elif car.get("rpm") == null:
+#		print("'rpm' could not be found in given car, drawing cannot proceed.")
 #		return
 	
 	peakhp = [0.0,0.0]
@@ -52,7 +52,7 @@ func draw_graph() -> void:
 	#var draw_scale:Vector2 = Vector2(size.x / Generation_Range, size.y / Generation_Range) 
 	for i:int in range(Generation_Range):
 		if i > Draw_RPM:
-			car._rpm = float(i)
+			car.rpm = float(i)
 			#var trq:float = VitaVehicleSimulation.multivariate(car)
 			var trq:float = car.multivariate()
 			var hp:float = (i / 5252.0) * trq

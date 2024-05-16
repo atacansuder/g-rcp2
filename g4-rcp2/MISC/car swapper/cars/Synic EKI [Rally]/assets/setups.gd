@@ -14,14 +14,15 @@ var setup:int = 0
 
 func _on_setup_1_pressed() -> void:
 	$setup1.release_focus()
-	for i in wheels:
+	for i:ViVeWheel in wheels:
 		i.get_node("animation/camber/wheel/wheel 1").visible = true
 		i.get_node("animation/camber/wheel/wheel 2").visible = false
 		i.TyreSettings = tire_gravel
 		i.CompoundSettings.ForeFriction = 1.0
 		i.S_ReboundDamping = 12.0
 		i.Camber = 0.0
-		i.target_position.y = -3.2
+		#i.target_position.y = -3.2
+		i.target_position.y = -3.7
 		i.W_PowerBias = 1.0
 		i.A_Geometry1 = 1.2
 		if i.name.begins_with("f"):
@@ -33,7 +34,7 @@ func _on_setup_1_pressed() -> void:
 
 func _on_setup_2_pressed() -> void:
 	$setup2.release_focus()
-	for i in wheels:
+	for i:ViVeWheel in wheels:
 		i.get_node("animation/camber/wheel/wheel 1").visible = false
 		i.get_node("animation/camber/wheel/wheel 2").visible = true
 		i.TyreSettings = tire_tarmac

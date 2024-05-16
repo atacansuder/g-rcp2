@@ -11,29 +11,29 @@ class_name ViVeTyreSmoke
 
 var tyre_width:float
 
+const magic_number_1:float = 0.0030592
+
 func _ready() -> void:
 	tyre_width = wheel_self.TyreSettings.Width_mm
 
 func _physics_process(_delta:float) -> void:
-	if VitaVehicleSimulation.misc_smoke:
-		visible = true
+	visible = misc_graphics_settings.smoke
+	if visible:
 		run_smoke()
 
 func run_smoke() -> void:
 	var velo1_v:Vector3 = wheel_self.velocity
 	
-	revolve_l.position.x = float(tyre_width) * 0.0030592 / 2
-	revolve_r.position.x = - float(tyre_width) * 0.0030592 / 2
+	revolve_l.position.x = float(tyre_width) * magic_number_1 / 2
+	revolve_r.position.x = - float(tyre_width) * magic_number_1 / 2
 	
 	$static.global_rotation = velo1.global_rotation
 	var direction:Vector3 = velo1_v * 0.75
 	
-	var spin:float = wheel_self.slip_perc.y
-	var j:float = abs(wheel_self.wv)
-	
-	j = minf(j, 10.0)
-	
-	spin = clampf(spin, -j, j)
+	#the range of spin, below
+	var spin_range:float = minf(absf(wheel_self.wv), 10.0)
+	#how much the effect will be rotationally offset
+	var spin:float = clampf(wheel_self.slip_perc.y, -spin_range, spin_range)
 	
 	direction.z += spin
 	
@@ -54,7 +54,7 @@ func run_smoke() -> void:
 				i.orbit_velocity_min = -1.0
 			i.emitting = false
 	
-	var should_emit:bool = (abs(wheel_self.wv * wheel_self.w_size) > velo1_v.length() + 10.0)
+	var should_emit:bool = (absf(wheel_self.wv * wheel_self.w_size) > velo1_v.length() + 10.0)
 	
 	if wheel_self.is_colliding():
 		if dirt_type:

@@ -49,7 +49,7 @@ func _ready() -> void:
 
 func _physics_process(_delta:float) -> void:
 	var car:ViVeCar = get_parent_node_3d()
-	pitch = absf(car._rpm * pitch_influence) / pitch_calibrate
+	pitch = absf(car.rpm * pitch_influence) / pitch_calibrate
 	
 	volume = 0.5 + car._throttle * 0.5
 	

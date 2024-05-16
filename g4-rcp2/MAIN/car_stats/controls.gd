@@ -16,6 +16,7 @@ enum ControlType {
 ## @depreciated
 ## Applies all control settings globally. This also affects cars that were already spawned.
 @export var Use_Global_Control_Settings:bool = false
+@export_group("Steering")
 ##Uses your cursor to steer the vehicle if keyboard and mouse controls are active.
 @export var UseMouseSteering:bool = false
 ## @depreciated
@@ -23,42 +24,51 @@ enum ControlType {
 @export var UseAccelerometreSteering :bool = false
 ## Steering amplification on mouse and accelerometre steering.
 @export var SteerSensitivity:float = 1.0
-## Keyboard steering response rate.
-@export var KeyboardSteerSpeed:float = 0.025
-## Keyboard steering centring rate.
-@export var KeyboardReturnSpeed:float = 0.05
-## Return rate when steering from an opposite direction.
-@export var KeyboardCompensateSpeed:float = 0.1
 ## Reduces steering rate based on the vehicle’s speed.
 @export var SteerAmountDecay:float = 0.015 # understeer help
+## Enable Steering Assistance
+@export var EnableSteeringAssistance:bool = false
 ## Drift Help. The higher the value, the more the car will automatically center itself when drifting.
 @export var SteeringAssistance:float = 1.0
 ## Drift Stability Help.
 @export var SteeringAssistanceAngular:float = 0.12
 ##@experimental Simulate rack and pinion steering physics.
 @export var LooseSteering :bool = false
+@export_subgroup("Keyboard Steering")
+## Keyboard steering response rate.
+@export var KeyboardSteerSpeed:float = 0.025
+## Keyboard steering centring rate.
+@export var KeyboardReturnSpeed:float = 0.05
+## Return rate when steering from an opposite direction.
+@export var KeyboardCompensateSpeed:float = 0.1
+
+@export_group("Digital to Analog")
+@export_subgroup("Throttle")
 ## Throttle pressure rate.
 @export var OnThrottleRate:float = 0.2
 ## Throttle depress rate.
 @export var OffThrottleRate:float = 0.2
+## Maximum throttle amount.
+@export var MaxThrottle:float = 1.0
+@export_subgroup("Brake")
 ## Brake pressure rate.
 @export var OnBrakeRate:float = 0.05
 ## Brake depress rate.
 @export var OffBrakeRate:float = 0.1
+## Maximum brake amount.
+@export var MaxBrake:float = 1.0
+@export_subgroup("Handbrake")
 ## Handbrake pull rate.
 @export var OnHandbrakeRate:float = 0.2
 ## Handbrake push rate.
 @export var OffHandbrakeRate:float = 0.2
+## Maximum handbrake amount.
+@export var MaxHandbrake:float = 1.0
+@export_subgroup("Clutch")
 ## Clutch release rate.
 @export var OnClutchRate:float = 0.2
 ## Clutch engage rate.
 @export var OffClutchRate:float = 0.2
-## Maximum throttle amount.
-@export var MaxThrottle:float = 1.0
-## Maximum brake amount.
-@export var MaxBrake:float = 1.0
-## Maximum handbrake amount.
-@export var MaxHandbrake:float = 1.0
 ## Maxiumum clutch amount.
 @export var MaxClutch:float = 1.0
 
@@ -154,7 +164,7 @@ func apply_gear_assist() -> void:
 
 ##Apply the steering assistance in an input implementation 
 func apply_assistance_factor(going:float) -> void:
-	if assistance_factor > 0.0:
+	if EnableSteeringAssistance and assistance_factor > 0.0:
 		var maxsteer:float = 1.0 / (going * (SteerAmountDecay / assistance_factor) + 1.0)
 		var assist_mult:float = SteeringAssistance * assistance_factor
 		
@@ -183,11 +193,7 @@ func steer_digital_curve() -> void:
 ##Apply calculations on an analog input for steering.
 func steer_analog(input_axis:float) -> void:
 	steer2 = clampf(input_axis * SteerSensitivity, -1.0, 1.0)
-	
-	var s:float = absf(steer2) * 1.0 + 0.5
-	s = minf(s, 1.0)
-	
-	steer2 *= s
+	steer2 *= minf(absf(steer2) + 0.5, 1.0)
 
 ##The control implementation for touchscreen + accelerometer
 func controls_touchscreen() -> void:
@@ -216,7 +222,7 @@ func controls_touchscreen() -> void:
 	if (velocity.x > 0 and steer2 > 0) or (velocity.x < 0 and steer2 < 0):
 		siding = 0.0
 	
-	var going:float = maxf(velocity.z / (siding + 1.0), 0)
+	var going:float = maxf(velocity.z / (siding + 1.0), 0.0)
 	
 	if UseMouseSteering:
 		steer_analog(Input.get_accelerometer().x / 10.0)

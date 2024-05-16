@@ -32,11 +32,11 @@ var car:ViVeCar = ViVeCar.new()
 
 #This keeps getting re-called somewhere when it shouldn't be, when swapping cars
 func _ready() -> void:
-	if not ViVeEnvironment.singleton.is_connected("car_changed", draw_graph):
+	if not ViVeEnvironment.get_singleton().is_connected("car_changed", draw_graph):
 		var _err:Error = ViVeEnvironment.get_singleton().connect("car_changed", draw_graph)
 
 func draw_graph() -> void:
-	car = ViVeEnvironment.singleton.car
+	car = ViVeEnvironment.get_singleton().car
 	Generation_Range = float(int(car.RPMLimit / 1000.0) * 1000 + 1000) #???
 	Draw_RPM = car.IdleRPM
 	calculate()
@@ -51,7 +51,7 @@ func calculate() -> void:
 	var skip:int = 0
 	for i:int in range(Generation_Range):
 		if i > Draw_RPM:
-			car._rpm = i
+			car.rpm = i
 			var trq:float = car.multivariate()
 			var hp:float = (i / 5252.0) * trq
 			

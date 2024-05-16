@@ -70,7 +70,7 @@ func _ready() -> void:
 
 func _physics_process(_delta:float) -> void:
 	fueltrace += (car._throttle) * backfire_FuelRichness
-	air = (car._throttle * car._rpm) * backfire_Air + car._turbopsi
+	air = (car._throttle * car.rpm) * backfire_Air + car._turbopsi
 	
 	fueltrace = maxf(fueltrace - (fueltrace * backfire_FuelDecay), 0.0)
 	
@@ -79,7 +79,7 @@ func _physics_process(_delta:float) -> void:
 	if has_node(engine_sound):
 		engine_node.pitch_influence -= (engine_node.pitch_influence - 1.0) * 0.5
 	
-	if car._rpm > car.DeadRPM:
+	if car.rpm > car.DeadRPM:
 		if fueltrace > randf_range(air * backfire_BackfirePrevention + backfire_BackfireThreshold, 60.0 / backfire_BackfireRate):
 			rand = 0.1
 			var ft:float = maxf(fueltrace, 10.0)
@@ -97,7 +97,7 @@ func _physics_process(_delta:float) -> void:
 			for i:CPUParticles3D in exhaust_particles:
 				i.emitting = false
 	
-	var wh:float = maxf((abs(car._rpm / 10000.0) * WhinePitch), 0.0)
+	var wh:float = maxf((absf(car.rpm / 10000.0) * WhinePitch), 0.0)
 	
 	if wh > 0.01:
 		scwhine.volume_db = linear_to_db(WhineVolume * volume)
@@ -116,7 +116,7 @@ func _physics_process(_delta:float) -> void:
 	
 	var spoolvol:float = clampf(car._turbopsi / 10.0, 0.0, 1.0)
 	
-	spoolvol += (absf(car._rpm) * (TurboNoiseRPMAffection / 1000.0)) * spoolvol
+	spoolvol += (absf(car.rpm) * (TurboNoiseRPMAffection / 1000.0)) * spoolvol
 	
 	blow.volume_db = maxf(linear_to_db(volume * (blowvol * BlowOffVolume2)), -60.0)
 	spool.volume_db = maxf(linear_to_db(volume * (spoolvol * SpoolVolume)), -60.0)

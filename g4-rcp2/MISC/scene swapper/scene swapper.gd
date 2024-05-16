@@ -37,19 +37,18 @@ func load_and_cache(path:String) -> PackedScene:
 
 func swapmap(naem:String) -> void:
 	#world.get_node(current_map).queue_free()
-	ViVeEnvironment.singleton.scene.queue_free()
+	ViVeEnvironment.get_singleton().scene.queue_free()
 	
 	var d:Node = load_and_cache(pathh + "scenes/" + naem + "/scene.tscn").instantiate()
 	
-	ViVeEnvironment.singleton.add_child(d)
-	ViVeEnvironment.singleton.scene = d
+	ViVeEnvironment.get_singleton().add_child(d)
+	ViVeEnvironment.get_singleton().scene = d
 	
 	await get_tree().create_timer(0.1).timeout
-	ViVeEnvironment.singleton.car.global_position *= 0
-	ViVeEnvironment.singleton.car.global_rotation *= 0
-	ViVeEnvironment.singleton.car.linear_velocity *= 0
-	ViVeEnvironment.singleton.car.angular_velocity *= 0
-
+	ViVeEnvironment.get_singleton().car.global_position = Vector3.ZERO
+	ViVeEnvironment.get_singleton().car.global_rotation = Vector3.ZERO
+	ViVeEnvironment.get_singleton().car.linear_velocity = Vector3.ZERO
+	ViVeEnvironment.get_singleton().car.angular_velocity = Vector3.ZERO
 
 func _ready() -> void:
 	$container/_DEFAULT.queue_free()
