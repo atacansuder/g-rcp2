@@ -315,6 +315,8 @@ var total:float = 0.0
 
 var weight_dist:Array[float] = [0.0,0.0]
 
+var physics_tick:int = 60
+
 #Holdover from Godot 3. 
 #Still here because Bullet is available as an optional GDExtension, so you never know
 ##Function for fixing ViVe under Bullet physics. Not needed when using Godot physics.
@@ -330,10 +332,11 @@ signal wheels_ready
 
 func _ready() -> void:
 #	bullet_fix()
+	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60)
 	_control_func = decide_controls()
 	rpm = IdleRPM
 	for i:String in Powered_Wheels:
-		var wh:ViVeWheel = get_node(str(i))
+		var wh:ViVeWheel = get_node(i)
 		c_pws.append(wh)
 	emit_signal("wheels_ready")
 
@@ -697,11 +700,11 @@ func automatic_transmission() -> void:
 					actualgear = -1
 			else:
 				_sassistdel = 60
-		elif linear_velocity.length()<5:
+		elif linear_velocity.length() < 5:
 			if not car_controls.gas and car_controls.gear == 1 or not car_controls.brake and car_controls.gear == -1:
 				_sassistdel = 60
 				actualgear = 0
-			
+	
 	if actualgear == -1:
 		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	else:
@@ -730,7 +733,7 @@ func automatic_transmission() -> void:
 func cvt_transmission() -> void:
 	car_controls.clutchpedal = (rpm - AutoSettings.engage_rpm_thresh * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
-		#clutchpedal = 1
+	#clutchpedal = 1
 	
 	if not GearAssist.assist_level == 2:
 		if car_controls.su:
@@ -833,7 +836,7 @@ func drivetrain() -> void:
 	else:
 		rpm += ((_rpmcs / _clock_mult) * (RevSpeed / magic_2))
 	
-	if "": #...what-
+	if false: #...what-
 		rpm = 7000.0
 		Locking = 0.0
 		CoastLocking = 0.0
@@ -870,6 +873,7 @@ func drivetrain() -> void:
 	
 	
 	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(c_pws)
+	assert(is_instance_valid(maxd), "Maxd is borked")
 	#var mind:ViVeWheel = VitaVehicleSimulation.slowest_wheel(c_pws)
 	
 	
@@ -976,7 +980,8 @@ func _physics_process(_delta:float) -> void:
 	#0.30592 is pixels per second to meter per second, probably
 	#9.806 is gravity constant (because ViVe screws with gravity)
 	#60.0 is the physics tick, so that the number is per second and not per physics tick
-	gforce = (linear_velocity - _pastvelocity) * ((0.30592 / 9.806) * 60.0)
+	#gforce = (linear_velocity - _pastvelocity) * ((0.30592 / 9.806) * 60.0)
+	gforce = (linear_velocity - _pastvelocity) * ((0.30592 / 9.806) * float(physics_tick))
 	_pastvelocity = linear_velocity
 	
 	#gforce = global_transform.basis.orthonormalized().transposed() * (gforce)

@@ -45,7 +45,9 @@ class_name ViVeWheel
 @export var S_RestLength:float = 0.0
 ##Compression Barrier.
 @export var S_MaxCompression:float = 0.5
+
 @export var A_InclineArea:float = 0.2
+
 @export var A_ImpactForce:float = 1.5
 ##Anti-roll Stiffness.
 @export var AR_Stiff:float = 0.5
@@ -105,6 +107,7 @@ var w_size:float = 1.0
 ##Size read of the wheel. This is w_size but capped to 1.0 or lower.
 var w_size_read:float = 1.0
 ##Weight read of the wheel. Seems to be (unintentionally) a constant?
+##Fuethermore, this should [i]never[/i] be 0.
 var w_weight_read:float = 0.0
 ##Weight of the wheel. This is w_size but to the power of 2.
 var w_weight:float = 0.0
@@ -188,6 +191,11 @@ var slip_percpre:float = 0.0
 var velocity_last:Vector3 = Vector3.ZERO
 
 var velocity2_last:Vector3 = Vector3.ZERO
+
+var physics_tick:int = 60
+
+func _ready() -> void:
+	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60)
 
 func power() -> void:
 	if not is_zero_approx(c_p):
@@ -282,6 +290,7 @@ func _physics_process(_delta:float) -> void:
 	w_weight = pow(w_size, 2.0)
 	
 	w_size_read = maxf(w_size, 1.0)
+	w_weight_read = maxf(w_weight, 1.0) #implied from the above line
 	
 	#Sync positions. Without this, the car is very bouncy for some reason
 	velo_2.global_position = geometry.global_position
@@ -299,10 +308,6 @@ func _physics_process(_delta:float) -> void:
 	
 	# VARS
 	
-	#var elasticity:float = maxf(S_Stiffness * AR_Elast * rolldist + 1.0, 0.0)
-	#var damping:float = maxf(S_Damping * AR_Stiff * rolldist + 1.0, 0.0)
-	#var damping_rebound:float = maxf(S_ReboundDamping * AR_Stiff * rolldist + 1.0, 0.0)
-	
 	sway()
 	
 	var tyre_maxgrip:float = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
@@ -317,7 +322,6 @@ func _physics_process(_delta:float) -> void:
 	tyre_stiffness2 /= deviding
 	
 	var tyre_stiffness:float = (tyre_stiffness2 * ((TyrePressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
-	#var tyre_stiffness_2:float = (tyre_stiffness2 * (TyrePressure / 30.0)) * CompoundSettings.Stiffness + effectiveness
 	#assert(is_equal_approx(tyre_stiffness, tyre_stiffness_2), "WRONG")
 	
 	tyre_stiffness = maxf(tyre_stiffness, 1.0)
@@ -333,9 +337,10 @@ func _physics_process(_delta:float) -> void:
 	var braked:float = minf(car._brakeline * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
 	#Get brake power by multiplying the braked factor by the brake force, 
 	#and dividing that result by the weight of the wheel
-	#BUG: w_weight_read is 0, so this causes bp to be NaN
+	#BUG: when w_weight_read is 0, this causes bp to be NaN
 	#This in turn seems to break braking
 	var bp:float = (B_Torque * braked) / w_weight_read
+	#var bp:float = (B_Torque * braked) / w_weight
 	
 	if not car.actualgear == 0:
 		if car.dsweightrun > 0.0:
@@ -544,7 +549,8 @@ const suspension_inputs:String = "self,S_MaxCompression,A_InclineArea,A_ImpactFo
 func suspension() -> float:
 	var g_range:float = absf(target_position.y)
 	geometry.global_position = get_collision_point()
-	geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), - g_range)
+	#geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), - g_range)
+	geometry.position.y -= (ground_bump * surface_vars.ground_bump_height)
 	
 	velo_1.global_transform = VitaVehicleSimulation.alignAxisToVector(velo_1.global_transform, get_collision_normal())
 	velo_2.global_transform = VitaVehicleSimulation.alignAxisToVector(velo_2.global_transform, get_collision_normal())
@@ -572,21 +578,17 @@ func suspension() -> float:
 		#Serious BS was taken here, as this is the "damping" var from _physics_process
 		damp_variant = maxf(S_Damping * AR_Stiff * rolldist + 1.0, 0.0)
 	
-	
 	var compressed:float = g_range - (global_position - get_collision_point()).length() - (ground_bump * surface_vars.ground_bump_height)
-	#var compressed2:float = g_range - (global_position - get_collision_point()).length() - (ground_bump * ground_bump_height)
 	var compressed2:float =  maxf(compressed - (S_MaxCompression + (ground_bump * surface_vars.ground_bump_height)), 0.0)
 	
 	var elasticity2:float = (S_Stiffness * AR_Elast * rolldist + 1.0) * (1.0 - incline) + (car.mass) * incline
 	var damping2:float = damp_variant * (1.0 - incline) + (car.mass / 10.0) * incline
 	
-	var suspforce:float = maxf(compressed - S_RestLength, 0.0) * elasticity2
+	var suspforce:float = maxf(compressed - S_RestLength, 0.0) * elasticity2 - velocity.y * damping2
 	
 	if compressed2 > 0.0:
 		suspforce -= velocity.y * (car.mass / 10.0)
 		suspforce += compressed2 * car.mass
-	
-	suspforce -= velocity.y * damping2
 	
 	rd = compressed
 	

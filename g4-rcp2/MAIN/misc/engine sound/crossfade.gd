@@ -27,6 +27,22 @@ var maxfades:float = 0.0
 #snd_7: 112750
 #snd_8: 100500
 
+@export var sound_1:AudioStream
+
+@export var sound_2:AudioStream
+
+@export var sound_3:AudioStream
+
+@export var sound_4:AudioStream
+
+@export var sound_5:AudioStream
+
+@export var sound_6:AudioStream
+
+@export var sound_7:AudioStream
+
+@export var sound_8:AudioStream
+
 @onready var snd_8:ViVeEngineSound = $"snd_8"
 
 var pitch_influence:float = 1.0
