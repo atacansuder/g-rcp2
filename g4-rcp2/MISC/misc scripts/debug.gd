@@ -19,62 +19,14 @@ var changed_graph_size:Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	if not ViVeEnvironment.singleton.is_connected("ready", setup):
-		var _err:Error = ViVeEnvironment.get_singleton().connect("ready", setup)
+		ViVeEnvironment.get_singleton().connect("ready", setup)
 	if not ViVeEnvironment.singleton.is_connected("car_changed", update_car):
-		var _err:Error = ViVeEnvironment.get_singleton().connect("car_changed", update_car)
+		ViVeEnvironment.get_singleton().connect("car_changed", update_car)
 	singleton = self
 
 func update_car() -> void:
 	car_node = ViVeEnvironment.singleton.car
-
-#This is signal-ified due to being "too early" when done in _ready()
-func setup() -> void:
-	update_car()
-	vgs.clear()
-	for d:ViVeWheel in car_node.get_wheels():
-		vgs.append_wheel(d)
 	
-	#What in the world-
-	
-#	for i:Dictionary in $power_graph.get_script().get_script_property_list():
-#		print(i)
-#		const blacklist:PackedStringArray = ["peakhp", "tr", "hp", "skip", "scale"]
-#		#if not i["name"] == "peakhp" and not i["name"] == "tr" and not i["name"] == "tr" and not i["name"] == "hp" and not i["name"] == "skip" and not i["name"] == "scale":
-#		if not blacklist.has(i.get("name")):
-#			if i["name"] in car_node:
-#				$power_graph.set(i["name"], car_node.get(i["name"]))
-
-func _process(delta:float) -> void:
-	if car_node == null:
-		return
-	if delta > 0:
-		#This gives a more precise FPS at the cost of calculation
-		fps.text = "fps: " + str(1.0 / delta)
-		#This gives a smoother FPS but performs slightly better
-		#fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
-		
-		$sw.rotation_degrees = car_node.car_controls.steer * 380.0
-		$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
-		if ViVeEnvironment.get_singleton().Debug_Mode:
-			weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
-		else:
-			weight_dist.text = "[ enable Debug_Mode or press F to\nfetch weight distribution ]"
-	
-	if not changed_graph_size == power_graph.size:
-		changed_graph_size = power_graph.size
-		power_graph.draw_graph()
-	
-	$"fix engine".visible = car_node.rpm < car_node.DeadRPM
-	
-	$throttle.bar_scale = car_node.car_controls.gaspedal
-	$brake.bar_scale = car_node.car_controls.brakepedal
-	$handbrake.bar_scale = car_node.car_controls.handbrakepull
-	$clutch.bar_scale = car_node._clutchpedalreal
-	
-	$tacho/speedk.text = "KM/PH: " +str(int(car_node.linear_velocity.length() * 1.10130592))
-	$tacho/speedm.text = "MPH: " +str(int((car_node.linear_velocity.length() * 1.10130592) / 1.609 ) )
-	
-	#begin unneeded value setting
 	var hpunit:String
 	match power_graph.Power_Unit:
 		1:
@@ -94,7 +46,55 @@ func _process(delta:float) -> void:
 	elif power_graph.Torque_Unit == 2:
 		tqunit = "kg/m"
 	$tq.text = "Torque: %s%s @ %s RPM" % [str(int(power_graph.peaktq[0] * 10.0) / 10.0 ), tqunit, str(int(power_graph.peaktq[1] * 10.0) / 10.0)]
-	#end unneeded value setting
+
+
+#This is signal-ified due to being "too early" when done in _ready()
+func setup() -> void:
+	update_car()
+	vgs.clear()
+	for d:ViVeWheel in car_node.get_wheels():
+		vgs.append_wheel(d)
+	
+	#What in the world-
+	
+#	for i:Dictionary in $power_graph.get_script().get_script_property_list():
+#		print(i)
+#		const blacklist:PackedStringArray = ["peakhp", "tr", "hp", "skip", "scale"]
+#		#if not i["name"] == "peakhp" and not i["name"] == "tr" and not i["name"] == "tr" and not i["name"] == "hp" and not i["name"] == "skip" and not i["name"] == "scale":
+#		if not blacklist.has(i.get("name")):
+#			if i["name"] in car_node:
+#				$power_graph.set(i["name"], car_node.get(i["name"]))
+
+func _process(delta:float) -> void:
+	#This gives a more precise FPS at the cost of calculation
+	fps.text = "fps: " + str(1.0 / delta)
+	#This gives a smoother FPS but performs slightly better
+	#fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
+	
+	#Everything past here needs a car active to be functional
+	if car_node == null:
+		return
+	
+	$sw.rotation_degrees = car_node.car_controls.steer * 380.0
+	$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
+	if ViVeEnvironment.get_singleton().Debug_Mode:
+		weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
+	else:
+		weight_dist.text = "[ enable Debug_Mode or press F to\nfetch weight distribution ]"
+	
+	if not changed_graph_size == power_graph.size:
+		changed_graph_size = power_graph.size
+		power_graph.draw_graph()
+	
+	$"fix engine".visible = car_node.rpm < car_node.DeadRPM
+	
+	$throttle.bar_scale = car_node.car_controls.gaspedal
+	$brake.bar_scale = car_node.car_controls.brakepedal
+	$handbrake.bar_scale = car_node.car_controls.handbrakepull
+	$clutch.bar_scale = car_node._clutchpedalreal
+	
+	$tacho/speedk.text = "KM/PH: " +str(int(car_node.linear_velocity.length() * 1.10130592))
+	$tacho/speedm.text = "MPH: " +str(int((car_node.linear_velocity.length() * 1.10130592) / 1.609 ) )
 	
 	$power_graph/rpm.position.x = (car_node.rpm / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	$power_graph/redline.position.x = (car_node.RPMLimit / power_graph.Generation_Range) * power_graph.size.x - 1.0

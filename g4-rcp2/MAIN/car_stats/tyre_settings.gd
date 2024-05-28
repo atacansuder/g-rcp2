@@ -8,7 +8,7 @@ class_name ViVeTyreSettings
 @export var Width_mm:int = 185
 ##Aspect ratios are delivered in percentages. 
 ##Tire makers calculate the aspect ratio by dividing a tire's height off the rim by its width. 
-##If a tire has an aspect ratio of 70, it means the tire's height is 70's of its width.
-@export var Aspect_Ratio:int = 60
+##If a tire has an aspect ratio of 70, it means the tire's height is 70 percent of its width.
+@export_range(0.0, 100.0) var Aspect_Ratio:float = 60.0
 ##Rim size, in inches(?).
 @export var Rim_Size_in:int = 14

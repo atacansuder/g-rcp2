@@ -11,7 +11,7 @@ class_name ViVeWheel
 @export_group("Differed Calculations")
 ##Finds a wheel to correct itself to another, in favour of differential mechanics. 
 ##Both wheels need to have their properties proposed to each other.
-@export var Differed_Wheel:NodePath = ""
+@export var Differed_Wheel_Path:NodePath = ""
 ##Connects a sway bar to the opposing axle. 
 ##Both wheels should have their properties proposed to each other.
 @export var SwayBarConnection:NodePath = ""
@@ -94,6 +94,12 @@ class_name ViVeWheel
 @onready var anim:Marker3D = $"animation"
 @onready var anim_camber:Marker3D = $"animation/camber"
 @onready var anim_camber_wheel:Marker3D = $"animation/camber/wheel"
+##The paired wheel for differed calculations
+@onready var differed_wheel:ViVeWheel = null
+##The paired wheel for sway bar calculations
+@onready var sway_bar_wheel:ViVeWheel = null
+##The paired wheel for solidifying axles
+@onready var solidify_axles_wheel:ViVeWheel = null
 
 const rigidity:float = 0.67
 const magic_number_a:float = 1.15296
@@ -196,6 +202,12 @@ var physics_tick:int = 60
 
 func _ready() -> void:
 	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60)
+	if Differed_Wheel_Path:
+		differed_wheel = car.get_node(Differed_Wheel_Path)
+	if SwayBarConnection:
+		sway_bar_wheel = car.get_node(SwayBarConnection)
+	if Solidify_Axles:
+		solidify_axles_wheel = car.get_node(Solidify_Axles)
 
 func power() -> void:
 	if not is_zero_approx(c_p):
@@ -214,25 +226,22 @@ func power() -> void:
 
 ##This "borrows" computations from a paired wheel in order to save on computations.
 func diffs() -> void:
-	if car.locked > 0.0 and Differed_Wheel:
-		var paired_differed_wheel:ViVeWheel = car.get_node(Differed_Wheel)
-		if is_instance_valid(paired_differed_wheel):
-			snap = absf(paired_differed_wheel.wheelpower_global) / (car.locked * 16.0) + 1.0
-			absolute_wv = output_wv + (offset * snap)
-			var distanced2:float = absf(absolute_wv - paired_differed_wheel.absolute_wv_diff) / (car.locked * 16.0)
-			distanced2 += absf(paired_differed_wheel.wheelpower_global) / (car.locked * 16.0)
-			distanced2 = maxf(distanced2, snap)
-			
-			distanced2 += 1.0 / cache_tyrestiffness
-			if distanced2 > 0.0:
-				wheelpower += -((absolute_wv_diff - paired_differed_wheel.absolute_wv_diff) / distanced2)
-
+	if car.locked > 0.0 and is_instance_valid(differed_wheel):
+		snap = absf(differed_wheel.wheelpower_global) / (car.locked * 16.0) + 1.0
+		absolute_wv = output_wv + (offset * snap)
+		
+		var distanced2:float = absf(absolute_wv - differed_wheel.absolute_wv_diff) / (car.locked * 16.0)
+		distanced2 += absf(differed_wheel.wheelpower_global) / (car.locked * 16.0)
+		
+		distanced2 = maxf(distanced2, snap)
+		
+		distanced2 += 1.0 / cache_tyrestiffness
+		if distanced2 > 0.0:
+			wheelpower += -((absolute_wv_diff - differed_wheel.absolute_wv_diff) / distanced2)
 
 func sway() -> void:
-	if SwayBarConnection: #NodePath evaluates true when not empty
-		var linkedwheel:ViVeWheel = car.get_node(SwayBarConnection)
-		if is_instance_valid(linkedwheel): #Needed to excuse some bootup errors
-			rolldist = clampf(rd - linkedwheel.rd, -1.0, 1.0)
+	if is_instance_valid(sway_bar_wheel): 
+		rolldist = clampf(rd - sway_bar_wheel.rd, -1.0, 1.0)
 
 func _physics_process(_delta:float) -> void:
 	var last_translation:Vector3 = position
@@ -281,12 +290,13 @@ func _physics_process(_delta:float) -> void:
 	
 	position = last_translation
 	
-	c_camber = Camber + Caster * rotation.y * float(position.x > 0.0) -Caster * rotation.y * float(position.x < 0.0)
+	c_camber = Camber + Caster * rotation.y * float(position.x > 0.0) - Caster * rotation.y * float(position.x < 0.0)
 	
 	directional_force = Vector3.ZERO
 	velo_1.position = Vector3.ZERO
 	
-	w_size = ((absi(TyreSettings.Width_mm) * ((absi(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * 0.003269) * 0.5
+	#w_size = ((absi(TyreSettings.Width_mm) * ((absf(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * 0.003269) * 0.5
+	w_size = ((absi(TyreSettings.Width_mm) * ((absf(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * 0.003269) * 0.5
 	w_weight = pow(w_size, 2.0)
 	
 	w_size_read = maxf(w_size, 1.0)
@@ -312,17 +322,16 @@ func _physics_process(_delta:float) -> void:
 	
 	var tyre_maxgrip:float = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
 	
-	var tyre_stiffness2:float = absi(TyreSettings.Width_mm) / (absi(TyreSettings.Aspect_Ratio) / 1.5)
+	var tyre_stiffness2:float = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
 	
-	var deviding:float = (Vector2(velocity.x, velocity.z).length() / 50.0 + 0.5) * CompoundSettings.DeformFactor
+	var speed_deform_factor:float = (Vector2(velocity.x, velocity.z).length() / 50.0 + 0.5) * CompoundSettings.DeformFactor
 	
-	deviding /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
-	deviding = maxf(deviding, 1.0)
+	speed_deform_factor /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
+	speed_deform_factor = maxf(speed_deform_factor, 1.0)
 	
-	tyre_stiffness2 /= deviding
+	tyre_stiffness2 /= speed_deform_factor
 	
 	var tyre_stiffness:float = (tyre_stiffness2 * ((TyrePressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
-	#assert(is_equal_approx(tyre_stiffness, tyre_stiffness_2), "WRONG")
 	
 	tyre_stiffness = maxf(tyre_stiffness, 1.0)
 	
@@ -337,14 +346,11 @@ func _physics_process(_delta:float) -> void:
 	var braked:float = minf(car._brakeline * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
 	#Get brake power by multiplying the braked factor by the brake force, 
 	#and dividing that result by the weight of the wheel
-	#BUG: when w_weight_read is 0, this causes bp to be NaN
-	#This in turn seems to break braking
 	var bp:float = (B_Torque * braked) / w_weight_read
-	#var bp:float = (B_Torque * braked) / w_weight
 	
 	if not car.actualgear == 0:
 		if car.dsweightrun > 0.0:
-			bp += ((car.stalled * (c_p / car.ds_weight)) * car.car_controls.clutchpedal) * (((500.0 / (car.RevSpeed * 100.0)) / (car.dsweightrun / 2.5)) / w_weight_read)
+			bp += ((car.stalled * (c_p / car.ds_weight)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.dsweightrun / 2.5)) / w_weight_read)
 	if bp > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / bp
@@ -364,12 +370,13 @@ func _physics_process(_delta:float) -> void:
 	var grip:float
 	
 	var gravity_incline:Vector3
+	
 	var dist_force:Vector2
 	
 	
 	# WHEEL
 	if is_colliding():
-		var collider:Object = get_collider()
+		var collider:Node3D = get_collider()
 		#if collider.is_class("RayCast3D"):
 		if "ground_vars" in collider:
 			#Retrieve surface variables
@@ -427,7 +434,7 @@ func _physics_process(_delta:float) -> void:
 		
 		#calculate the grip of the tire
 		if grip > 0:
-			var dist_v_squared:Vector2 = dist_v.abs() * dist_v.abs()
+			var dist_v_squared:Vector2 = dist_v * dist_v
 			var slipraw:float = sqrt(dist_v_squared.y + dist_v_squared.x)
 			var slip:float = slipraw / grip
 			
@@ -455,7 +462,7 @@ func _physics_process(_delta:float) -> void:
 			rollvol = velocity.length() * grip
 			
 			#Volume calculation?
-			var new_slip_sk:float = sqrt(pow(absf(dist_v.x * 2.0), 2.0) + dist_v_squared.y) / grip
+			var new_slip_sk:float = sqrt(pow(dist_v.x * 2.0, 2.0) + dist_v_squared.y) / grip
 			new_slip_sk /= slip * surface_vars.ground_builduprate + 1
 			new_slip_sk = maxf(new_slip_sk - CompoundSettings.TractionFactor, 0.0)
 			skvol = maxf(new_slip_sk - tyre_stiffness, 0.0) / 4.0
@@ -464,7 +471,7 @@ func _physics_process(_delta:float) -> void:
 		stress = 0.0
 		rollvol = 0.0
 		skvol = 0.0
-		#directional_force.y = 0.0
+		directional_force.y = 0.0
 		compensate = 0.0
 	
 	slip_perc = Vector2.ZERO
@@ -474,10 +481,8 @@ func _physics_process(_delta:float) -> void:
 	# FORCE
 	if is_colliding():
 		# FRICTION
-		if  Differed_Wheel: #NodePath will return true if it's not ""
-			var differed_wheel:ViVeWheel = car.get_node(Differed_Wheel)
-			if is_instance_valid(differed_wheel):
-				dist_force.y = velocity2.z - ((wv * (1.0 - car.locked) + differed_wheel.wv_diff * car.locked) * w_size) / (surface_vars.drag + 1)
+		if is_instance_valid(differed_wheel):
+			dist_force.y = velocity2.z - ((wv * (1.0 - car.locked) + differed_wheel.wv_diff * car.locked) * w_size) / (surface_vars.drag + 1)
 		
 		dist_force.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
 		
@@ -486,7 +491,7 @@ func _physics_process(_delta:float) -> void:
 		dist_force.x -= atan(absf(wv)) * ((angle * 10.0) * w_size)
 		
 		if grip > 0:
-			var dist_force_squared:Vector2 = dist_force.abs() * dist_force.abs()
+			var dist_force_squared:Vector2 = dist_force * dist_force
 			var slipraw:float = sqrt(dist_force_squared.y + dist_force_squared.x)
 			
 			var slip:float = slipraw / grip
@@ -516,12 +521,12 @@ func _physics_process(_delta:float) -> void:
 	var g:float
 	
 	axle_position = geometry.position.y
-	if not Solidify_Axles: #If the NodePath is null
+	if not is_instance_valid(solidify_axles_wheel):
 		g = (geometry.position.y + (absf(target_position.y) - A_Geometry1)) / (absf(position.x) + A_Geometry3 + 1.0)
 		g /= absf(g) + 1.0
 		cambered = (g * 90.0) - A_Geometry4
 	else:
-		g = (geometry.position.y - get_node(Solidify_Axles).axle_position) / (absf(position.x) + 1.0)
+		g = (geometry.position.y - solidify_axles_wheel.axle_position) / (absf(position.x) + 1.0)
 		g /= absf(g) + 1.0
 		cambered = (g * 90.0)
 	

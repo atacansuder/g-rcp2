@@ -1,13 +1,17 @@
-[gd_scene load_steps=17 format=3 uid="uid://crtwme8ggggra"]
+[gd_scene load_steps=21 format=3 uid="uid://ckdxhurvf2i3"]
 
-[ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
-[ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
-[ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3"]
-[ext_resource type="Texture2D" uid="uid://del2h14nydk3g" path="res://MAIN/misc/textures/rim.jpg" id="4"]
-[ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="5"]
-[ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6"]
-[ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7"]
-[ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_tk2wk"]
+[ext_resource type="Script" path="res://MAIN/car.gd" id="1_oxppr"]
+[ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="2_4hi2m"]
+[ext_resource type="Resource" uid="uid://c7ge6xss2h2h2" path="res://MISC/car swapper/cars/Miranda Proto/assets/abs.tres" id="2_hlk6j"]
+[ext_resource type="Resource" uid="uid://vwj5saoxpr4g" path="res://MISC/car swapper/cars/Miranda Proto/assets/torque_normal.tres" id="3_3hlla"]
+[ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3_utf86"]
+[ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="4_ewk3o"]
+[ext_resource type="Texture2D" uid="uid://del2h14nydk3g" path="res://MAIN/misc/textures/rim.jpg" id="5_8stf4"]
+[ext_resource type="Resource" uid="uid://bifxfrn15mqoh" path="res://MISC/car swapper/cars/Vigero ZX/assets/front_tyre_comp.tres" id="5_dj1ls"]
+[ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6_ldss1"]
+[ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7_gkjb0"]
+[ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_i1gj4"]
+[ext_resource type="Resource" uid="uid://qmxln8g2jgvv" path="res://MISC/car swapper/cars/Miranda Proto/assets/rear_tyre_settings.tres" id="9_hm1jj"]
 
 [sub_resource type="ConvexPolygonShape3D" id="12"]
 points = PackedVector3Array(2.75605, 1.27715, 6.68259, 1.75444, 2.13382, 3.26614, -2.75659, 1.27715, 6.68259, 2.75605, -0.4, 6.68259, 2.75605, 0.921974, -4.96708, 1.75444, 2.13382, -0.149161, -1.75498, 2.13382, 3.26614, -2.75659, -0.4, 6.68259, -1.75498, 2.13382, -0.149161, -2.75659, 0.921974, -4.96708, 2.75605, -0.4, -4.96708, -2.75659, -0.4, -4.96708)
@@ -138,7 +142,7 @@ blend_shape_mode = 0
 
 [sub_resource type="StandardMaterial3D" id="7"]
 shading_mode = 0
-albedo_texture = ExtResource("4")
+albedo_texture = ExtResource("5_8stf4")
 
 [sub_resource type="ArrayMesh" id="11"]
 _surfaces = [{
@@ -205,7 +209,7 @@ shader_parameter/albedo = Color(1, 1, 1, 1)
 shader_parameter/particles_anim_h_frames = 1
 shader_parameter/particles_anim_v_frames = 1
 shader_parameter/particles_anim_loop = false
-shader_parameter/texture_albedo = ExtResource("8_tk2wk")
+shader_parameter/texture_albedo = ExtResource("8_i1gj4")
 
 [sub_resource type="ArrayMesh" id="13"]
 _surfaces = [{
@@ -229,8 +233,30 @@ point_count = 2
 [node name="car" type="RigidBody3D"]
 mass = 90.0
 can_sleep = false
-script = ExtResource("2")
-Debug_Mode = true
+script = ExtResource("1_oxppr")
+Weight = 1350.0
+LiftAngle = 0.4
+DragCoefficient = 0.372
+Downforce = 1.0
+AckermannPoint = -3.859
+Steer_Radius = 15.0
+Powered_Wheels = ["rl", "rr"]
+GearRatios = [15.0, 2.0, 0.944, 8400.0, 8600.0, 3000.0, 5.0]
+ReverseRatio = 2.529
+ABS = ExtResource("2_hlk6j")
+Locking = 0.3
+RevSpeed = 1.0
+EngineDrag = 0.01
+ThrottleResponse = 0.75
+RPMLimit = 9000.0
+LimiterDelay = 1.0
+IdleRPM = 1100.0
+ThrottleIdle = 0.15
+VVTRPM = 45000.0
+torque_norm = ExtResource("3_3hlla")
+ClutchStable = 0.65
+ClutchGrip = 703.5
+ClutchFloatReduction = 24.0
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.624618, 0.725289)
@@ -239,34 +265,38 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.624618, 0.725289)
 transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.625, 0.725)
 shape = SubResource("12")
 
-[node name="tyre_sound" parent="." instance=ExtResource("5")]
+[node name="tyre_sound" parent="." instance=ExtResource("2_4hi2m")]
 
-[node name="engine_sound" parent="." instance=ExtResource("3")]
+[node name="engine_sound" parent="." instance=ExtResource("3_utf86")]
 
 [node name="carmesh" type="MeshInstance3D" parent="."]
 transform = Transform3D(-100, 1.50996e-05, 6.60024e-13, 0, -4.37114e-06, 100, 1.50996e-05, 100, 4.37114e-06, 0, -1.50209, 0)
 mesh = SubResource("10")
 
-[node name="fr" parent="." instance=ExtResource("1")]
+[node name="fr" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, 3.8)
 target_position = Vector3(0, -2.7, 0)
 SwayBarConnection = NodePath("fl")
-Caster = 2.0
-S_Stiffness = 55.0
-S_Damping = 4.0
-S_ReboundDamping = 4.0
-B_Torque = 30.0
-B_Bias = 0.8
+CompoundSettings = ExtResource("5_dj1ls")
+TyrePressure = 80.0
+Camber = -1.0
+S_Stiffness = 90.0
+S_Damping = 5.0
+S_ReboundDamping = 5.0
+B_Torque = 70.0
+B_Bias = 0.45
+A_Geometry1 = 1.1
 
 [node name="Cylinder2" type="MeshInstance3D" parent="fr/animation/camber/wheel" index="0"]
 transform = Transform3D(101.962, 0, 0, 0, 101.962, 0, 0, 0, 101.962, 0, 0, 0)
 mesh = SubResource("11")
 skeleton = NodePath("../../../../..")
 
-[node name="fl" parent="." instance=ExtResource("1")]
+[node name="fl" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, 3.8)
 target_position = Vector3(0, -2.7, 0)
 SwayBarConnection = NodePath("fr")
+CompoundSettings = ExtResource("5_dj1ls")
 Caster = 2.0
 S_Stiffness = 55.0
 S_Damping = 4.0
@@ -279,35 +309,43 @@ transform = Transform3D(-101.962, 0, -8.9138e-06, 0, 101.962, 0, 8.9138e-06, 0, 
 mesh = SubResource("11")
 skeleton = NodePath("../../../../..")
 
-[node name="rr" parent="." instance=ExtResource("1")]
+[node name="rr" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, -3.8)
 target_position = Vector3(0, -2.7, 0)
+Differed_Wheel_Path = NodePath("rl")
 SwayBarConnection = NodePath("rl")
-B_Torque = 30.0
-B_Bias = 0.2
+TyreSettings = ExtResource("9_hm1jj")
+S_Stiffness = 110.0
+S_Damping = 7.0
+S_ReboundDamping = 7.0
+B_Torque = 70.0
+B_Bias = 0.55
 HB_Bias = 1.0
+A_Geometry1 = 1.25
 
 [node name="Cylinder2" type="MeshInstance3D" parent="rr/animation/camber/wheel" index="0"]
 transform = Transform3D(101.962, 0, 0, 0, 101.962, 0, 0, 0, 101.962, 0, 0, 0)
 mesh = SubResource("11")
 skeleton = NodePath("../../../../..")
 
-[node name="rl" parent="." instance=ExtResource("1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, -3.8)
+[node name="rl" parent="." instance=ExtResource("4_ewk3o")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, -3.83458)
 target_position = Vector3(0, -2.7, 0)
-SwayBarConnection = NodePath("rl")
+SwayBarConnection = NodePath("fr")
+S_Stiffness = 55.0
+S_Damping = 4.0
+S_ReboundDamping = 4.0
 B_Torque = 30.0
-B_Bias = 0.2
-HB_Bias = 1.0
+B_Bias = 0.8
 
 [node name="Cylinder2" type="MeshInstance3D" parent="rl/animation/camber/wheel" index="0"]
 transform = Transform3D(-101.962, 0, -8.9138e-06, 0, 101.962, 0, 8.9138e-06, 0, -101.962, 0, 0, 0)
 mesh = SubResource("11")
 skeleton = NodePath("../../../../..")
 
-[node name="other_sounds" parent="." instance=ExtResource("6")]
+[node name="other_sounds" parent="." instance=ExtResource("6_ldss1")]
 
-[node name="fire" parent="." instance=ExtResource("7")]
+[node name="fire" parent="." instance=ExtResource("7_gkjb0")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.21278, -1.65592, -5.90752)
 mesh = SubResource("13")
 scale_amount_curve = SubResource("14")

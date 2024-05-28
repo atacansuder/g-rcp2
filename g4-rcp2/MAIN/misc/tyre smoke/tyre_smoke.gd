@@ -6,8 +6,21 @@ class_name ViVeTyreSmoke
 @onready var velo1:Marker3D = get_node("../../../velocity")
 @onready var velo2:Marker3D = get_node("../../../velocity2")
 @onready var wheel_self:ViVeWheel = get_node("../../..")
+
+@onready var static_particles:Node3D = $"static"
+@onready var static_1:CPUParticles3D = $"static/lvl1"
+@onready var static_2:CPUParticles3D = $"static/lvl2"
+@onready var static_3:CPUParticles3D = $"static/lvl3"
+
 @onready var revolve_l:Node3D = $revolvel
+@onready var revolve_l_1:CPUParticles3D
+@onready var revolve_l_2:CPUParticles3D
+@onready var revolve_l_3:CPUParticles3D
+
 @onready var revolve_r:Node3D = $revolver
+@onready var revolve_r_1:CPUParticles3D
+@onready var revolve_r_2:CPUParticles3D
+@onready var revolve_r_3:CPUParticles3D
 
 var tyre_width:float
 
@@ -27,7 +40,7 @@ func run_smoke() -> void:
 	revolve_l.position.x = float(tyre_width) * magic_number_1 / 2
 	revolve_r.position.x = - float(tyre_width) * magic_number_1 / 2
 	
-	$static.global_rotation = velo1.global_rotation
+	static_particles.global_rotation = velo1.global_rotation
 	var direction:Vector3 = velo1_v * 0.75
 	
 	#the range of spin, below
@@ -37,7 +50,7 @@ func run_smoke() -> void:
 	
 	direction.z += spin
 	
-	for i:CPUParticles3D in $static.get_children():
+	for i:CPUParticles3D in static_particles.get_children():
 		i.direction = direction
 		i.initial_velocity_min = direction.length()
 		i.initial_velocity_max = direction.length()
@@ -60,36 +73,36 @@ func run_smoke() -> void:
 		if dirt_type:
 			if wheel_self.surface_vars.ground_dirt:
 				if velo1_v.length() > 20.0:
-					$static/lvl1.emitting = true
+					static_1.emitting = true
 					if should_emit:
-						$revolvel/lvl1.emitting = true
-						$revolver/lvl1.emitting = true
+						revolve_l_1.emitting = true
+						revolve_r_1.emitting = true
 				if wheel_self.slip_perc2 > 1.0:
 					if wheel_self.slip_perc.length() > 80.0:
-						$static/lvl3.emitting = true
+						static_3.emitting = true
 						if should_emit:
-							$revolvel/lvl3.emitting = true
-							$revolver/lvl3.emitting = true
+							revolve_l_3.emitting = true
+							revolve_r_3.emitting = true
 					elif wheel_self.slip_perc.length() > 40.0:
-						$static/lvl2.emitting = true
+						static_2.emitting = true
 						if should_emit:
-							$revolvel/lvl2.emitting = true
-							$revolver/lvl2.emitting = true
+							revolve_l_2.emitting = true
+							revolve_r_2.emitting = true
 		else:
 			if not wheel_self.surface_vars.ground_dirt:
 				if wheel_self.slip_perc2 > 1.0:
 					if wheel_self.slip_perc.length() > 80.0:
-						$static/lvl3.emitting = true
+						static_3.emitting = true
 						if should_emit:
-							$revolvel/lvl3.emitting = true
-							$revolver/lvl3.emitting = true
+							revolve_l_3.emitting = true
+							revolve_r_3.emitting = true
 					elif wheel_self.slip_perc.length() > 40.0:
-						$static/lvl2.emitting = true
+						static_2.emitting = true
 						if should_emit:
-							$revolvel/lvl2.emitting = true
-							$revolver/lvl2.emitting = true
+							revolve_l_2.emitting = true
+							revolve_r_2.emitting = true
 					elif wheel_self.slip_perc.length() > 20.0:
-						$static/lvl1.emitting = true
+						static_1.emitting = true
 						if should_emit:
-							$revolvel/lvl1.emitting = true
-							$revolver/lvl1.emitting = true
+							revolve_l_1.emitting = true
+							revolve_r_1.emitting = true

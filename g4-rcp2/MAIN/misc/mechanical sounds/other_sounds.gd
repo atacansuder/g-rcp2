@@ -74,9 +74,9 @@ func _physics_process(_delta:float) -> void:
 	
 	fueltrace = maxf(fueltrace - (fueltrace * backfire_FuelDecay), 0.0)
 	
-	engine_node = get_node(engine_sound)
-	
-	if has_node(engine_sound):
+	if not is_instance_valid(engine_node):
+		engine_node = get_node(engine_sound)
+	else:
 		engine_node.pitch_influence -= (engine_node.pitch_influence - 1.0) * 0.5
 	
 	if car.rpm > car.DeadRPM:

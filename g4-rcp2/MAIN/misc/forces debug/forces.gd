@@ -2,13 +2,14 @@ extends MeshInstance3D
 
 @export var Scale:float = 0.5
 
-@onready var wheel_parent:ViVeWheel
+@onready var wheel_parent:ViVeWheel = null
 @onready var compress:MeshInstance3D = $"compress"
 @onready var longi:MeshInstance3D = $"longi"
 @onready var lateral:MeshInstance3D = $"lateral"
 
 func _physics_process(_delta:float) -> void:
-	wheel_parent = get_parent() #ViVeWheel
+	if not is_instance_valid(wheel_parent):
+		wheel_parent = get_parent() #ViVeWheel
 	visible = ViVeEnvironment.get_singleton().Debug_Mode
 	if visible:
 		compress.visible = wheel_parent.is_colliding()

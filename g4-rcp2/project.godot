@@ -47,6 +47,10 @@ window/vsync/use_vsync=false
 
 enabled=PackedStringArray("res://addons/vitavehicle_ui/plugin.cfg")
 
+[filesystem]
+
+import/fbx/enabled=false
+
 [input]
 
 gas={

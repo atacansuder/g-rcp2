@@ -18,7 +18,7 @@ var current_trail_node:ViVeWheelMark = null
 var current_trail :ImmediateMesh = null
 var drawers:Array[MeshInstance3D] = []
 
-var wheel_parent:ViVeWheel
+var wheel_parent:ViVeWheel = null
 
 # i spent 5 days trying to figure out why the skids were not working properly
 	# the immediate mesh resource was shared between all the skids :/
@@ -61,7 +61,8 @@ func _physics_process(_delta:float) -> void:
 
 
 func _process(_delta:float) -> void:
-	wheel_parent = get_parent().get_parent()
+	if not is_instance_valid(wheel_parent):
+		wheel_parent = get_parent().get_parent()
 	
 	inserting = wheel_parent.slip_perc.length() > wheel_parent.stress + 20.0 and wheel_parent.is_colliding()
 	

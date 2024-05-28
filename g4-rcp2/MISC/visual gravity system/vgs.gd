@@ -9,6 +9,7 @@ class_name ViVeVGS
 
 @onready var wheel:ViVeDebugWheel = $wheel.duplicate()
 
+
 var glength:float = 0.0
 
 var appended:Array[ViVeDebugWheel] = []
@@ -26,7 +27,7 @@ func append_wheel(node:ViVeWheel) -> void:
 	var settings:ViVeTyreSettings = node.TyreSettings
 	var pos:Vector3 = node.position
 	
-	var w_size:float = ((absi(settings.Width_mm) * ((absi(settings.Aspect_Ratio) * 2.0) / 100.0) + absi(settings.Rim_Size_in) * 25.4) * 0.003269) / 2.0
+	var w_size:float = ((absi(settings.Width_mm) * ((absf(settings.Aspect_Ratio) * 2.0) / 100.0) + absi(settings.Rim_Size_in) * 25.4) * 0.003269) / 2.0
 	var width:float = (absi(settings.Width_mm) * 0.003269) / 2.0
 	
 	var w:ViVeDebugWheel = wheel.duplicate()

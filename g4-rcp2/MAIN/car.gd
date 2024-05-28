@@ -1169,7 +1169,7 @@ func multivariate() -> float:
 	value /= (j * (j * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	value /= pow(rpm, 2) * (torque_local.FloatRate / 10000000.0) + 1.0
 	
-	value -= rpm / ((absf(pow(rpm, 2))) / EngineFriction + 1.0)
+	value -= rpm / (pow(rpm, 2) / EngineFriction + 1.0)
 	value -= rpm * EngineDrag
 	
 	return value
