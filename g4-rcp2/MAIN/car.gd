@@ -21,18 +21,31 @@ var c_pws:Array[ViVeWheel]
 
 @export_group("Controls")
 @export var car_controls:ViVeCarControls = ViVeCarControls.new()
-var car_controls_cache:ViVeCarControls.ControlType
+@export_enum("Keyboard and Mouse", "Keyboard", "Touch controls (Gyro)", "Joypad") var control_type:int = 0
+##Which control type the car is going to be associated with.
+enum ControlType {
+	##Use the keyboard and mouse for control.
+	CONTROLS_KEYBOARD_MOUSE,
+	##Use just the keyboard for control.
+	CONTROLS_KEYBOARD,
+	##Use the touchscreen for control.
+	CONTROLS_TOUCH,
+	##Use a connected game controller for control.
+	CONTROLS_JOYPAD,
+}
+
+var car_controls_cache:ControlType
 var _control_func:Callable = car_controls.controls_keyboard_mouse
 
 ## Gear Assistance.
 @export var GearAssist:ViVeGearAssist = ViVeGearAssist.new()
 
 @export_group("Meta")
-#Whether the car is a user-controlled vehicle or not
+##Whether the car is a user-controlled vehicle or not
 @export var Controlled:bool = true
 ##Whether or not debug mode is active. [br]
 ##TODO: Make this do more than just hide weight distribution.
-@export var Debug_Mode :bool = false
+@export var Debug_Mode:bool = false
 
 @export_group("Chassis")
 ##Vehicle weight in kilograms.
@@ -333,6 +346,9 @@ signal wheels_ready
 func _ready() -> void:
 #	bullet_fix()
 	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60)
+	car_controls.front_left = front_left
+	car_controls.front_right = front_right
+	car_controls.GearAssist = GearAssist
 	_control_func = decide_controls()
 	rpm = IdleRPM
 	for i:String in Powered_Wheels:
@@ -358,36 +374,48 @@ func _mouse_wrapper() -> void:
 
 ##Check which [Callable] from [ViVeCarControls] to use for the car's controls.
 func decide_controls() -> Callable:
-	ViVeTouchControls.singleton.visible = false
-	match car_controls.control_type as ViVeCarControls.ControlType:
-		ViVeCarControls.ControlType.CONTROLS_KEYBOARD_MOUSE:
+	ViVeTouchControls.singleton.hide()
+	match control_type as ControlType:
+		ControlType.CONTROLS_KEYBOARD_MOUSE:
+			
 			return _mouse_wrapper
-		ViVeCarControls.ControlType.CONTROLS_TOUCH:
+		ControlType.CONTROLS_TOUCH:
 			ViVeTouchControls.singleton.show()
 			return car_controls.controls_touchscreen
-		ViVeCarControls.ControlType.CONTROLS_JOYPAD:
+		ControlType.CONTROLS_JOYPAD:
 			return car_controls.controls_joypad
 	return _mouse_wrapper
 
+func newer_controls() -> void:
+	if control_type == ControlType.CONTROLS_KEYBOARD_MOUSE:
+		var mouseposx:float = get_window().get_mouse_position().x / get_window().size.x
+		car_controls.controls(mouseposx)
+	elif control_type == ControlType.CONTROLS_KEYBOARD:
+		car_controls.controls()
+	elif control_type == ControlType.CONTROLS_TOUCH:
+		car_controls.controls(Input.get_accelerometer().x / 10.0)
+	elif control_type == ControlType.CONTROLS_JOYPAD:
+		car_controls.controls(Input.get_axis(car_controls.Steer_Left_Button, car_controls.Steer_Right_Button))
+
 func new_controls() -> void:
-	if car_controls.control_type != car_controls_cache:
+	if control_type != car_controls_cache:
 		_control_func = decide_controls()
-		car_controls_cache = car_controls.control_type as ViVeCarControls.ControlType
+		car_controls_cache = car_controls.control_type
 	_control_func.call()
 
 func controls() -> void:
 	#Tbh I don't see why these need to be divided, but...
-	if car_controls.UseMouseSteering:
+	if car_controls.UseAnalogSteering:
 		car_controls.gas = Input.is_action_pressed("gas_mouse")
 		car_controls.brake = Input.is_action_pressed("brake_mouse")
-		car_controls.su = Input.is_action_just_pressed("shiftup_mouse")
-		car_controls.sd = Input.is_action_just_pressed("shiftdown_mouse")
+		car_controls.shiftUp = Input.is_action_just_pressed("shiftup_mouse")
+		car_controls.shiftDown = Input.is_action_just_pressed("shiftdown_mouse")
 		car_controls.handbrake = Input.is_action_pressed("handbrake_mouse")
 	else:
 		car_controls.gas = Input.is_action_pressed("gas")
 		car_controls.brake = Input.is_action_pressed("brake")
-		car_controls.su = Input.is_action_just_pressed("shiftup")
-		car_controls.sd = Input.is_action_just_pressed("shiftdown")
+		car_controls.shiftUp = Input.is_action_just_pressed("shiftup")
+		car_controls.shiftDown = Input.is_action_just_pressed("shiftdown")
 		car_controls.handbrake = Input.is_action_pressed("handbrake")
 	
 	car_controls.left = Input.is_action_pressed("left")
@@ -460,7 +488,7 @@ func controls() -> void:
 		#Steer based on control options
 		if not car_controls.LooseSteering:
 			
-			if car_controls.UseMouseSteering:
+			if car_controls.UseAnalogSteering:
 				var mouseposx:float = 0.0
 #				if get_viewport().size.x > 0.0:
 #					mouseposx = get_viewport().get_mouse_position().x / get_viewport().size.x
@@ -529,12 +557,12 @@ func limits() -> void:
 	car_controls.steer = clampf(car_controls.steer, -1.0, 1.0)
 
 func transmission() -> void:
-	car_controls.su = (Input.is_action_just_pressed("shiftup") and not car_controls.UseMouseSteering) or (Input.is_action_just_pressed("shiftup_mouse") and car_controls.UseMouseSteering)
-	car_controls.sd = (Input.is_action_just_pressed("shiftdown") and not car_controls.UseMouseSteering) or (Input.is_action_just_pressed("shiftdown_mouse") and car_controls.UseMouseSteering)
+	car_controls.shiftUp = (Input.is_action_just_pressed("shiftup") and not car_controls.UseAnalogSteering) or (Input.is_action_just_pressed("shiftup_mouse") and car_controls.UseAnalogSteering)
+	car_controls.shiftDown = (Input.is_action_just_pressed("shiftdown") and not car_controls.UseAnalogSteering) or (Input.is_action_just_pressed("shiftdown_mouse") and car_controls.UseAnalogSteering)
 	
-	car_controls.clutch = Input.is_action_pressed("clutch") and not car_controls.UseMouseSteering or Input.is_action_pressed("clutch_mouse") and car_controls.UseMouseSteering
+	car_controls.clutch = Input.is_action_pressed("clutch") and not car_controls.UseAnalogSteering or Input.is_action_pressed("clutch_mouse") and car_controls.UseAnalogSteering
 	if not GearAssist.assist_level == 0:
-		car_controls.clutch = Input.is_action_pressed("handbrake") and not car_controls.UseMouseSteering or Input.is_action_pressed("handbrake_mouse") and car_controls.UseMouseSteering
+		car_controls.clutch = Input.is_action_pressed("handbrake") and not car_controls.UseAnalogSteering or Input.is_action_pressed("handbrake_mouse") and car_controls.UseAnalogSteering
 	car_controls.clutch = not car_controls.clutch
 	
 	if TransmissionType == TransmissionTypes.full_manual:
@@ -563,13 +591,13 @@ func full_manual_transmission() -> void:
 	elif car_controls.gear == -1:
 		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	if GearAssist.assist_level == 0:
-		if car_controls.su:
-			car_controls.su = false
-			if car_controls.gear < len(GearRatios):
+		if car_controls.shiftUp:
+			car_controls.shiftUp = false
+			if car_controls.gear < GearRatios.size():
 				if _gearstress < GearGap:
 					actualgear += 1
-		if car_controls.sd:
-			car_controls.sd = false
+		if car_controls.shiftDown:
+			car_controls.shiftDown = false
 			if car_controls.gear > -1:
 				if _gearstress < GearGap:
 					actualgear -= 1
@@ -580,9 +608,9 @@ func full_manual_transmission() -> void:
 		else:
 			if not car_controls.gasrestricted and not car_controls.revmatch:
 				car_controls.clutchin = false
-		if car_controls.su:
-			car_controls.su = false
-			if car_controls.gear < len(GearRatios):
+		if car_controls.shiftUp:
+			car_controls.shiftUp = false
+			if car_controls.gear < GearRatios.size():
 				if rpm < GearAssist.clutch_out_RPM:
 					actualgear += 1
 				else:
@@ -598,8 +626,8 @@ func full_manual_transmission() -> void:
 						
 						car_controls.clutchin = true
 						car_controls.gasrestricted = true
-		elif car_controls.sd:
-			car_controls.sd = false
+		elif car_controls.shiftDown:
+			car_controls.shiftDown = false
 			if car_controls.gear > -1:
 				if rpm < GearAssist.clutch_out_RPM:
 					actualgear -= 1
@@ -680,12 +708,12 @@ func automatic_transmission() -> void:
 	car_controls.clutchpedal = (rpm - AutoSettings.engage_rpm_thresh * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
 	if not GearAssist.assist_level == 2:
-		if car_controls.su:
-			car_controls.su = false
+		if car_controls.shiftUp:
+			car_controls.shiftUp = false
 			if car_controls.gear < 1:
 				actualgear += 1
-		if car_controls.sd:
-			car_controls.sd = false
+		if car_controls.shiftDown:
+			car_controls.shiftDown = false
 			if car_controls.gear > -1:
 				actualgear -= 1
 	else:
@@ -712,17 +740,17 @@ func automatic_transmission() -> void:
 	if actualgear > 0:
 		var lastratio:float = GearRatios[car_controls.gear - 2] * FinalDriveRatio * RatioMult
 		
-		car_controls.su = false
-		car_controls.sd = false
+		car_controls.shiftUp = false
+		car_controls.shiftDown = false
 		for i:ViVeWheel in c_pws:
 			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / current_ratio:
-				car_controls.su = true
+				car_controls.shiftUp = true
 			elif (i.wv / GearAssist.speed_influence) < ((AutoSettings.shift_rpm - AutoSettings.downshift_thresh) * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / lastratio:
-				car_controls.sd = true
+				car_controls.shiftDown = true
 		
-		if car_controls.su:
+		if car_controls.shiftUp:
 			car_controls.gear += 1
-		elif car_controls.sd:
+		elif car_controls.shiftDown:
 			car_controls.gear -= 1
 		
 		car_controls.gear = clampi(car_controls.gear, 1, GearRatios.size())
@@ -736,12 +764,12 @@ func cvt_transmission() -> void:
 	#clutchpedal = 1
 	
 	if not GearAssist.assist_level == 2:
-		if car_controls.su:
-			car_controls.su = false
+		if car_controls.shiftUp:
+			car_controls.shiftUp = false
 			if car_controls.gear < 1:
 				actualgear += 1
-		if car_controls.sd:
-			car_controls.sd = false
+		if car_controls.shiftDown:
+			car_controls.shiftDown = false
 			if car_controls.gear > -1:
 				actualgear -= 1
 	else:
@@ -784,12 +812,12 @@ func semi_auto_transmission() -> void:
 		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	
 	if GearAssist.assist_level < 2:
-		if car_controls.su:
-			car_controls.su = false
+		if car_controls.shiftUp:
+			car_controls.shiftUp = false
 			if car_controls.gear < len(GearRatios):
 				actualgear += 1
-		if car_controls.sd:
-			car_controls.sd = false
+		if car_controls.shiftDown:
+			car_controls.shiftDown = false
 			if car_controls.gear > -1:
 				actualgear -= 1
 	else:
@@ -987,12 +1015,9 @@ func _physics_process(_delta:float) -> void:
 	#gforce = global_transform.basis.orthonormalized().transposed() * (gforce)
 	gforce *= global_transform.basis.orthonormalized().transposed()
 	
-	car_controls.front_left = front_left
-	car_controls.front_right = front_right
 	car_controls.velocity = _velocity
 	car_controls.rvelocity = _rvelocity
 	car_controls.linear_velocity = linear_velocity
-	car_controls.GearAssist = GearAssist
 	new_controls()
 	#controls()
 	

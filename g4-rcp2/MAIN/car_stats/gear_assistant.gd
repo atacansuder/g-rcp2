@@ -6,8 +6,8 @@ class_name ViVeGearAssist
 @export var shift_delay:int = 20 #0
 ## Assistance Level.
 ## [br] 0 means the player will have to manually hold clutch and then shift up/down.
-## [br] 1 means the player will only have to shift up/down.
-## [br] 2 means the car is automatic.
+## [br] 1 means the player will only have to press shift up/down.
+## [br] 2 means the car is effectively automatic.
 @export_range(0, 2) var assist_level:int = 2 #1
 ## Speed influence relative to wheel sizes. (This will be set automatically).
 @export var speed_influence:float = 0.944087 #2

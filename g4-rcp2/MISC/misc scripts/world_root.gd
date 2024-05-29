@@ -12,6 +12,8 @@ static var singleton:ViVeEnvironment = null
 var current_sky:Environment = environment
 
 var Debug_Mode:bool = true
+##An internal multiplier for changing the effective speed of the simulation.
+var clock_mult:float = 1.0
 
 ##The currently active player car.
 ##NOTE: Could be changed in the future to accomodate multiple player cars, but right now acts singularly.
