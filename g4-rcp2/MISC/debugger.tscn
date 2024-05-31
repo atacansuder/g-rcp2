@@ -681,19 +681,19 @@ anchor_bottom = 1.0
 text = "0.0"
 vertical_alignment = 2
 
-[node name="mouse_steering" type="CheckBox" parent="Window/TabContainer/Control Config/container"]
+[node name="analog_steering" type="CheckBox" parent="Window/TabContainer/Control Config/container"]
 custom_minimum_size = Vector2(240, 60)
 layout_mode = 2
 script = ExtResource("9")
-var_name = "UseMouseSteering"
+var_name = "UseAnalogSteering"
 
-[node name="text" type="Label" parent="Window/TabContainer/Control Config/container/mouse_steering"]
+[node name="text" type="Label" parent="Window/TabContainer/Control Config/container/analog_steering"]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-text = "Use Mouse Steering"
+text = "Use Analog Steering"
 
-[node name="amount" type="Label" parent="Window/TabContainer/Control Config/container/mouse_steering"]
+[node name="amount" type="Label" parent="Window/TabContainer/Control Config/container/analog_steering"]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -702,14 +702,16 @@ vertical_alignment = 2
 
 [node name="input_options" type="OptionButton" parent="Window/TabContainer/Control Config/container"]
 layout_mode = 2
-item_count = 3
+item_count = 4
 selected = 0
 popup/item_0/text = "Keyboard & Mouse"
 popup/item_0/id = 1
-popup/item_1/text = "Touch Controls"
-popup/item_1/id = 0
-popup/item_2/text = "Joypad"
-popup/item_2/id = 2
+popup/item_1/text = "Keyboard"
+popup/item_1/id = 3
+popup/item_2/text = "Touch Controls"
+popup/item_2/id = 0
+popup/item_3/text = "Joypad"
+popup/item_3/id = 2
 script = ExtResource("12_ofvnx")
 var_name = "control_type"
 

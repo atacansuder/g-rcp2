@@ -21,7 +21,6 @@ func _on_open_graphics_pressed() -> void:
 func _on_swap_map_pressed() -> void:
 	check_tab(2)
 
-
 func _on_swap_car_pressed() -> void:
 	check_tab(3)
 

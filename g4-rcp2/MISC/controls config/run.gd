@@ -24,7 +24,7 @@ func setup() -> void:
 					i.value = car.car_controls.get(i.var_name)
 					i.get_node("amount").text = str(i.value)
 			"OptionButton":
-				i.select(car.car_controls.control_type)
+				i.select(car.control_type)
 			"CheckBox":
 				i.button_pressed = car.car_controls.get(i.var_name)
 				i.get_node("amount").text = str(i.button_pressed)

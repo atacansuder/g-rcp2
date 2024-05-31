@@ -67,15 +67,15 @@ func _physics_process(_delta:float) -> void:
 	var car:ViVeCar = get_parent_node_3d()
 	pitch = absf(car.rpm * pitch_influence) / pitch_calibrate
 	
-	volume = 0.5 + car._throttle * 0.5
+	volume = 0.5 + car.throttle * 0.5
 	
-	fade = (snd_8.pitch_scale - 0.22222) * (crossfade_influence + car._throttle * crossfade_throttle + float(car._vvt) * crossfade_vvt)
+	fade = (snd_8.pitch_scale - 0.22222) * (crossfade_influence + car.throttle * crossfade_throttle + float(car._vvt) * crossfade_vvt)
 	
 	fade = clampf(fade, childcount - 1, 0.0)
 	
-	vacuum = clampf((car.car_controls.gaspedal - car._throttle) * 4, 0, 1)
+	vacuum = clampf((car.car_controls.gaspedal - car.throttle) * 4, 0, 1)
 	
-	var sfk:float = maxf(1.0 - (vacuum * car._throttle), vacuum_crossfade)
+	var sfk:float = maxf(1.0 - (vacuum * car.throttle), vacuum_crossfade)
 	
 	fade *= sfk
 	

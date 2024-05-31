@@ -101,7 +101,7 @@ func _process(delta:float) -> void:
 	
 	$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node.gforce.x * 100.0) / 100.0), str(int(car_node.gforce.y * 100.0) / 100.0), str(int(car_node.gforce.z * 100.0) / 100.0)]
 	
-	tacho.currentpsi = car_node._turbopsi * (car_node.TurboAmount)
+	tacho.currentpsi = car_node.turbo_psi * (car_node.TurboAmount)
 	tacho.currentrpm = car_node.rpm
 	tacho_rpm.text = str(int(car_node.rpm))
 	
@@ -126,7 +126,7 @@ func _physics_process(_delta:float) -> void:
 	vgs.gforce -= (vgs.gforce - Vector2(car_node.gforce.x, car_node.gforce.z)) * 0.5
 	
 	var tacho_label:Label = $tacho/abs
-	tacho_label.visible = car_node._abspump > 0 and car_node.car_controls.brakepedal > 0.1
+	tacho_label.visible = car_node.abs_pump > 0 and car_node.car_controls.brakepedal > 0.1
 	tacho_label = $tacho/tcs
 	tacho_label.visible = car_node._tcsflash
 	tacho_label = $tacho/esp

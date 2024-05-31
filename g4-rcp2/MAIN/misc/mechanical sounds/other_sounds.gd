@@ -69,8 +69,8 @@ func _ready() -> void:
 	play()
 
 func _physics_process(_delta:float) -> void:
-	fueltrace += (car._throttle) * backfire_FuelRichness
-	air = (car._throttle * car.rpm) * backfire_Air + car._turbopsi
+	fueltrace += (car.throttle) * backfire_FuelRichness
+	air = (car.throttle * car.rpm) * backfire_Air + car.turbo_psi
 	
 	fueltrace = maxf(fueltrace - (fueltrace * backfire_FuelDecay), 0.0)
 	
@@ -106,15 +106,15 @@ func _physics_process(_delta:float) -> void:
 	else:
 		scwhine.volume_db = linear_to_db(0.0)
 	
-	var blowvol:float = clampf(blow_psi - car._turbopsi, 0.0, 1.0)
-	blow_psi -= (blow_psi - car._turbopsi) * BlowOffWhineReduction
-	blow_inertia += blow_psi - car._turbopsi
-	blow_inertia -= (blow_inertia - (blow_psi - car._turbopsi)) * BlowDamping
+	var blowvol:float = clampf(blow_psi - car.turbo_psi, 0.0, 1.0)
+	blow_psi -= (blow_psi - car.turbo_psi) * BlowOffWhineReduction
+	blow_inertia += blow_psi - car.turbo_psi
+	blow_inertia -= (blow_inertia - (blow_psi - car.turbo_psi)) * BlowDamping
 	blow_psi -= blow_inertia * BlowOffBounceSpeed
 	
 	blow_psi = minf(blow_psi, car.MaxPSI)
 	
-	var spoolvol:float = clampf(car._turbopsi / 10.0, 0.0, 1.0)
+	var spoolvol:float = clampf(car.turbo_psi / 10.0, 0.0, 1.0)
 	
 	spoolvol += (absf(car.rpm) * (TurboNoiseRPMAffection / 1000.0)) * spoolvol
 	
@@ -129,8 +129,8 @@ func _physics_process(_delta:float) -> void:
 	whistle.max_db = whistle.volume_db
 	
 	var wps:float = 1.0
-	if car._turbopsi > 0.0:
-		wps = blowvol * BlowOffPitch2 + car._turbopsi * 0.05 + BlowOffPitch1
+	if car.turbo_psi > 0.0:
+		wps = blowvol * BlowOffPitch2 + car.turbo_psi * 0.05 + BlowOffPitch1
 	else:
 		wps = blowvol * BlowOffPitch2 + BlowOffPitch1
 	
@@ -138,21 +138,21 @@ func _physics_process(_delta:float) -> void:
 	spool.pitch_scale = SpoolPitch + spoolvol * 0.5
 	blow.pitch_scale = BlowPitch
 	
-	var h:float = clampf(car._whinepitch / 200.0, 0.5, 1.0)
+	var h:float = clampf(car.whine_pitch / 200.0, 0.5, 1.0)
 	
 	var wlow_local:float = linear_to_db(((car._gearstress * car.GearGap) / 160000.0) * ((1.0 - h) * 0.5))
 	wlow_local = maxf(wlow_local, -60.0)
 	
 	wlow.volume_db = wlow_local
 	wlow.max_db = wlow.volume_db
-	if car._whinepitch / 50.0 > 0.0001:
-		wlow.pitch_scale = car._whinepitch / 50.0
+	if car.whine_pitch / 50.0 > 0.0001:
+		wlow.pitch_scale = car.whine_pitch / 50.0
 	var whigh_local:float = linear_to_db(((car._gearstress * car.GearGap) / 80000.0) * 0.5)
 	
 	whigh.volume_db = maxf(whigh_local, -60.0)
 	whigh.max_db = whigh.volume_db
-	if car._whinepitch / 100.0 > 0.0001:
-		whigh.pitch_scale = car._whinepitch / 100.0
+	if car.whine_pitch / 100.0 > 0.0001:
+		whigh.pitch_scale = car.whine_pitch / 100.0
 
 
 

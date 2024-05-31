@@ -31,19 +31,20 @@ enum ControlType {
 
 @export_subgroup("Digital")
 ##Action name for steering left by button.
-@export var Steer_Left_Button:StringName = &"left"
+@export var ActionNameSteerLeft:StringName = &"left"
 ##Action name for steering right by button.
-@export var Steer_Right_Button:StringName = &"right"
+@export var ActionNameSteerRight:StringName = &"right"
 ## Digital steering response rate.
 @export var KeyboardSteerSpeed:float = 0.025
-## Digital steering centring rate.
+## Digital steering centering rate.
 @export var KeyboardReturnSpeed:float = 0.05
-## Digital return rate when steering from an opposite direction.
+## Digital return rate when steering from an opposite direction. 
 @export var KeyboardCompensateSpeed:float = 0.1
 
 ## Reduces steering rate based on the vehicle’s speed.
-@export var SteerAmountDecay:float = 0.015 # understeer help
-## Enable Steering Assistance
+##This helps with understeer.
+@export var SteerAmountDecay:float = 0.015
+## Enable Steering Assistance.
 @export var EnableSteeringAssistance:bool = false
 ## Drift Help. The higher the value, the more the car will automatically center itself when drifting.
 @export var SteeringAssistance:float = 1.0
@@ -211,7 +212,8 @@ func loose_steering() -> void:
 		steer_velocity *= -0.5
 	for i:ViVeWheel in [front_left,front_right]:
 		steer_velocity += (i.directional_force.x * 0.00125) * i.Caster
-		steer_velocity -= (i.stress * 0.0025) * (atan2(absf(i.wv), 1.0) * i.angle)
+		#steer_velocity -= (i.stress * 0.0025) * (atan2(absf(i.wv), 1.0) * i.angle)
+		steer_velocity -= (i.stress * 0.0025) * (atan(absf(i.wv)) * i.angle)
 		
 		steer_velocity += steer * (i.directional_force.z * 0.0005) * i.Caster
 		
@@ -281,15 +283,15 @@ func steer_digital_curve() -> void:
 	steer2 = clampf(steer2, -1.0, 1.0)
 
 ##Apply calculations on an analog input for steering.
-func steer_analog(input_axis:float) -> void:
-	steer2 = clampf(input_axis * SteerSensitivity, -1.0, 1.0)
+func steer_analog(steer_axis:float) -> void:
+	steer2 = clampf(steer_axis * SteerSensitivity, -1.0, 1.0)
 	steer2 *= minf(absf(steer2) + 0.5, 1.0)
 
 
-func controls(input_axis:float = 0.0) -> void:
+func controls(steer_axis:float = 0.0) -> void:
 	#poll inputs
-	left = Input.is_action_pressed(Steer_Left_Button)
-	right = Input.is_action_pressed(Steer_Right_Button)
+	left = Input.is_action_pressed(ActionNameSteerLeft)
+	right = Input.is_action_pressed(ActionNameSteerRight)
 	shiftUp = Input.is_action_pressed(ActionNameShiftUp)
 	shiftDown = Input.is_action_pressed(ActionNameShiftDown)
 	gas = Input.is_action_pressed(throttle_button.name)
@@ -299,7 +301,7 @@ func controls(input_axis:float = 0.0) -> void:
 	
 	
 	#Something to do with loose steering?
-	if not UseAnalogSteering:
+	if not UseAnalogSteering: #idr why I put this check here
 		if left:
 			steer_velocity -= 0.01
 		elif right:
@@ -320,20 +322,22 @@ func controls(input_axis:float = 0.0) -> void:
 				brakepedal = brake_button.poll()
 			
 			
-			if (gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch:
-				pass
+			#if (gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch:
+			#	pass
 			
-			gaspedal = throttle_button.poll_digital_ease((gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch)
-			brakepedal = brake_button.poll_digital_ease((brake and gear != -1) or (gas and gear == -1))
+			#gaspedal = throttle_button.poll_digital_ease((gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch)
+			#brakepedal = brake_button.poll_digital_ease((brake and gear != -1) or (gas and gear == -1))
 		1: #go forward if gas is pressed, go backwards if brake is pressed.
-			if not gasrestricted or revmatch:
-				gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
+			#if not gasrestricted or revmatch:
+			#	gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
+			gaspedal = throttle_button.poll()
 			brakepedal = brake_button.poll()
 		0: #1, but also automatically disable clutch
 			gasrestricted = false
 			clutchin = false
 			revmatch = false
-			gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
+			#gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
+			gaspedal = throttle_button.poll()
 			brakepedal = brake_button.poll()
 	
 	#previously called "going"
@@ -347,7 +351,7 @@ func controls(input_axis:float = 0.0) -> void:
 	
 	#handle steering
 	if UseAnalogSteering:
-		steer2 = clampf(input_axis * SteerSensitivity, -1.0, 1.0)
+		steer2 = clampf(steer_axis * SteerSensitivity, -1.0, 1.0)
 		steer2 *= minf(absf(steer2) + 0.5, 1.0)
 	else:
 		if right:

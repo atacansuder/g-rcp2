@@ -24,7 +24,7 @@ func _on_setup_1_pressed() -> void:
 		#i.target_position.y = -3.2
 		i.target_position.y = -3.7
 		i.W_PowerBias = 1.0
-		i.A_Geometry1 = 1.2
+		i.Axle_Y_Mount = 1.2
 		if i.name.begins_with("f"):
 			i.S_Stiffness = 70.0
 			i.S_Damping = 4.0
@@ -41,7 +41,7 @@ func _on_setup_2_pressed() -> void:
 		i.CompoundSettings.ForeFriction = 0.125
 		i.target_position.y = -2.9
 		i.S_ReboundDamping = 12.0
-		i.A_Geometry1 = 1.1
+		i.Axle_Y_Mount = 1.1
 		if i.name.begins_with("f"):
 			i.S_Stiffness = 110.0
 			i.S_Damping = 6.0

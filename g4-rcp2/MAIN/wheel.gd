@@ -21,8 +21,9 @@ class_name ViVeWheel
 
 ##Power Bias (when driven).
 @export var W_PowerBias:float = 1.0
-
+##The [ViVeTyreSettings] for this wheel.
 @export var TyreSettings:ViVeTyreSettings = ViVeTyreSettings.new()
+##The [TyreCompoundSettings] for this wheel.
 @export var CompoundSettings:TyreCompoundSettings = TyreCompoundSettings.new()
 
 ##Tyre Pressure PSI (hypothetical).
@@ -45,34 +46,39 @@ class_name ViVeWheel
 @export var S_RestLength:float = 0.0
 ##Compression Barrier.
 @export var S_MaxCompression:float = 0.5
-
-@export var A_InclineArea:float = 0.2
-
-@export var A_ImpactForce:float = 1.5
 ##Anti-roll Stiffness.
 @export var AR_Stiff:float = 0.5
 ##Anti-roll Reformation Rate.
 @export var AR_Elast:float = 0.1
 @export_group("Braking and Handbraking")
-##Brake Force.
+##Brake force/torque.
 @export var B_Torque:float = 15.0
-##Brake Bias.
+##Brake bias.
 @export var B_Bias:float = 1.0
 ##Leave this at 1.0 unless you have a heavy vehicle with large wheels, set it higher depending on how big it is.
 @export var B_Saturation:float = 1.0
-##Handbrake Bias.
+##Handbrake Bias. 
+##The handbrake input value is multiplied by this:
+##a value over 1 increases effectiveness, and a value lower than 1 makes it fractionally as effective.
 @export var HB_Bias:float = 0.0
 
-@export_group("Geometry")
-##Axle Vertical Mounting Position.
-@export var A_Geometry1:float = 1.15
-##Camber Gain Factor.
-@export var A_Geometry2:float = 1.0
+@export_group("Axle")
+##Axle vertical mounting position.
+##Previously called A_Geometry1.
+@export var Axle_Y_Mount:float = 1.15
+##Camber gain factor.
+##Previously called A_Geometry2.
+@export var Axle_Camber_Gain:float = 1.0
 ##Axle lateral mounting position, affecting camber gain. 
 ##High negative values may mount them outside.
-@export var A_Geometry3:float = 0.0
-
+##Previously called A_Geometry3.
+@export var Axle_Lat_Mount_Pos:float = 0.0
+##Related to the camber.
 @export var A_Geometry4:float = 0.0
+##Used in calculating suspension.
+@export var A_InclineArea:float = 0.2
+##Used in calculating suspension.
+@export var A_ImpactForce:float = 1.5
 
 @export_group("Extras")
 ##Allows the Anti-lock Braking System to monitor this wheel.
@@ -84,7 +90,9 @@ class_name ViVeWheel
 
 @export var ContactTTCS:bool = false
 
+##The parent [ViVeCar]
 @onready var car:ViVeCar = get_parent()
+##The base node for debugging geometry.
 @onready var geometry:MeshInstance3D = $"geometry"
 
 @onready var velo_1:Marker3D = $"velocity"
@@ -92,7 +100,9 @@ class_name ViVeWheel
 @onready var velo_1_step:Marker3D = $"velocity/step"
 @onready var velo_2_step:Marker3D = $"velocity2/step"
 @onready var anim:Marker3D = $"animation"
+
 @onready var anim_camber:Marker3D = $"animation/camber"
+
 @onready var anim_camber_wheel:Marker3D = $"animation/camber/wheel"
 ##The paired wheel for differed calculations
 @onready var differed_wheel:ViVeWheel = null
@@ -211,7 +221,7 @@ func _ready() -> void:
 
 func power() -> void:
 	if not is_zero_approx(c_p):
-		dist *= pow(car.car_controls.clutchpedal, 2.0) / (car._currentstable)
+		dist *= pow(car.car_controls.clutchpedal, 2.0) / (car.current_stable)
 		
 		var tol:float = (magic_number_b / magic_number_c) * car.ClutchGrip
 		var dist2:float = clampf(dist, -tol, tol)
@@ -222,7 +232,7 @@ func power() -> void:
 		if car.dsweightrun > 0.0:
 			if car.rpm > car.DeadRPM:
 				wheelpower -= (((dist2 / car.ds_weight) / (car.dsweightrun / 2.5)) * c_p) / w_weight
-			car._resistance += (((dist2 * (10.0)) / car.dsweightrun) * c_p)
+			car.resistance += (((dist2 * (10.0)) / car.dsweightrun) * c_p)
 
 ##This "borrows" computations from a paired wheel in order to save on computations.
 func diffs() -> void:
@@ -255,8 +265,8 @@ func _physics_process(_delta:float) -> void:
 		
 		#The y value should be 0; this use case works
 		#because it never gets set to anything other than 0
-		assert(is_zero_approx(car._steering_geometry.y), "Y is not zero")
-		look_at_from_position(position, car._steering_geometry)
+		assert(is_zero_approx(car.steering_geometry.y), "Y is not zero")
+		look_at_from_position(position, car.steering_geometry)
 		
 		# just making this use origin fixed it. lol
 		global_transform.origin = lasttransform.origin
@@ -268,7 +278,7 @@ func _physics_process(_delta:float) -> void:
 		
 		var roter:float = global_rotation.y
 		
-		look_at_from_position(position, Vector3(car.Steer_Radius, 0.0, car._steering_geometry.z))
+		look_at_from_position(position, Vector3(car.Steer_Radius, 0.0, car.steering_geometry.z))
 		
 		# this one too
 		global_transform.origin = lasttransform.origin #This little thing keeps the car from launching into orbit
@@ -343,7 +353,7 @@ func _physics_process(_delta:float) -> void:
 	
 	wheelpower = 0.0
 	
-	var braked:float = minf(car._brakeline * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
+	var braked:float = minf(car.brake_line * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
 	#Get brake power by multiplying the braked factor by the brake force, 
 	#and dividing that result by the weight of the wheel
 	var bp:float = (B_Torque * braked) / w_weight_read
@@ -354,7 +364,7 @@ func _physics_process(_delta:float) -> void:
 	if bp > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / bp
-			distanced = maxf(distanced - car._brakeline, snap * (w_size_read / B_Saturation))
+			distanced = maxf(distanced - car.brake_line, snap * (w_size_read / B_Saturation))
 			wheelpower += - absolute_wv / distanced
 		else:
 			wheelpower += -absolute_wv
@@ -449,9 +459,9 @@ func _physics_process(_delta:float) -> void:
 			slip = maxf(slip - CompoundSettings.TractionFactor, 0.0)
 			
 			if absf(dist_v.y) / (tyre_stiffness / 3.0) > (car.ABS.threshold / grip) * pow(surface_vars.ground_friction, 2.0) and car.ABS.enabled and absf(velocity.z) > car.ABS.speed_pre_active and ContactABS:
-				car._abspump = car.ABS.pump_time
+				car.abs_pump = car.ABS.pump_time
 				if absf(dist_v.x) / (tyre_stiffness / 3.0) > (car.ABS.lat_thresh / grip) * pow(surface_vars.ground_friction, 2.0):
-					car._abspump = car.ABS.lat_pump_time
+					car.abs_pump = car.ABS.lat_pump_time
 			
 			var force_v:Vector2 = force_smoothing(- dist_v / (slip + 1.0))
 			cache_friction_action = force_v.y * ok
@@ -516,13 +526,18 @@ func _physics_process(_delta:float) -> void:
 	
 	inned *= inned - A_Geometry4 / 90.0
 	geometry.position.x = -inned * position.x
-	anim_camber.rotation.z = - (deg_to_rad(- c_camber * float(position.x < 0.0) + c_camber * float(position.x > 0.0)) - deg_to_rad( - cambered * float(position.x < 0.0) + cambered * float(position.x > 0.0)) * A_Geometry2)
+	anim_camber.rotation.z = - (deg_to_rad(- c_camber * float(position.x < 0.0) + c_camber * float(position.x > 0.0)) - deg_to_rad( - cambered * float(position.x < 0.0) + cambered * float(position.x > 0.0)) * Axle_Camber_Gain)
+	if position.x > 0.0:
+		anim_camber.rotation.z = - (deg_to_rad(c_camber) - deg_to_rad(cambered) * Axle_Camber_Gain)
+	else:
+		anim_camber.rotation.z = - (deg_to_rad(-c_camber) - deg_to_rad(-cambered) * Axle_Camber_Gain)
+	
 	
 	var g:float
 	
 	axle_position = geometry.position.y
 	if not is_instance_valid(solidify_axles_wheel):
-		g = (geometry.position.y + (absf(target_position.y) - A_Geometry1)) / (absf(position.x) + A_Geometry3 + 1.0)
+		g = (geometry.position.y + (absf(target_position.y) - Axle_Y_Mount)) / (absf(position.x) + Axle_Lat_Mount_Pos + 1.0)
 		g /= absf(g) + 1.0
 		cambered = (g * 90.0) - A_Geometry4
 	else:
@@ -532,8 +547,10 @@ func _physics_process(_delta:float) -> void:
 	
 	anim.position = geometry.position
 	
-	var forces:Vector3 #= (velo_2.global_transform.basis.orthonormalized() * (Vector3.BACK)) * directional_force.z + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_LEFT)) * directional_force.x + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP)) * directional_force.y
-	forces = velo_2.global_transform.basis.orthonormalized() * directional_force
+	var forces:Vector3 = (velo_2.global_transform.basis.orthonormalized() * (Vector3.BACK)) * directional_force.z + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_LEFT)) * directional_force.x + (velo_2.global_transform.basis.orthonormalized() * (Vector3.MODEL_TOP)) * directional_force.y
+	var forces_2:Vector3 = velo_2.global_transform.basis.orthonormalized() * directional_force
+	#forces = velo_2.global_transform.basis.orthonormalized() * directional_force
+	assert(forces.is_equal_approx(forces_2), "Calculation simplification for forces failed")
 	
 	car.apply_impulse(forces, hitposition - car.global_transform.origin)
 	
@@ -563,7 +580,7 @@ func suspension() -> float:
 	var positive_pos:float = float(position.x > 0.0)
 	var negative_pos:float = float(position.x < 0.0)
 	
-	angle = (geometry.rotation_degrees.z - ( - c_camber * positive_pos + c_camber * negative_pos) + ( - cambered * positive_pos + cambered * negative_pos) * A_Geometry2) / 90.0
+	angle = (geometry.rotation_degrees.z - ( - c_camber * positive_pos + c_camber * negative_pos) + ( - cambered * positive_pos + cambered * negative_pos) * Axle_Camber_Gain) / 90.0
 	
 #	var incline = (own.get_collision_normal()-own.global_transform.basis.orthonormalized().xform(Vector3(0,1,0))).length()
 	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.MODEL_TOP)).length()

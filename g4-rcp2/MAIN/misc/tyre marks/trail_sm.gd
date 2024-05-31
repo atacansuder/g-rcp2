@@ -22,7 +22,7 @@ var wheel_parent:ViVeWheel = null
 
 # i spent 5 days trying to figure out why the skids were not working properly
 	# the immediate mesh resource was shared between all the skids :/
-	# ok i just do this on line 82
+	# ok i just do this on line 84
 
 
 func add_segment() -> void:
@@ -99,7 +99,7 @@ func _process(_delta:float) -> void:
 	if not current_trail_node == null:
 		if inserting:
 			current_trail_node.delete_wait = 180
-			if vertices.size() > 0:
+			if not vertices.is_empty():
 				vertices[vertices.size() - 1].x = ((g + global_transform.basis.orthonormalized() * Vector3(wid, 0, 0)))
 				vertices[vertices.size() - 1].y = ((g - global_transform.basis.orthonormalized() * Vector3(wid, 0, 0)))
 				vertices[vertices.size() - 1].z = g
@@ -108,7 +108,7 @@ func _process(_delta:float) -> void:
 		#current_trail_node.global_transform.basis = get_tree().get_current_scene().global_transform.basis
 		current_trail.clear_surfaces()
 		
-		if vertices.size() > 0 : # check if we actually got stuff to make
+		if not vertices.is_empty(): # check if we actually got stuff to make
 			current_trail.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 			for i:Basis in vertices:
 				current_trail.surface_add_vertex(i.x - g)

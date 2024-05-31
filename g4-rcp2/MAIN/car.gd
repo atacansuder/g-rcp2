@@ -223,13 +223,13 @@ var rpm:float = 0.0
 
 #var _rpmspeed:float = 0.0
 
-var _limdel:float = 0.0
+var lim_del:float = 0.0
 
 var actualgear:int = 0
 
 var _gearstress:float = 0.0
 
-var _throttle:float = 0.0
+var throttle:float = 0.0
 ##Acceleration if the car is using a Continuously Variable Transmission
 var cvt_accel:float = 0.0
 
@@ -239,9 +239,9 @@ var _sassiststep:int = 0
 
 var _clutchpedalreal:float = 0.0
 
-var _abspump:float = 0.0
+var abs_pump:float = 0.0
 
-var _tcsweight:float = 0.0
+var tcs_weight:float = 0.0
 ##Used in debug stuff
 var _tcsflash:bool = false
 ##Used in debug stuff
@@ -251,11 +251,11 @@ var current_ratio:float = 0.0 #previously _ratio
 ##Whether Variable Valve Timing stats for the torque will be used
 var _vvt:bool = false
 
-var _brake_allowed:float = 0.0
+var brake_allowed:float = 0.0
 
 var _readout_torque:float = 0.0
 
-var _brakeline:float = 0.0
+var brake_line:float = 0.0
 
 var _dsweight:float = 0.0
 
@@ -271,35 +271,35 @@ var _c_locked:float = 0.0
 
 var wv_difference:float = 0.0
 
-var _rpmforce:float = 0.0
+var rpm_force:float = 0.0
 
-var _whinepitch:float = 0.0
+var whine_pitch:float = 0.0
 
-var _turbopsi:float = 0.0
+var turbo_psi:float = 0.0
 
-var _scrpm:float = 0.0
+var sc_rpm:float = 0.0
 
-var _boosting:float = 0.0
+var boosting:float = 0.0
 
-var _rpmcs:float = 0.0
+var rpm_cs:float = 0.0
 
-var _rpmcsm:float = 0.0
+var rpm_csm:float = 0.0
 
-var _currentstable:float = 0.0
+var current_stable:float = 0.0
 
-#var _steering_geometry:Array[float] = [0.0,0.0] #0 is x, 1 is z?
+#var steering_geometry:Array[float] = [0.0,0.0] #0 is x, 1 is z?
 #Only x and z are used, it's not a Vec2 for consistency
-var _steering_geometry:Vector3 = Vector3.ZERO 
+var steering_geometry:Vector3 = Vector3.ZERO 
 
-var _resistance:float = 0.0
+var resistance:float = 0.0
 
-var _wob:float = 0.0
+var clutch_wobble:float = 0.0
 
 var ds_weight:float = 0.0
 
 #var _steer_torque:float = 0.0
 
-var _drivewheels_size:float = 1.0
+var drivewheels_size:float = 1.0
 ##An array of the global_rotation.y values of each steering wheel at the current physics frame
 var steering_angles:PackedFloat32Array = []
 ##The largest value in [steering_angles], set each physics frame.
@@ -311,15 +311,15 @@ var _pastvelocity:Vector3 = Vector3.ZERO
 ##The force of gravity on the car.
 var gforce:Vector3 = Vector3.ZERO
 
-var _clock_mult:float = 1.0
+var clock_mult:float = 1.0
 
-var _dist:float = 0.0
+var dist:float = 0.0
 
 var _stress:float = 0.0
 
 var _velocity:Vector3 = Vector3.ZERO
 
-var _rvelocity:Vector3 = Vector3.ZERO
+var r_velocity:Vector3 = Vector3.ZERO
 
 var stalled:float = 0.0
 
@@ -330,6 +330,9 @@ var weight_dist:Array[float] = [0.0,0.0]
 
 var physics_tick:int = 60
 
+## Emitted when the wheels are ready.
+signal wheels_ready
+
 #Holdover from Godot 3. 
 #Still here because Bullet is available as an optional GDExtension, so you never know
 ##Function for fixing ViVe under Bullet physics. Not needed when using Godot physics.
@@ -339,9 +342,6 @@ func bullet_fix() -> void:
 	
 	for i:Node3D in get_children():
 		i.position -= offset
-
-## Emitted when the wheels are ready.
-signal wheels_ready
 
 func _ready() -> void:
 #	bullet_fix()
@@ -395,7 +395,7 @@ func newer_controls() -> void:
 	elif control_type == ControlType.CONTROLS_TOUCH:
 		car_controls.controls(Input.get_accelerometer().x / 10.0)
 	elif control_type == ControlType.CONTROLS_JOYPAD:
-		car_controls.controls(Input.get_axis(car_controls.Steer_Left_Button, car_controls.Steer_Right_Button))
+		car_controls.controls(Input.get_axis(car_controls.ActionNameSteerLeft, car_controls.ActionNameSteerRight))
 
 func new_controls() -> void:
 	if control_type != car_controls_cache:
@@ -448,13 +448,13 @@ func controls() -> void:
 	if Controlled:
 		if GearAssist.assist_level == 2:
 			if (car_controls.gas and not car_controls.gasrestricted and not car_controls.gear == -1) or (car_controls.brake and car_controls.gear == -1) or car_controls.revmatch:
-				car_controls.gaspedal += car_controls.OnThrottleRate / _clock_mult
+				car_controls.gaspedal += car_controls.OnThrottleRate / clock_mult
 			else:
-				car_controls.gaspedal -= car_controls.OffThrottleRate / _clock_mult
+				car_controls.gaspedal -= car_controls.OffThrottleRate / clock_mult
 			if (car_controls.brake and not car_controls.gear == -1) or (car_controls.gas and car_controls.gear == -1):
-				car_controls.brakepedal += car_controls.OnBrakeRate / _clock_mult
+				car_controls.brakepedal += car_controls.OnBrakeRate / clock_mult
 			else:
-				car_controls.brakepedal -= car_controls.OffBrakeRate / _clock_mult
+				car_controls.brakepedal -= car_controls.OffBrakeRate / clock_mult
 		else:
 			if GearAssist.assist_level == 0:
 				car_controls.gasrestricted = false
@@ -462,19 +462,19 @@ func controls() -> void:
 				car_controls.revmatch = false
 			
 			if car_controls.gas and not car_controls.gasrestricted or car_controls.revmatch:
-				car_controls.gaspedal += car_controls.OnThrottleRate / _clock_mult
+				car_controls.gaspedal += car_controls.OnThrottleRate / clock_mult
 			else:
-				car_controls.gaspedal -= car_controls.OffThrottleRate / _clock_mult
+				car_controls.gaspedal -= car_controls.OffThrottleRate / clock_mult
 			
 			if car_controls.brake:
-				car_controls.brakepedal += car_controls.OnBrakeRate / _clock_mult
+				car_controls.brakepedal += car_controls.OnBrakeRate / clock_mult
 			else:
-				car_controls.brakepedal -= car_controls.OffBrakeRate / _clock_mult
+				car_controls.brakepedal -= car_controls.OffBrakeRate / clock_mult
 		
 		if car_controls.handbrake:
-			car_controls.handbrakepull += car_controls.OnHandbrakeRate / _clock_mult
+			car_controls.handbrakepull += car_controls.OnHandbrakeRate / clock_mult
 		else:
-			car_controls.handbrakepull -= car_controls.OffHandbrakeRate / _clock_mult
+			car_controls.handbrakepull -= car_controls.OffHandbrakeRate / clock_mult
 		
 		var siding:float = absf(_velocity.x)
 		
@@ -546,7 +546,7 @@ func controls() -> void:
 				var assist_commence:float = linear_velocity.length() / 10.0
 				assist_commence = minf(assist_commence, 1.0)
 				
-				car_controls.steer = (car_controls.steer2 * maxsteer) - (_velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * car_controls.assistance_factor) + _rvelocity.y * (car_controls.SteeringAssistanceAngular * car_controls.assistance_factor)
+				car_controls.steer = (car_controls.steer2 * maxsteer) - (_velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * car_controls.assistance_factor) + r_velocity.y * (car_controls.SteeringAssistanceAngular * car_controls.assistance_factor)
 			else:
 				car_controls.steer = car_controls.steer2
 
@@ -578,9 +578,9 @@ func transmission() -> void:
 
 func full_manual_transmission() -> void:
 	if car_controls.clutch and not car_controls.clutchin:
-		_clutchpedalreal -= car_controls.OffClutchRate / _clock_mult
+		_clutchpedalreal -= car_controls.OffClutchRate / clock_mult
 	else:
-		_clutchpedalreal += car_controls.OnClutchRate / _clock_mult
+		_clutchpedalreal += car_controls.OnClutchRate / clock_mult
 	
 	_clutchpedalreal = clampf(_clutchpedalreal, 0.0, car_controls.MaxClutch)
 	
@@ -848,21 +848,21 @@ func semi_auto_transmission() -> void:
 	car_controls.gear = actualgear
 
 func drivetrain() -> void:
-	_rpmcsm -= (_rpmcs - _resistance)
+	rpm_csm -= (rpm_cs - resistance)
 	
-	_rpmcs += _rpmcsm * ClutchElasticity
+	rpm_cs += rpm_csm * ClutchElasticity
 	
-	_rpmcs -= _rpmcs * (1.0 - car_controls.clutchpedal)
+	rpm_cs -= rpm_cs * (1.0 - car_controls.clutchpedal)
 	
-	_wob = ClutchWobble * car_controls.clutchpedal * (current_ratio * WobbleRate)
+	clutch_wobble = ClutchWobble * car_controls.clutchpedal * (current_ratio * WobbleRate)
 	
-	_rpmcs -= (_rpmcs - _resistance) * (1.0 / (_wob + 1.0))
+	rpm_cs -= (rpm_cs - resistance) * (1.0 / (clutch_wobble + 1.0))
 	
 	#torquereadout = multivariate(RiseRPM,TorqueRise,BuildUpTorque,EngineFriction,EngineDrag,OffsetTorque,rpm,DeclineRPM,DeclineRate,FloatRate,turbopsi,TurboAmount,EngineCompressionRatio,TurboEnabled,VVTRPM,VVT_BuildUpTorque,VVT_TorqueRise,VVT_RiseRPM,VVT_OffsetTorque,VVT_FloatRate,VVT_DeclineRPM,VVT_DeclineRate,SuperchargerEnabled,SCRPMInfluence,BlowRate,SCThreshold)
 	if car_controls.gear < 0:
-		rpm -= ((_rpmcs / _clock_mult) * (RevSpeed / magic_2))
+		rpm -= ((rpm_cs / clock_mult) * (RevSpeed / magic_2))
 	else:
-		rpm += ((_rpmcs / _clock_mult) * (RevSpeed / magic_2))
+		rpm += ((rpm_cs / clock_mult) * (RevSpeed / magic_2))
 	
 	if false: #...what-
 		rpm = 7000.0
@@ -874,15 +874,15 @@ func drivetrain() -> void:
 		Centre_Preload = 1.0
 		ClutchFloatReduction = 0.0
 	
-	_gearstress = (absf(_resistance) * StressFactor) * car_controls.clutchpedal
+	_gearstress = (absf(resistance) * StressFactor) * car_controls.clutchpedal
 	ds_weight = DSWeight / (current_ratio * 0.9 + 0.1)
 	
-	_whinepitch = absf(rpm / current_ratio) * 1.5
+	whine_pitch = absf(rpm / current_ratio) * 1.5
 	
-	if _resistance > 0.0:
-		locked = absf(_resistance / ds_weight) * (CoastLocking / 100.0) + Preload
+	if resistance > 0.0:
+		locked = absf(resistance / ds_weight) * (CoastLocking / 100.0) + Preload
 	else:
-		locked = absf(_resistance / ds_weight) * (Locking / 100.0) + Preload
+		locked = absf(resistance / ds_weight) * (Locking / 100.0) + Preload
 	
 	locked = clampf(locked, 0.0, 1.0)
 	
@@ -912,46 +912,46 @@ func drivetrain() -> void:
 	else:
 		floatreduction = 0.0
 	
-	var stabling:float = - (GearRatioRatioThreshold - current_ratio * _drivewheels_size) * ThresholdStable
+	var stabling:float = - (GearRatioRatioThreshold - current_ratio * drivewheels_size) * ThresholdStable
 	stabling = maxf(stabling, 0.0)
 	
-	_currentstable = ClutchStable + stabling
-	_currentstable *= (RevSpeed / magic_2)
+	current_stable = ClutchStable + stabling
+	current_stable *= (RevSpeed / magic_2)
 	
 	var what:float
 	
 	if dsweightrun > 0.0:
-		what = (rpm -(((_rpmforce * floatreduction) * _currentstable) / (ds_weight / dsweightrun)))
+		what = (rpm -(((rpm_force * floatreduction) * current_stable) / (ds_weight / dsweightrun)))
 	else:
 		what = rpm
 		
 	if car_controls.gear < 0.0:
-		_dist = maxd.wv + what / current_ratio
+		dist = maxd.wv + what / current_ratio
 	else:
-		_dist = maxd.wv - what / current_ratio
+		dist = maxd.wv - what / current_ratio
 	
-	_dist *=  pow(car_controls.clutchpedal, 2.0)
+	dist *=  pow(car_controls.clutchpedal, 2.0)
 	
 	if car_controls.gear == 0:
-		_dist = 0.0
+		dist = 0.0
 	
 	wv_difference = 0.0
-	_drivewheels_size = 0.0
+	drivewheels_size = 0.0
 	for i:ViVeWheel in c_pws:
-		_drivewheels_size += i.w_size / c_pws.size()
+		drivewheels_size += i.w_size / c_pws.size()
 		i.c_p = i.W_PowerBias
 		wv_difference += ((i.wv - what / current_ratio) / c_pws.size()) * pow(car_controls.clutchpedal, 2.0)
 		if car_controls.gear < 0:
-			i.dist = _dist * (1 - _c_locked) + (i.wv + what / current_ratio) * _c_locked
+			i.dist = dist * (1 - _c_locked) + (i.wv + what / current_ratio) * _c_locked
 		else:
-			i.dist = _dist * (1 - _c_locked) + (i.wv - what / current_ratio) * _c_locked
+			i.dist = dist * (1 - _c_locked) + (i.wv - what / current_ratio) * _c_locked
 		if car_controls.gear == 0:
 			i.dist = 0.0
-	GearAssist.speed_influence = _drivewheels_size
-	_resistance = 0.0
+	GearAssist.speed_influence = drivewheels_size
+	resistance = 0.0
 	dsweightrun = _dsweight
 	_dsweight = 0.0
-	_tcsweight = 0.0
+	tcs_weight = 0.0
 	_stress = 0.0
 
 func aero() -> void:
@@ -997,7 +997,7 @@ func _physics_process(_delta:float) -> void:
 		GearAssist.assist_level = VitaVehicleSimulation.GearAssistant
 	
 	_velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
-	_rvelocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
+	r_velocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
 	
 	#if not mass == Weight / 10.0:
 	#	mass = Weight/10.0
@@ -1016,7 +1016,7 @@ func _physics_process(_delta:float) -> void:
 	gforce *= global_transform.basis.orthonormalized().transposed()
 	
 	car_controls.velocity = _velocity
-	car_controls.rvelocity = _rvelocity
+	car_controls.rvelocity = r_velocity
 	car_controls.linear_velocity = linear_velocity
 	new_controls()
 	#controls()
@@ -1029,60 +1029,61 @@ func _physics_process(_delta:float) -> void:
 	
 	limits()
 	
+	#I graphed this function in a calculator, and it only curves significantly if max_steering_angle > 200
 	var uhh:float = pow((max_steering_angle / 90.0), 2) * 0.5
 	
 	var steeroutput:float = car_controls.steer * (absf(car_controls.steer) * (uhh) + (1.0 - uhh))
 	
 	
 	if absf(steeroutput) > 0.0:
-		_steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
+		steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
 	
-	_abspump -= 1    
+	abs_pump -= 1    
 	
-	if _abspump < 0:
-		_brake_allowed += ABS.pump_force
+	if abs_pump < 0:
+		brake_allowed += ABS.pump_force
 	else:
-		_brake_allowed -= ABS.pump_force
+		brake_allowed -= ABS.pump_force
 	
-	_brake_allowed = clampf(_brake_allowed, 0.0, 1.0)
+	brake_allowed = clampf(brake_allowed, 0.0, 1.0)
 	
-	_brakeline = maxf(car_controls.brakepedal * _brake_allowed, 0.0)
+	brake_line = maxf(car_controls.brakepedal * brake_allowed, 0.0)
 	
-	_limdel -= 1
+	lim_del -= 1
 	
-	if _limdel < 0:
-		_throttle -= (_throttle - (car_controls.gaspedal / (_tcsweight * car_controls.clutchpedal + 1.0))) * (ThrottleResponse / _clock_mult)
+	if lim_del < 0:
+		throttle -= (throttle - (car_controls.gaspedal / (tcs_weight * car_controls.clutchpedal + 1.0))) * (ThrottleResponse / clock_mult)
 	else:
-		_throttle -= _throttle * (ThrottleResponse / _clock_mult)
+		throttle -= throttle * (ThrottleResponse / clock_mult)
 	
 	if rpm > RPMLimit:
-		if _throttle > ThrottleLimit:
-			_throttle = ThrottleLimit
-			_limdel = LimiterDelay
+		if throttle > ThrottleLimit:
+			throttle = ThrottleLimit
+			lim_del = LimiterDelay
 	elif rpm < IdleRPM:
-		_throttle = maxf(_throttle, ThrottleIdle)
+		throttle = maxf(throttle, ThrottleIdle)
 	
 	#var stab:float = 300.0
 	var thr:float = 0.0
 	
 	if TurboEnabled:
-		thr = (_throttle - SpoolThreshold) / (1 - SpoolThreshold)
+		thr = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
 		
-		if _boosting > thr:
-			_boosting = thr
+		if boosting > thr:
+			boosting = thr
 		else:
-			_boosting -= (_boosting - thr) * TurboEfficiency
+			boosting -= (boosting - thr) * TurboEfficiency
 		 
-		_turbopsi += (_boosting * rpm) / ((TurboSize / Compressor) * 60.9)
+		turbo_psi += (boosting * rpm) / ((TurboSize / Compressor) * 60.9)
 		
-		_turbopsi = clampf(_turbopsi - (_turbopsi * BlowoffRate), -TurboVacuum, MaxPSI)
+		turbo_psi = clampf(turbo_psi - (turbo_psi * BlowoffRate), -TurboVacuum, MaxPSI)
 	
 	elif SuperchargerEnabled:
-		_scrpm = rpm * SCRPMInfluence
-		_turbopsi = clampf((_scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, MaxPSI)
+		sc_rpm = rpm * SCRPMInfluence
+		turbo_psi = clampf((sc_rpm / 10000.0) * BlowRate - SCThreshold, 0.0, MaxPSI)
 	
 	else:
-		_turbopsi = 0.0
+		turbo_psi = 0.0
 	
 	#Wouldn't this be the other way around...?
 	_vvt = rpm > VVTRPM
@@ -1097,25 +1098,25 @@ func _physics_process(_delta:float) -> void:
 	
 	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
 	
-	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * _throttle
-	torque += ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * magic_1) )
+	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	torque += ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * magic_1) )
 	
 	#Apply rpm reductions to the torque
 	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	torque /= pow(rpm, 2) * (torque_local.FloatRate / 10000000.0) + 1.0
 	
-	_rpmforce = (rpm / (pow(rpm, 2.0) / (EngineFriction / _clock_mult) + 1.0))
+	rpm_force = (rpm / (pow(rpm, 2.0) / (EngineFriction / clock_mult) + 1.0))
 	if rpm < DeadRPM:
 		torque = 0.0
-		_rpmforce /= 5.0
+		rpm_force /= 5.0
 		stalled = 1.0 - rpm / DeadRPM
 	else:
 		stalled = 0.0
 	
-	_rpmforce += (rpm * (EngineDrag / _clock_mult))
-	_rpmforce -= (torque / _clock_mult)
-	rpm -= _rpmforce * RevSpeed
+	rpm_force += (rpm * (EngineDrag / clock_mult))
+	rpm_force -= (torque / clock_mult)
+	rpm -= rpm_force * RevSpeed
 	
 	drivetrain()
 
@@ -1158,22 +1159,22 @@ const multivariation_inputs:PackedStringArray = [
 ]
 
 func multivariate() -> float:
-	#car uses _turbopsi for PSI, this may be inaccurate to other uses of the function
+	#car uses turbo_psi for PSI, this may be inaccurate to other uses of the function
 	
 	var value:float = 0.0
 	
 	#if car.SCEnabled:
 	if SuperchargerEnabled:
-		var maxpsi:float = _turbopsi
+		var maxpsi:float = turbo_psi
 		#scrpm = rpm
 		var scrpm:float = rpm * SCRPMInfluence
-		#_turbopsi = (scrpm / 10000.0) * BlowRate - SCThreshold
-		#_turbopsi = clampf(_turbopsi, 0.0, maxpsi)
-		_turbopsi = clampf((scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, maxpsi)
+		#turbo_psi = (scrpm / 10000.0) * BlowRate - SCThreshold
+		#turbo_psi = clampf(turbo_psi, 0.0, maxpsi)
+		turbo_psi = clampf((scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, maxpsi)
 	
 	#if not car.SCEnabled and not car.TEnabled:
 	if not SuperchargerEnabled and not TurboEnabled:
-		_turbopsi = 0.0
+		turbo_psi = 0.0
 	
 	var torque_local:ViVeCarTorque 
 	if rpm > VVTRPM:
@@ -1181,7 +1182,7 @@ func multivariate() -> float:
 	else:
 		torque_local = torque_norm
 	
-	value = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (_turbopsi * TurboAmount) * (EngineCompressionRatio * magic_1) )
+	value = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * magic_1) )
 	var f:float = maxf(rpm - torque_local.RiseRPM, 0.0)
 	#f = rpm - torque_local.RiseRPM
 	#f = maxf(f, 0.0)

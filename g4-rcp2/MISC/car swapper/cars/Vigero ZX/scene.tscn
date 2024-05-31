@@ -283,7 +283,6 @@ S_Damping = 5.0
 S_ReboundDamping = 5.0
 B_Torque = 70.0
 B_Bias = 0.45
-A_Geometry1 = 1.1
 
 [node name="Cylinder2" type="MeshInstance3D" parent="fr/animation/camber/wheel" index="0"]
 transform = Transform3D(101.962, 0, 0, 0, 101.962, 0, 0, 0, 101.962, 0, 0, 0)
@@ -319,7 +318,6 @@ S_ReboundDamping = 7.0
 B_Torque = 70.0
 B_Bias = 0.55
 HB_Bias = 1.0
-A_Geometry1 = 1.25
 
 [node name="Cylinder2" type="MeshInstance3D" parent="rr/animation/camber/wheel" index="0"]
 transform = Transform3D(101.962, 0, 0, 0, 101.962, 0, 0, 0, 101.962, 0, 0, 0)
