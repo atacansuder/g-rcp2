@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3 uid="uid://bafwwdeygykke"]
+[gd_scene load_steps=52 format=3 uid="uid://bafwwdeygykke"]
 
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
 [ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
@@ -12,10 +12,14 @@
 [ext_resource type="Script" path="res://MAIN/car_stats/btcs.gd" id="6_gikgh"]
 [ext_resource type="Script" path="res://MAIN/car_stats/ttcs.gd" id="7_tm8i4"]
 [ext_resource type="Script" path="res://MAIN/car_stats/torque.gd" id="8_fopge"]
-[ext_resource type="Resource" uid="uid://b7q1lajptm0vg" path="res://MISC/car swapper/cars/Synic EKI [Rally]/assets/tires_gravel.tres" id="12_vyhmi"]
+[ext_resource type="Resource" uid="uid://b7q1lajptm0vg" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/gravel_tyre.tres" id="12_vyhmi"]
+[ext_resource type="Resource" uid="uid://c6wwfepeeba11" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/gravel_compound.tres" id="13_ji7rs"]
 [ext_resource type="Script" path="res://MISC/car swapper/cars/Synic EKI [Rally]/assets/setups.gd" id="14"]
-[ext_resource type="Resource" uid="uid://bh3xhml3wl4fp" path="res://MISC/car swapper/cars/Synic EKI [Rally]/assets/tires_tarmac.tres" id="14_4q3x6"]
+[ext_resource type="Resource" uid="uid://bh3xhml3wl4fp" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/tarmac_tyre.tres" id="14_4q3x6"]
+[ext_resource type="Resource" uid="uid://upgq4jx2mgwm" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/gravel_axle.tres" id="14_wwtq5"]
 [ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="16"]
+[ext_resource type="Resource" uid="uid://fsvs5tdmflqq" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/tarmac_compound.tres" id="17_uk4lo"]
+[ext_resource type="Resource" uid="uid://ciu7otc2sql6t" path="res://MISC/car swapper/cars/Synic EKI [Rally]/resources/tarmac_axle.tres" id="18_bco03"]
 
 [sub_resource type="Resource" id="Resource_fdv5n"]
 script = ExtResource("2_6y44o")
@@ -479,7 +483,11 @@ overall_volume = 0.6
 [node name="fr" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.65, 0.2, 4.067)
 target_position = Vector3(0, -3, 0)
+Differed_Wheel_Path = NodePath("fl")
+SwayBarConnection = NodePath("fl")
 TyreSettings = ExtResource("12_vyhmi")
+CompoundSettings = ExtResource("13_ji7rs")
+AxleSettings = ExtResource("14_wwtq5")
 S_Stiffness = 70.0
 S_Damping = 4.0
 S_ReboundDamping = 12.0
@@ -501,7 +509,11 @@ skeleton = NodePath("../../../../..")
 [node name="fl" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.65, 0.2, 4.067)
 target_position = Vector3(0, -2, 0)
+Differed_Wheel_Path = NodePath("fr")
+SwayBarConnection = NodePath("fr")
 TyreSettings = ExtResource("12_vyhmi")
+CompoundSettings = ExtResource("13_ji7rs")
+AxleSettings = ExtResource("14_wwtq5")
 S_Stiffness = 70.0
 S_Damping = 4.0
 S_ReboundDamping = 12.0
@@ -523,7 +535,10 @@ skeleton = NodePath("../../../../..")
 [node name="rr" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.65, 0.2, -4.06717)
 target_position = Vector3(0, -3, 0)
+SwayBarConnection = NodePath("rl")
 TyreSettings = ExtResource("12_vyhmi")
+CompoundSettings = ExtResource("13_ji7rs")
+AxleSettings = ExtResource("14_wwtq5")
 S_Stiffness = 45.0
 S_Damping = 3.0
 S_ReboundDamping = 12.0
@@ -548,6 +563,7 @@ skeleton = NodePath("../../../../..")
 [node name="rl" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.65, 0.2, -4.06717)
 target_position = Vector3(0, -3, 0)
+SwayBarConnection = NodePath("rr")
 TyreSettings = ExtResource("12_vyhmi")
 S_Stiffness = 45.0
 S_Damping = 3.0
@@ -588,7 +604,11 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("14")
 tire_gravel = ExtResource("12_vyhmi")
+compound_gravel = ExtResource("13_ji7rs")
+axle_gravel = ExtResource("14_wwtq5")
 tire_tarmac = ExtResource("14_4q3x6")
+compound_tarmac = ExtResource("17_uk4lo")
+axle_tarmac = ExtResource("18_bco03")
 
 [node name="setup1" type="Button" parent="realtime_setup"]
 layout_mode = 0
