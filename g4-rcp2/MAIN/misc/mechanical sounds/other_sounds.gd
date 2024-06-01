@@ -140,14 +140,14 @@ func _physics_process(_delta:float) -> void:
 	
 	var h:float = clampf(car.whine_pitch / 200.0, 0.5, 1.0)
 	
-	var wlow_local:float = linear_to_db(((car._gearstress * car.GearGap) / 160000.0) * ((1.0 - h) * 0.5))
+	var wlow_local:float = linear_to_db(((car.gear_stress * car.GearGap) / 160000.0) * ((1.0 - h) * 0.5))
 	wlow_local = maxf(wlow_local, -60.0)
 	
 	wlow.volume_db = wlow_local
 	wlow.max_db = wlow.volume_db
 	if car.whine_pitch / 50.0 > 0.0001:
 		wlow.pitch_scale = car.whine_pitch / 50.0
-	var whigh_local:float = linear_to_db(((car._gearstress * car.GearGap) / 80000.0) * 0.5)
+	var whigh_local:float = linear_to_db(((car.gear_stress * car.GearGap) / 80000.0) * 0.5)
 	
 	whigh.volume_db = maxf(whigh_local, -60.0)
 	whigh.max_db = whigh.volume_db

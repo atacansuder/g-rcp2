@@ -226,10 +226,10 @@ func power() -> void:
 		car._dsweight += live_power_bias
 		car._stress += stress * live_power_bias
 		
-		if car.dsweightrun > 0.0:
+		if car.ds_weight_run > 0.0:
 			if car.rpm > car.DeadRPM:
-				wheelpower -= (((dist2 / car.ds_weight) / (car.dsweightrun / 2.5)) * live_power_bias) / w_weight
-			car.resistance += (((dist2 * (10.0)) / car.dsweightrun) * live_power_bias)
+				wheelpower -= (((dist2 / car.ds_weight) / (car.ds_weight_run / 2.5)) * live_power_bias) / w_weight
+			car.resistance += (((dist2 * (10.0)) / car.ds_weight_run) * live_power_bias)
 
 ##This "borrows" computations from a paired wheel in order to save on computations.
 func diffs() -> void:
@@ -257,8 +257,8 @@ func apply_braking() -> void:
 	var brake_power:float = (B_Torque * total_brake_effect) / w_weight_read
 	
 	if not car.actualgear == 0:
-		if car.dsweightrun > 0.0:
-			brake_power += ((car.stalled * (live_power_bias / car.ds_weight)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.dsweightrun / 2.5)) / w_weight_read)
+		if car.ds_weight_run > 0.0:
+			brake_power += ((car.stalled * (live_power_bias / car.ds_weight)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.ds_weight_run / 2.5)) / w_weight_read)
 	if brake_power > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / brake_power
@@ -280,15 +280,14 @@ func _physics_process(_delta:float) -> void:
 	
 	#Do steer rotation things if this wheel is a steering wheel
 	if Steer and absf(car.car_controls.steer) > 0:
-		var lasttransform:Transform3D = global_transform
+		var last_transform:Transform3D = global_transform
 		
 		#The y value should be 0; this use case works
 		#because it never gets set to anything other than 0
 		assert(is_zero_approx(car.steering_geometry.y), "steering_geometry.y is not zero")
-		look_at_from_position(position, car.steering_geometry)
+		look_at_from_position(position, car.steering_geometry, Vector3.UP)
 		
-		# just making this use origin fixed it. lol
-		global_transform.origin = lasttransform.origin
+		global_transform.origin = last_transform.origin
 		
 		if car.car_controls.steer > 0.0:
 			rotate_y( -deg_to_rad(90.0))
@@ -299,8 +298,8 @@ func _physics_process(_delta:float) -> void:
 		
 		look_at(Vector3(car.Steer_Radius, 0.0, car.steering_geometry.z))
 		
-		# this one too
-		global_transform.origin = lasttransform.origin #This little thing keeps the car from launching into orbit
+		#This set keeps the car from launching into orbit (idk why)
+		global_transform.origin = last_transform.origin
 		
 		rotate_y(deg_to_rad(90.0))
 		
@@ -427,15 +426,17 @@ func _physics_process(_delta:float) -> void:
 		#the distribution of the wheel's velocity(?)
 		var dist_v:Vector2 = Vector2(velocity2.x, velocity2.z - (wv * w_size))
 		#A version of dist_v used in force calculations
-		dist_force = dist_v / (surface_vars.drag + 1.0)
+		#dist_force = dist_v / (surface_vars.drag + 1.0)
+		dist_force = dist_v
+		dist_force.y = dist_v.y / (surface_vars.drag + 1.0)
 		
 		offset = clampf(dist_v.y / w_size, -grip, grip)
 		
 		gravity_incline = (geometry.global_transform.basis.orthonormalized().transposed() * Vector3.UP)
 		
-		dist_v.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
-		
 		compensate = gravity_incline.z * (directional_force.y / tyre_stiffness)
+		
+		dist_v.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
 		
 		slip_perc = dist_v
 		
@@ -496,6 +497,8 @@ func _physics_process(_delta:float) -> void:
 			dist_force.y = velocity2.z - ((wv * (1.0 - car.locked) + differed_wheel.wv_diff * car.locked) * w_size) / (surface_vars.drag + 1)
 		
 		dist_force.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
+		
+		slip_perc = dist_force
 		
 		dist_force *= tyre_stiffness
 		
@@ -565,19 +568,16 @@ const suspension_inputs:String = "self,S_MaxCompression,A_InclineArea,A_ImpactFo
 func suspension() -> float:
 	var g_range:float = absf(target_position.y)
 	geometry.global_position = get_collision_point()
-	#geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), - g_range)
-	geometry.position.y -= (ground_bump * surface_vars.ground_bump_height)
+	geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), -g_range)
 	
 	velo_1.global_transform = VitaVehicleSimulation.alignAxisToVector(velo_1.global_transform, get_collision_normal())
 	velo_2.global_transform = VitaVehicleSimulation.alignAxisToVector(velo_2.global_transform, get_collision_normal())
 	
-	var positive_pos:float = float(position.x > 0.0)
-	var negative_pos:float = float(position.x < 0.0)
-	
-	angle = (geometry.rotation_degrees.z - ( - c_camber * positive_pos + c_camber * negative_pos) + ( - cambered * positive_pos + cambered * negative_pos) * AxleSettings.Camber_Gain) / 90.0
+	#angle = (geometry.rotation_degrees.z - ( - c_camber * positive_pos + c_camber * negative_pos) + ( - cambered * positive_pos + cambered * negative_pos) * AxleSettings.Camber_Gain) / 90.0
+	angle = (geometry.rotation_degrees.z - ( - c_camber * signf(position.x)) + ( - cambered * signf(position.x)) * AxleSettings.Camber_Gain) / 90.0
 	
 #	var incline = (own.get_collision_normal()-own.global_transform.basis.orthonormalized().xform(Vector3(0,1,0))).length()
-	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.MODEL_TOP)).length()
+	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.UP)).length()
 	
 	incline /= 1 - A_InclineArea
 	
