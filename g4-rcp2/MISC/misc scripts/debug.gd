@@ -27,25 +27,25 @@ func _ready() -> void:
 func update_car() -> void:
 	car_node = ViVeEnvironment.singleton.car
 	
-	var hpunit:String
+	var horsepower_unit:String
 	match power_graph.Power_Unit:
 		1:
-			hpunit = "bhp"
+			horsepower_unit = "bhp"
 		2:
-			hpunit = "ps"
+			horsepower_unit = "ps"
 		3:
-			hpunit = "kW"
+			horsepower_unit = "kW"
 		_:
-			hpunit = "hp"
+			horsepower_unit = "hp"
 	
-	$hp.text = "Power: %s%s @ %s RPM" % [str( int(power_graph.peakhp[0] * 10.0) / 10.0 ), hpunit, str(int(power_graph.peakhp[1] * 10.0) / 10.0)]
+	$hp.text = "Power: %s%s @ %s RPM" % [str( int(power_graph.peakhp[0] * 10.0) / 10.0 ), horsepower_unit, str(int(power_graph.peakhp[1] * 10.0) / 10.0)]
 	
-	var tqunit:String = "ft⋅lb"
+	var torque_unit:String = "ft⋅lb"
 	if power_graph.Torque_Unit == 1:
-		tqunit = "nm"
+		torque_unit = "nm"
 	elif power_graph.Torque_Unit == 2:
-		tqunit = "kg/m"
-	$tq.text = "Torque: %s%s @ %s RPM" % [str(int(power_graph.peaktq[0] * 10.0) / 10.0 ), tqunit, str(int(power_graph.peaktq[1] * 10.0) / 10.0)]
+		torque_unit = "kg/m"
+	$tq.text = "Torque: %s%s @ %s RPM" % [str(int(power_graph.peaktq[0] * 10.0) / 10.0 ), torque_unit, str(int(power_graph.peaktq[1] * 10.0) / 10.0)]
 
 
 #This is signal-ified due to being "too early" when done in _ready()
@@ -71,13 +71,14 @@ func _process(delta:float) -> void:
 	#This gives a smoother FPS but performs slightly better
 	#fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
 	
-	#Everything past here needs a car active to be functional
+	#Everything past here needs an active car to be functional
 	if car_node == null:
 		return
 	
 	$sw.rotation_degrees = car_node.car_controls.steer * 380.0
 	$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
-	if ViVeEnvironment.get_singleton().Debug_Mode:
+	#if ViVeEnvironment.get_singleton().Debug_Mode:
+	if car_node.Debug_Mode:
 		weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
 	else:
 		weight_dist.text = "[ enable Debug_Mode or press F to\nfetch weight distribution ]"
@@ -128,9 +129,9 @@ func _physics_process(_delta:float) -> void:
 	var tacho_label:Label = $tacho/abs
 	tacho_label.visible = car_node.abs_pump > 0 and car_node.car_controls.brakepedal > 0.1
 	tacho_label = $tacho/tcs
-	tacho_label.visible = car_node._tcsflash
+	tacho_label.visible = car_node.tcs_flash
 	tacho_label = $tacho/esp
-	tacho_label.visible = car_node._espflash
+	tacho_label.visible = car_node.esp_flash
 
 ##Restarts the car's engine. Needed if the RPM dips to low and it stalls.
 func engine_restart() -> void:
@@ -139,6 +140,3 @@ func engine_restart() -> void:
 
 func toggle_forces() -> void:
 	Input.action_press("toggle_debug_mode")
-
-
-

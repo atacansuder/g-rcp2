@@ -10,7 +10,7 @@ extends MeshInstance3D
 func _physics_process(_delta:float) -> void:
 	if not is_instance_valid(wheel_parent):
 		wheel_parent = get_parent() #ViVeWheel
-	visible = ViVeEnvironment.get_singleton().Debug_Mode
+	visible = wheel_parent.car.Debug_Mode
 	if visible:
 		compress.visible = wheel_parent.is_colliding()
 		longi.visible = wheel_parent.is_colliding()

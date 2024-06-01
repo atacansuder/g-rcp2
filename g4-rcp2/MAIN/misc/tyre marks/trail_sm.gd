@@ -27,17 +27,11 @@ var wheel_parent:ViVeWheel = null
 
 func add_segment() -> void:
 	var ppos:Transform3D = global_transform
-	var new_basis:Basis
-	new_basis.x = ppos.origin + (ppos.basis.orthonormalized() * Vector3(wid, 0, 0))
-	new_basis.y = ppos.origin - (ppos.basis.orthonormalized() * Vector3(wid, 0, 0))
-	new_basis.z = ppos.origin
-#	vertices.append( [
-#		ppos.origin + (ppos.basis.orthonormalized() * Vector3(wid,0,0)),
-#		ppos.origin - (ppos.basis.orthonormalized() * Vector3(wid,0,0)),
-#		
-#		ppos.origin,
-#		] )
-	vertices.append(new_basis)
+	vertices.append(Basis(
+		ppos.origin + (ppos.basis.orthonormalized() * Vector3(wid, 0, 0)),
+		ppos.origin - (ppos.basis.orthonormalized() * Vector3(wid, 0, 0)),
+		ppos.origin)
+		)
 	last_pos = ppos
 
 

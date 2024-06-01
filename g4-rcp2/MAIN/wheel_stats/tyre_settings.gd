@@ -12,3 +12,6 @@ class_name ViVeTyreSettings
 @export_range(0.0, 100.0) var Aspect_Ratio:float = 60.0
 ##Rim size, in inches(?).
 @export var Rim_Size_in:int = 14
+##Air pressure of the tire, in PSI (hypothetical).
+#previously [TyrePressure]
+@export var AirPressure:float = 30.0

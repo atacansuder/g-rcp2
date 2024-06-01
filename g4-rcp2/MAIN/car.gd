@@ -144,7 +144,7 @@ enum TransmissionTypes {
 @export var RPMLimit:float = 7000.0
 ## Throttle cutoff time.
 @export var LimiterDelay:float = 4
-
+##The idling RPM.
 @export var IdleRPM:float = 800.0
 ## Minimum throttle cutoff.
 @export_range(0.0, 1.0) var ThrottleLimit:float = 0.0
@@ -242,10 +242,10 @@ var _clutchpedalreal:float = 0.0
 var abs_pump:float = 0.0
 
 var tcs_weight:float = 0.0
-##Used in debug stuff
-var _tcsflash:bool = false
-##Used in debug stuff
-var _espflash:bool = false
+##Used in the tachometer.
+var tcs_flash:bool = false
+##Used in the tachometer.
+var esp_flash:bool = false
 ##The gear ratio of the current gear.
 var current_ratio:float = 0.0 #previously _ratio
 ##Whether Variable Valve Timing stats for the torque will be used
@@ -400,7 +400,7 @@ func newer_controls() -> void:
 func new_controls() -> void:
 	if control_type != car_controls_cache:
 		_control_func = decide_controls()
-		car_controls_cache = car_controls.control_type
+		car_controls_cache = control_type
 	_control_func.call()
 
 func controls() -> void:
@@ -509,7 +509,7 @@ func controls() -> void:
 				
 				#steer2 = control_steer_analog(Input.get_joy_axis(0, JOY_AXIS_LEFT_X))
 				
-			elif car_controls.UseAccelerometreSteering:
+			elif car_controls.UseAnalogSteering:
 				car_controls.steer2 = Input.get_accelerometer().x / 10.0
 				car_controls.steer2 *= car_controls.SteerSensitivity
 				
@@ -939,7 +939,7 @@ func drivetrain() -> void:
 	drivewheels_size = 0.0
 	for i:ViVeWheel in c_pws:
 		drivewheels_size += i.w_size / c_pws.size()
-		i.c_p = i.W_PowerBias
+		i.live_power_bias = i.W_PowerBias
 		wv_difference += ((i.wv - what / current_ratio) / c_pws.size()) * pow(car_controls.clutchpedal, 2.0)
 		if car_controls.gear < 0:
 			i.dist = dist * (1 - _c_locked) + (i.wv + what / current_ratio) * _c_locked

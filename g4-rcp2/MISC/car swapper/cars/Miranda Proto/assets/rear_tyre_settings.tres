@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ViVeTyreSettings" load_steps=2 format=3 uid="uid://qmxln8g2jgvv"]
 
-[ext_resource type="Script" path="res://MAIN/car_stats/tyre_settings.gd" id="1_hl5sf"]
+[ext_resource type="Script" path="res://MAIN/wheel_stats/tyre_settings.gd" id="1_hl5sf"]
 
 [resource]
 script = ExtResource("1_hl5sf")

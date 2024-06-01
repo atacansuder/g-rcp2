@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ViVeTyreSettings" load_steps=2 format=3 uid="uid://b7q1lajptm0vg"]
 
-[ext_resource type="Script" path="res://MAIN/car_stats/tyre_settings.gd" id="1_wyeeo"]
+[ext_resource type="Script" path="res://MAIN/wheel_stats/tyre_settings.gd" id="1_wyeeo"]
 
 [resource]
 script = ExtResource("1_wyeeo")
 GripInfluence = 1.0
 Width_mm = 195
-Aspect_Ratio = 40
+Aspect_Ratio = 40.0
 Rim_Size_in = 18
+AirPressure = 40.0
