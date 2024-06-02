@@ -38,8 +38,8 @@ func most_skidding(array:Array[ViVeWheel]) -> ViVeWheel:
 	var val:float = -10000000000000000000000000000000000.0
 	var obj:ViVeWheel
 	for i:ViVeWheel in array:
-		val = maxf(val, absf(i.skvol))
-		if val == absf(i.skvol):
+		val = maxf(val, absf(i.skid_volume))
+		if val == absf(i.skid_volume):
 			obj = i
 	return obj
 
@@ -50,7 +50,7 @@ func _physics_process(_delta:float) -> void:
 	
 	var wheel:ViVeWheel = most_skidding(wheels)
 	
-	length = minf((wheel.skvol / 2.0 - 1.0), 2.0)
+	length = minf((wheel.skid_volume / 2.0 - 1.0), 2.0)
 	
 	var roll:float = absf(wheel.wv * wheel.w_size) - wheel.velocity.length()
 	
@@ -61,7 +61,7 @@ func _physics_process(_delta:float) -> void:
 	var total:float = 0.0
 	
 	for i:ViVeWheel in wheels:
-		total += i.skvol
+		total += i.skid_volume
 	
 	total = minf(total / 10.0, 1.0)
 	
@@ -76,7 +76,7 @@ func _physics_process(_delta:float) -> void:
 	
 	var drit:float = minf((parent.linear_velocity.length() * wheel.stress) / 1000.0 - 0.1, 0.5)
 	
-	drit = clampf(drit + wheel.skvol / 2.0 - 0.1, 0.0, 1.0)
+	drit = clampf(drit + wheel.skid_volume / 2.0 - 0.1, 0.0, 1.0)
 	
 	drit *= dirt
 	

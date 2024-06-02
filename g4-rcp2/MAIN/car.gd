@@ -247,7 +247,7 @@ var tcs_flash:bool = false
 ##Used in the tachometer.
 var esp_flash:bool = false
 ##The gear ratio of the current gear.
-var current_ratio:float = 0.0 #previously _ratio
+var current_gear_ratio:float = 0.0 #previously _ratio
 ##Whether Variable Valve Timing stats for the torque will be used
 var vvt:bool = false
 
@@ -315,7 +315,7 @@ var clock_mult:float = 1.0
 
 var dist:float = 0.0
 
-var _stress:float = 0.0
+var stress_total:float = 0.0
 
 var velocity:Vector3 = Vector3.ZERO
 
@@ -592,9 +592,9 @@ func full_manual_transmission() -> void:
 	car_controls.clutchpedal = 1.0 - _clutchpedalreal
 	
 	if car_controls.gear > 0:
-		current_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
+		current_gear_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
 	elif car_controls.gear == -1:
-		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	if GearAssist.assist_level == 0:
 		if car_controls.shiftUp:
 			car_controls.shiftUp = false
@@ -650,7 +650,7 @@ func full_manual_transmission() -> void:
 						car_controls.revmatch = true
 						car_controls.gasrestricted = false
 	elif GearAssist.assist_level == 2:
-		var assistshiftspeed:float = (GearAssist.upshift_RPM / current_ratio) * GearAssist.speed_influence
+		var assistshiftspeed:float = (GearAssist.upshift_RPM / current_gear_ratio) * GearAssist.speed_influence
 		var assistdownshiftspeed:float = (GearAssist.down_RPM / absf((GearRatios[car_controls.gear - 2] * FinalDriveRatio) * RatioMult)) * GearAssist.speed_influence
 		if car_controls.gear == 0:
 			if car_controls.gas:
@@ -739,16 +739,16 @@ func automatic_transmission() -> void:
 				actualgear = 0
 	
 	if actualgear == -1:
-		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	else:
-		current_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
+		current_gear_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
 	if actualgear > 0:
 		var lastratio:float = GearRatios[car_controls.gear - 2] * FinalDriveRatio * RatioMult
 		
 		car_controls.shiftUp = false
 		car_controls.shiftDown = false
 		for i:ViVeWheel in c_pws:
-			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / current_ratio:
+			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / current_gear_ratio:
 				car_controls.shiftUp = true
 			elif (i.wv / GearAssist.speed_influence) < ((AutoSettings.shift_rpm - AutoSettings.downshift_thresh) * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / lastratio:
 				car_controls.shiftDown = true
@@ -804,17 +804,17 @@ func cvt_transmission() -> void:
 	
 	var a:float = maxf(CVTSettings.iteration_3 / ((absf(wv) / 10.0) * cvt_accel + 1.0), CVTSettings.iteration_4)
 	
-	current_ratio = (CVTSettings.iteration_1 * 10000000.0) / (absf(wv) * (rpm * a) + 1.0)
+	current_gear_ratio = (CVTSettings.iteration_1 * 10000000.0) / (absf(wv) * (rpm * a) + 1.0)
 	
-	current_ratio = minf(current_ratio, CVTSettings.iteration_2)
+	current_gear_ratio = minf(current_gear_ratio, CVTSettings.iteration_2)
 
 func semi_auto_transmission() -> void:
 	car_controls.clutchpedal = (rpm - AutoSettings.engage_rpm_thresh * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
 	if car_controls.gear > 0:
-		current_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
+		current_gear_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
 	elif car_controls.gear == -1:
-		current_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	
 	if GearAssist.assist_level < 2:
 		if car_controls.shiftUp:
@@ -826,7 +826,7 @@ func semi_auto_transmission() -> void:
 			if car_controls.gear > -1:
 				actualgear -= 1
 	else:
-		var assistshiftspeed:float = (GearAssist.upshift_RPM / current_ratio) * GearAssist.speed_influence
+		var assistshiftspeed:float = (GearAssist.upshift_RPM / current_gear_ratio) * GearAssist.speed_influence
 		var assistdownshiftspeed:float = (GearAssist.down_RPM / absf((GearRatios[car_controls.gear - 2] * FinalDriveRatio) * RatioMult)) * GearAssist.speed_influence
 		if car_controls.gear == 0:
 			if car_controls.gas:
@@ -859,7 +859,7 @@ func drivetrain() -> void:
 	
 	rpm_cs -= rpm_cs * (1.0 - car_controls.clutchpedal)
 	
-	clutch_wobble = ClutchWobble * car_controls.clutchpedal * (current_ratio * WobbleRate)
+	clutch_wobble = ClutchWobble * car_controls.clutchpedal * (current_gear_ratio * WobbleRate)
 	
 	rpm_cs -= (rpm_cs - resistance) * (1.0 / (clutch_wobble + 1.0))
 	
@@ -880,9 +880,9 @@ func drivetrain() -> void:
 		ClutchFloatReduction = 0.0
 	
 	gear_stress = (absf(resistance) * StressFactor) * car_controls.clutchpedal
-	ds_weight = DSWeight / (current_ratio * 0.9 + 0.1)
+	ds_weight = DSWeight / (current_gear_ratio * 0.9 + 0.1)
 	
-	whine_pitch = absf(rpm / current_ratio) * 1.5
+	whine_pitch = absf(rpm / current_gear_ratio) * 1.5
 	
 	if resistance > 0.0:
 		locked = absf(resistance / ds_weight) * (CoastLocking / 100.0) + Preload
@@ -917,7 +917,7 @@ func drivetrain() -> void:
 	else:
 		float_reduction = 0.0
 	
-	var stabling:float = - (GearRatioRatioThreshold - current_ratio * drivewheels_size) * ThresholdStable
+	var stabling:float = - (GearRatioRatioThreshold - current_gear_ratio * drivewheels_size) * ThresholdStable
 	stabling = maxf(stabling, 0.0)
 	
 	current_stable = ClutchStable + stabling
@@ -931,9 +931,9 @@ func drivetrain() -> void:
 		what = rpm
 		
 	if car_controls.gear < 0.0:
-		dist = maxd.wv + what / current_ratio
+		dist = maxd.wv + what / current_gear_ratio
 	else:
-		dist = maxd.wv - what / current_ratio
+		dist = maxd.wv - what / current_gear_ratio
 	
 	dist *=  pow(car_controls.clutchpedal, 2.0)
 	
@@ -945,11 +945,11 @@ func drivetrain() -> void:
 	for i:ViVeWheel in c_pws:
 		drivewheels_size += i.w_size / c_pws.size()
 		i.live_power_bias = i.W_PowerBias
-		wv_difference += ((i.wv - what / current_ratio) / c_pws.size()) * pow(car_controls.clutchpedal, 2.0)
+		wv_difference += ((i.wv - what / current_gear_ratio) / c_pws.size()) * pow(car_controls.clutchpedal, 2.0)
 		if car_controls.gear < 0:
-			i.dist = dist * (1 - c_locked) + (i.wv + what / current_ratio) * c_locked
+			i.dist = dist * (1 - c_locked) + (i.wv + what / current_gear_ratio) * c_locked
 		else:
-			i.dist = dist * (1 - c_locked) + (i.wv - what / current_ratio) * c_locked
+			i.dist = dist * (1 - c_locked) + (i.wv - what / current_gear_ratio) * c_locked
 		if car_controls.gear == 0:
 			i.dist = 0.0
 	GearAssist.speed_influence = drivewheels_size
@@ -957,7 +957,7 @@ func drivetrain() -> void:
 	ds_weight_run = _dsweight
 	_dsweight = 0.0
 	tcs_weight = 0.0
-	_stress = 0.0
+	stress_total = 0.0
 
 func aero() -> void:
 	var veloc:Vector3 = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
@@ -1027,7 +1027,7 @@ func _physics_process(_delta:float) -> void:
 	new_controls()
 	#controls()
 	
-	current_ratio = 10.0
+	current_gear_ratio = 10.0
 	
 	s_assist_del -= 1
 	
@@ -1036,12 +1036,13 @@ func _physics_process(_delta:float) -> void:
 	limits()
 	
 	#I graphed this function in a calculator, and it only curves significantly if max_steering_angle > 200
-	var uhh:float = pow((max_steering_angle / 90.0), 2) * 0.5
+	#I've tried it, this calculation is functionally redundant, but imma leave it in because Authenticity:tm:
+	var uhh:float = pow((max_steering_angle / 90.0), 2.0) * 0.5
 	
 	var steeroutput:float = car_controls.steer * (absf(car_controls.steer) * (uhh) + (1.0 - uhh))
+	#var steeroutput:float = car_controls.steer * absf(car_controls.steer) #without the redundant calculation
 	
-	
-	if absf(steeroutput) > 0.0:
+	if not is_zero_approx(steeroutput):
 		steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
 	
 	abs_pump -= 1    

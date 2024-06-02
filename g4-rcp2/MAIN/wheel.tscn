@@ -91,10 +91,12 @@ visible = false
 editor_only = true
 
 [node name="velocity" type="Marker3D" parent="."]
+visible = false
 
 [node name="step" type="Marker3D" parent="velocity"]
 
 [node name="velocity2" type="Marker3D" parent="."]
+visible = false
 
 [node name="step" type="Marker3D" parent="velocity2"]
 

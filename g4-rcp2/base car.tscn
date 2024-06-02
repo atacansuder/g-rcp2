@@ -282,6 +282,7 @@ skeleton = NodePath("../../../../..")
 [node name="rr" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, -3.8)
 target_position = Vector3(0, -2.7, 0)
+Steer = false
 SwayBarConnection = NodePath("rl")
 B_Torque = 30.0
 B_Bias = 0.2
@@ -295,6 +296,7 @@ skeleton = NodePath("../../../../..")
 [node name="rl" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, -3.8)
 target_position = Vector3(0, -2.7, 0)
+Steer = false
 SwayBarConnection = NodePath("rl")
 B_Torque = 30.0
 B_Bias = 0.2

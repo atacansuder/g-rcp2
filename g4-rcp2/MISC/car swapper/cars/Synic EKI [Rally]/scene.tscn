@@ -535,6 +535,7 @@ skeleton = NodePath("../../../../..")
 [node name="rr" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.65, 0.2, -4.06717)
 target_position = Vector3(0, -3, 0)
+Steer = false
 SwayBarConnection = NodePath("rl")
 TyreSettings = ExtResource("12_vyhmi")
 CompoundSettings = ExtResource("13_ji7rs")
@@ -563,6 +564,7 @@ skeleton = NodePath("../../../../..")
 [node name="rl" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.65, 0.2, -4.06717)
 target_position = Vector3(0, -3, 0)
+Steer = false
 SwayBarConnection = NodePath("rr")
 TyreSettings = ExtResource("12_vyhmi")
 S_Stiffness = 45.0

@@ -66,18 +66,18 @@ func setup() -> void:
 #				$power_graph.set(i["name"], car_node.get(i["name"]))
 
 func _process(delta:float) -> void:
-	#This gives a more precise FPS at the cost of calculation
-	fps.text = "fps: " + str(1.0 / delta)
-	#This gives a smoother FPS but performs slightly better
-	#fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
-	
-	#Everything past here needs an active car to be functional
-	if car_node == null:
+	if not is_instance_valid(car_node):
 		return
+	
+	if car_node.Debug_Mode:
+		#This gives a more precise FPS at the cost of calculation
+		fps.text = "fps: " + str(1.0 / delta)
+	else:
+		#This gives performs slightly better but gives a less precise FPS
+		fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
 	
 	$sw.rotation_degrees = car_node.car_controls.steer * 380.0
 	$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
-	#if ViVeEnvironment.get_singleton().Debug_Mode:
 	if car_node.Debug_Mode:
 		weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
 	else:
@@ -122,7 +122,7 @@ func _process(delta:float) -> void:
 			tacho_gear.text = str(car_node.car_controls.gear)
 
 func _physics_process(_delta:float) -> void:
-	if car_node == null:
+	if not is_instance_valid(car_node):
 		return
 	vgs.gforce -= (vgs.gforce - Vector2(car_node.gforce.x, car_node.gforce.z)) * 0.5
 	
@@ -135,8 +135,5 @@ func _physics_process(_delta:float) -> void:
 
 ##Restarts the car's engine. Needed if the RPM dips to low and it stalls.
 func engine_restart() -> void:
-	if car_node != null:
+	if is_instance_valid(car_node):
 		car_node.rpm = car_node.IdleRPM
-
-func toggle_forces() -> void:
-	Input.action_press("toggle_debug_mode")

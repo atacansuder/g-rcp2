@@ -163,18 +163,20 @@ var rd:float = 0.0
 var c_camber:float = 0.0
 
 var cambered:float = 0.0
-
+##The volume of the wheel rolling/skidding.
 var roll_vol:float = 0.0
 
-##Related to the volume of peel2
-var skvol:float = 0.0
+##The skidding volume.
+##Specifically related to the volume of peel2.
+var skid_volume:float = 0.0
 
 var velocity:Vector3 = Vector3.ZERO
 
 var velocity2:Vector3 = Vector3.ZERO
-
+##This is compensation for the forward velocity/grip on a slope being affected by the [tyre_stiffness].
 var compensate:float = 0.0
-#THe axle position
+##The axle position (of the geometry).
+##This is exposed for use in differed calculations, and is updated right before said calculations.
 var axle_position:float = 0.0
 
 var ground_bump:float = 0.0
@@ -184,11 +186,16 @@ var ground_bump_up:bool = false
 var ground_bump_frequency:float = 0.0
 
 var surface_vars:ViVeSurfaceVars = ViVeSurfaceVars.new()
-
+##The last collision point reported by the underlying RayCast3D
 var hitposition:Vector3 = Vector3.ZERO
 
-var cache_tyrestiffness:float = 0.0
+var tyre_stiffness:float
 
+var tyre_stiffness_2:float
+
+##This is [tyre_stiffness] from the previous frame.
+var cache_tyrestiffness:float = 0.0
+##This is a cached value of the vertical friction applied on the tyre.
 var cache_friction_action:float = 0.0
 ##The directional force of the tire. 
 ##This is the "sum" that is used to apply physics impulses to the car.
@@ -203,35 +210,39 @@ var slip_percpre:float = 0.0
 var velocity_last:Vector3 = Vector3.ZERO
 
 var velocity2_last:Vector3 = Vector3.ZERO
+##Cached value of "physics/common/physics_ticks_per_second", for compensating for varying physics ticks.
+var physics_tick:float = 60
 
-var physics_tick:int = 60
+var tol:float = 0.0
 
 func _ready() -> void:
-	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60)
+	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60.0)
 	if Differed_Wheel_Path:
 		differed_wheel = car.get_node(Differed_Wheel_Path)
 	if SwayBarConnection:
 		sway_bar_wheel = car.get_node(SwayBarConnection)
 	if Solidify_Axles:
 		solidify_axles_wheel = car.get_node(Solidify_Axles)
+	
 	set_physical_stats()
 
+##Apply power. This function only does something if the wheel is a drive wheel,
+##according to the settings of the parent ViVeCar
 func power() -> void:
 	if not is_zero_approx(live_power_bias):
 		dist *= pow(car.car_controls.clutchpedal, 2.0) / (car.current_stable)
 		
-		var tol:float = (magic_number_b / magic_number_c) * car.ClutchGrip
 		var dist2:float = clampf(dist, -tol, tol)
 		
 		car._dsweight += live_power_bias
-		car._stress += stress * live_power_bias
+		car.stress_total += stress * live_power_bias
 		
 		if car.ds_weight_run > 0.0:
 			if car.rpm > car.DeadRPM:
 				wheelpower -= (((dist2 / car.ds_weight) / (car.ds_weight_run / 2.5)) * live_power_bias) / w_weight
 			car.resistance += (((dist2 * (10.0)) / car.ds_weight_run) * live_power_bias)
 
-##This "borrows" computations from a paired wheel in order to save on computations.
+##This "borrows" computations from a paired wheel in order to save on computation bandwidth.
 func diffs() -> void:
 	if car.locked > 0.0 and is_instance_valid(differed_wheel):
 		snap = absf(differed_wheel.wheelpower_global) / (car.locked * 16.0) + 1.0
@@ -246,10 +257,12 @@ func diffs() -> void:
 		if distanced2 > 0.0:
 			wheelpower += -((absolute_wv_diff - differed_wheel.absolute_wv_diff) / distanced2)
 
+##Run logic for the Sway Bar connection, if one is properly set.
 func sway_bar() -> void:
 	if is_instance_valid(sway_bar_wheel): 
 		rolldist = clampf(rd - sway_bar_wheel.rd, -1.0, 1.0)
 
+##Factor in the effects of braking and/or handbraking to the velocity of the wheel.
 func apply_braking() -> void:
 	var total_brake_effect:float = minf(car.brake_line * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
 	#Get brake power by multiplying the total_brake_effect factor by the brake force, 
@@ -272,7 +285,7 @@ func apply_braking() -> void:
 	wheelpower_global = wheelpower
 
 func _physics_process(_delta:float) -> void:
-	var last_translation:Vector3 = position
+	
 	
 	var sign_pos:float = signf(position.x)
 	if is_zero_approx(sign_pos):
@@ -280,12 +293,13 @@ func _physics_process(_delta:float) -> void:
 	
 	#Do steer rotation things if this wheel is a steering wheel
 	if Steer and absf(car.car_controls.steer) > 0:
+		var last_translation:Vector3 = position
 		var last_transform:Transform3D = global_transform
 		
 		#The y value should be 0; this use case works
 		#because it never gets set to anything other than 0
 		assert(is_zero_approx(car.steering_geometry.y), "steering_geometry.y is not zero")
-		look_at_from_position(position, car.steering_geometry, Vector3.UP)
+		look_at_from_position(position, car.steering_geometry)
 		
 		global_transform.origin = last_transform.origin
 		
@@ -310,11 +324,13 @@ func _physics_process(_delta:float) -> void:
 		
 		rotation.y = roter
 		
-		rotation_degrees.y += - (Toe * sign_pos)
+		#rotation_degrees.y += - (Toe * sign_pos)
+		rotation_degrees.y += -Toe
+		
+		position = last_translation
 	else:
-		rotation_degrees = Vector3(0.0, -(Toe * sign_pos), 0.0)
-	
-	position = last_translation
+		#rotation_degrees = Vector3(0.0, -(Toe * sign_pos), 0.0)
+		rotation_degrees = Vector3(0.0, -Toe, 0.0)
 	
 	#c_camber = Camber + Caster * rotation.y * float(position.x > 0.0) - Caster * rotation.y * float(position.x < 0.0)
 	c_camber = Camber + (Caster * rotation.y * signf(position.x))
@@ -347,17 +363,14 @@ func _physics_process(_delta:float) -> void:
 	
 	#moved to set_physical_stats
 	#tyre_maxgrip = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
-	
-	var tyre_stiffness2:float = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
+	#tyre_stiffness_2 = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
 	
 	var speed_deform_factor:float = (Vector2(velocity.x, velocity.z).length() / 50.0 + 0.5) * CompoundSettings.DeformFactor
 	
 	speed_deform_factor /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
 	speed_deform_factor = maxf(speed_deform_factor, 1.0)
 	
-	tyre_stiffness2 /= speed_deform_factor
-	
-	var tyre_stiffness:float = (tyre_stiffness2 * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
+	var tyre_stiffness:float = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
 	
 	tyre_stiffness = maxf(tyre_stiffness, 1.0)
 	
@@ -477,12 +490,12 @@ func _physics_process(_delta:float) -> void:
 			var new_slip_sk:float = sqrt(pow(dist_v.x * 2.0, 2.0) + dist_v_squared.y) / grip
 			new_slip_sk /= slip * surface_vars.ground_builduprate + 1
 			new_slip_sk = maxf(new_slip_sk - CompoundSettings.TractionFactor, 0.0)
-			skvol = maxf(new_slip_sk - tyre_stiffness, 0.0) / 4.0
+			skid_volume = maxf(new_slip_sk - tyre_stiffness, 0.0) / 4.0
 	else:
 		wv += wheelpower
 		stress = 0.0
 		roll_vol = 0.0
-		skvol = 0.0
+		skid_volume = 0.0
 		directional_force.y = 0.0
 		compensate = 0.0
 	
@@ -621,14 +634,20 @@ func force_smoothing(input:Vector2) -> Vector2:
 
 ##This will update various stats like [w_size] and [w_weight]. [br]
 ##Usually, these stats only need to be set once when the car is loaded,
-##since [TyreSettings] and [CompoundSettings] usually never change at runtime.
+##since [TyreSettings] and [CompoundSettings] (which are used in calculating these values) usually never change at runtime.
 ##However, if those are being edited in real time, such as in an editor, these stats need to be re-set.
 func set_physical_stats() -> void:
 	#25.4 is likely a unit conversion constant
-	w_size = ((absi(TyreSettings.Width_mm) * ((absf(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * magic_number_d) * 0.5
+	#w_size = ((absi(TyreSettings.Width_mm) * ((absf(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * magic_number_d) * 0.5
+	w_size = TyreSettings.get_size()
 	w_weight = pow(w_size, 2.0)
 	
 	w_size_read = maxf(w_size, 1.0)
 	w_weight_read = maxf(w_weight, 1.0) #implied from the above line
 	
 	tyre_maxgrip = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
+	
+	#tyre_stiffness_2 = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
+	tyre_stiffness_2 = TyreSettings.get_stiffness()
+	
+	tol = (magic_number_b / magic_number_c) * car.ClutchGrip
