@@ -276,7 +276,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, 3.8)
 target_position = Vector3(0, -2.7, 0)
 SwayBarConnection = NodePath("fl")
 CompoundSettings = ExtResource("5_dj1ls")
-TyrePressure = 80.0
 Camber = -1.0
 S_Stiffness = 90.0
 S_Damping = 5.0
@@ -309,6 +308,7 @@ skeleton = NodePath("../../../../..")
 [node name="rr" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, -3.8)
 target_position = Vector3(0, -2.7, 0)
+Steer = false
 Differed_Wheel_Path = NodePath("rl")
 SwayBarConnection = NodePath("rl")
 TyreSettings = ExtResource("9_hm1jj")
@@ -327,7 +327,9 @@ skeleton = NodePath("../../../../..")
 [node name="rl" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, -3.83458)
 target_position = Vector3(0, -2.7, 0)
+Steer = false
 SwayBarConnection = NodePath("fr")
+TyreSettings = ExtResource("9_hm1jj")
 S_Stiffness = 55.0
 S_Damping = 4.0
 S_ReboundDamping = 4.0

@@ -36,9 +36,3 @@ func slowest_wheel(array:Array[ViVeWheel]) -> ViVeWheel:
 	
 	return obj
 
-func alignAxisToVector(xform:Transform3D, norm:Vector3) -> Transform3D: # i named this literally out of blender
-	xform.basis.y = norm
-	xform.basis.x = -xform.basis.z.cross(norm)
-	xform.basis = xform.basis.orthonormalized()
-	return xform
-

@@ -253,7 +253,7 @@ var vvt:bool = false
 
 var brake_allowed:float = 0.0
 
-var _readout_torque:float = 0.0
+var readout_torque:float = 0.0
 
 var brake_line:float = 0.0
 
@@ -356,9 +356,7 @@ func _ready() -> void:
 	
 	mass = Weight / 10.0
 	
-	for i:String in Powered_Wheels:
-		var wh:ViVeWheel = get_node(i)
-		c_pws.append(wh)
+	c_pws = get_powered_wheels()
 	emit_signal("wheels_ready")
 
 ##Get the wheels of the car.
@@ -554,12 +552,6 @@ func controls() -> void:
 				car_controls.steer = (car_controls.steer2 * maxsteer) - (velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * car_controls.assistance_factor) + r_velocity.y * (car_controls.SteeringAssistanceAngular * car_controls.assistance_factor)
 			else:
 				car_controls.steer = car_controls.steer2
-
-func limits() -> void:
-	car_controls.gaspedal = clampf(car_controls.gaspedal, 0.0, car_controls.MaxThrottle)
-	car_controls.brakepedal = clampf(car_controls.brakepedal, 0.0, car_controls.MaxBrake)
-	car_controls.handbrakepull = clampf(car_controls.handbrakepull, 0.0, car_controls.MaxHandbrake)
-	car_controls.steer = clampf(car_controls.steer, -1.0, 1.0)
 
 func transmission() -> void:
 	car_controls.shiftUp = (Input.is_action_just_pressed("shiftup") and not car_controls.UseAnalogSteering) or (Input.is_action_just_pressed("shiftup_mouse") and car_controls.UseAnalogSteering)
@@ -899,10 +891,6 @@ func drivetrain() -> void:
 	c_locked = clampf(c_locked, 0.0, 1.0)
 	if c_pws.size() < 4:
 		c_locked = 0.0
-	#if c_locked < 0.0 or len(c_pws) < 4:
-	#	c_locked = 0.0
-	#elif c_locked > 1.0:
-	#	c_locked = 1.0
 	
 	
 	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(c_pws)
@@ -959,24 +947,28 @@ func drivetrain() -> void:
 	tcs_weight = 0.0
 	stress_total = 0.0
 
-func aero() -> void:
+##Applies aerodynamics to the car.
+func aerodynamics() -> void:
 	var veloc:Vector3 = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
-	
-	#var torq = global_transform.basis.orthonormalized().transposed() * (Vector3(1,0,0))
 	
 	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3((-veloc.length() * 0.3) * LiftAngle, 0.0, 0.0)))
 	
-	var v:Vector3 = (veloc * 0.15) * DragCoefficient
-	var vl:float = veloc.length() * 0.15
+	var drag_velocity:Vector3 = (veloc * 0.15)
+	var drag_velocity_length:float = veloc.length() * 0.15
 	
-	v.y = -vl * Downforce - v.y
-	var forc:Vector3 = global_transform.basis.orthonormalized() * v
+	#drag_velocity.x = -drag_velocity.x * DragCoefficient
+	drag_velocity.x *= -DragCoefficient
+	drag_velocity.y = -drag_velocity_length * Downforce - drag_velocity.y * DragCoefficient
+	#drag_velocity.z = -drag_velocity.z * DragCoefficient
+	drag_velocity.z *= -DragCoefficient
+	
+	var air_drag_force:Vector3 = global_transform.basis.orthonormalized() * drag_velocity
 	
 	#if has_node("DRAG_CENTRE"):
 	if is_instance_valid(drag_center):
-		apply_impulse(forc, global_transform.basis.orthonormalized() * (drag_center.position))
+		apply_impulse(air_drag_force, global_transform.basis.orthonormalized() * (drag_center.position))
 	else:
-		apply_central_impulse(forc)
+		apply_central_impulse(air_drag_force)
 
 func _physics_process(_delta:float) -> void:
 	if steering_angles.size() > 0:
@@ -1005,11 +997,10 @@ func _physics_process(_delta:float) -> void:
 	velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
 	r_velocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
 	
-	#if not mass == Weight / 10.0:
-	#	mass = Weight/10.0
-	#mass = Weight / 10.0
+	if Debug_Mode:
+		mass = Weight / 10.0
 	
-	aero()
+	aerodynamics()
 	
 	#0.30592 is pixels per second to meter per second, probably
 	#9.806 is gravity constant (because ViVe screws with gravity)
@@ -1018,7 +1009,6 @@ func _physics_process(_delta:float) -> void:
 	gforce = (linear_velocity - past_velocity) * ((0.30592 / 9.806) * float(physics_tick))
 	past_velocity = linear_velocity
 	
-	#gforce = global_transform.basis.orthonormalized().transposed() * (gforce)
 	gforce *= global_transform.basis.orthonormalized().transposed()
 	
 	car_controls.velocity = velocity
@@ -1033,17 +1023,23 @@ func _physics_process(_delta:float) -> void:
 	
 	transmission()
 	
-	limits()
+	car_controls.gaspedal = clampf(car_controls.gaspedal, 0.0, car_controls.MaxThrottle)
+	car_controls.brakepedal = clampf(car_controls.brakepedal, 0.0, car_controls.MaxBrake)
+	car_controls.handbrakepull = clampf(car_controls.handbrakepull, 0.0, car_controls.MaxHandbrake)
+	car_controls.steer = clampf(car_controls.steer, -1.0, 1.0)
+	
 	
 	#I graphed this function in a calculator, and it only curves significantly if max_steering_angle > 200
 	#I've tried it, this calculation is functionally redundant, but imma leave it in because Authenticity:tm:
-	var uhh:float = pow((max_steering_angle / 90.0), 2.0) * 0.5
+	#var uhh:float = pow((max_steering_angle / 90.0), 2.0) * 0.5
 	
-	var steeroutput:float = car_controls.steer * (absf(car_controls.steer) * (uhh) + (1.0 - uhh))
-	#var steeroutput:float = car_controls.steer * absf(car_controls.steer) #without the redundant calculation
+	#var steeroutput:float = car_controls.steer * (absf(car_controls.steer) * (uhh) + (1.0 - uhh))
+	var steeroutput:float = car_controls.steer * absf(car_controls.steer) #without the redundant calculation
 	
 	if not is_zero_approx(steeroutput):
 		steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
+	else:
+		steering_geometry = Vector3(0.0, 0.0, AckermannPoint)
 	
 	abs_pump -= 1    
 	
@@ -1071,9 +1067,9 @@ func _physics_process(_delta:float) -> void:
 		throttle = maxf(throttle, ThrottleIdle)
 	
 	#var stab:float = 300.0
-	var thr:float = 0.0
 	
 	if TurboEnabled:
+		var thr:float = 0.0
 		thr = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
 		
 		if boosting > thr:
@@ -1104,14 +1100,16 @@ func _physics_process(_delta:float) -> void:
 		torque_local = torque_norm
 	
 	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
+	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	
 	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	
 	torque += ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * magic_1) )
 	
 	#Apply rpm reductions to the torque
-	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
-	torque /= pow(rpm, 2) * (torque_local.FloatRate / 10000000.0) + 1.0
+	
+	torque /= pow(rpm, 2.0) * (torque_local.FloatRate / 10000000.0) + 1.0
 	
 	rpm_force = (rpm / (pow(rpm, 2.0) / (EngineFriction / clock_mult) + 1.0))
 	if rpm < DeadRPM:
@@ -1151,8 +1149,8 @@ func _process(_delta:float) -> void:
 		if total > 0:
 			weight_dist[0] = (front_load / total) * 0.5 + 0.5
 			weight_dist[1] = 1.0 - weight_dist[0]
-	
-	_readout_torque = multivariate()
+		
+		readout_torque = multivariate()
 
 const multivariation_inputs:PackedStringArray = [
 "RiseRPM","TorqueRise","BuildUpTorque","EngineFriction",
@@ -1166,22 +1164,17 @@ const multivariation_inputs:PackedStringArray = [
 ]
 
 func multivariate() -> float:
-	#car uses turbo_psi for PSI, this may be inaccurate to other uses of the function
+	var psi:float = turbo_psi
 	
-	var value:float = 0.0
+	var torque:float = 0.0
 	
-	#if car.SCEnabled:
 	if SuperchargerEnabled:
-		var maxpsi:float = turbo_psi
-		#scrpm = rpm
+		var maxpsi:float = psi
 		var scrpm:float = rpm * SCRPMInfluence
-		#turbo_psi = (scrpm / 10000.0) * BlowRate - SCThreshold
-		#turbo_psi = clampf(turbo_psi, 0.0, maxpsi)
-		turbo_psi = clampf((scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, maxpsi)
+		psi = clampf((scrpm / 10000.0) * BlowRate - SCThreshold, 0.0, maxpsi)
 	
-	#if not car.SCEnabled and not car.TEnabled:
 	if not SuperchargerEnabled and not TurboEnabled:
-		turbo_psi = 0.0
+		psi = 0.0
 	
 	var torque_local:ViVeCarTorque 
 	if rpm > VVTRPM:
@@ -1189,20 +1182,20 @@ func multivariate() -> float:
 	else:
 		torque_local = torque_norm
 	
-	value = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque) + ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * magic_1) )
-	var f:float = maxf(rpm - torque_local.RiseRPM, 0.0)
-	#f = rpm - torque_local.RiseRPM
-	#f = maxf(f, 0.0)
+	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
+	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	
-	value += (f * f) * (torque_local.TorqueRise / 10000000.0)
-	var j:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
-	#j = rpm - torque_local.DeclineRPM
-	#j = maxf(j, 0.0)
+	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque)
 	
-	value /= (j * (j * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
-	value /= pow(rpm, 2) * (torque_local.FloatRate / 10000000.0) + 1.0
+	torque += (psi * TurboAmount) * (EngineCompressionRatio * magic_1)
+	#+ pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	torque += pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)
 	
-	value -= rpm / (pow(rpm, 2) / EngineFriction + 1.0)
-	value -= rpm * EngineDrag
+	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	
-	return value
+	torque /= pow(rpm, 2.0) * (torque_local.FloatRate / 10000000.0) + 1.0
+	
+	torque -= rpm / (pow(rpm, 2.0) / EngineFriction + 1.0)
+	torque -= rpm * EngineDrag
+	
+	return torque
