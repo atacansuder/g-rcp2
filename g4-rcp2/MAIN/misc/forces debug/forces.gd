@@ -11,15 +11,16 @@ func _physics_process(_delta:float) -> void:
 	if not is_instance_valid(wheel_parent):
 		wheel_parent = get_parent() #ViVeWheel
 	visible = wheel_parent.car.Debug_Mode
+	
+	rotation = wheel_parent.velo_1.rotation
+	position = wheel_parent.anim.position
+	
+	position.y -= wheel_parent.w_size
+	
 	if visible:
 		compress.visible = wheel_parent.is_colliding()
 		longi.visible = wheel_parent.is_colliding()
 		lateral.visible = wheel_parent.is_colliding()
-		
-		rotation = wheel_parent.velo_1.rotation
-		position = wheel_parent.anim.position
-		
-		position.y -= wheel_parent.w_size
 		
 		compress.scale = Vector3(0.02, wheel_parent.directional_force.y * (Scale / 1.0), 0.02)
 		compress.position.y = compress.scale.y / 2.0

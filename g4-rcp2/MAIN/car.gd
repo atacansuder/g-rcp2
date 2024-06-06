@@ -2,12 +2,6 @@ extends RigidBody3D
 ##A class representing a car in VitaVehicle.
 class_name ViVeCar
 
-##A set of wheels that are powered parented under the vehicle.
-var c_pws:Array[ViVeWheel]
-
-
-
-
 @onready var front_left:ViVeWheel = $"fl"
 @onready var front_right:ViVeWheel = $"fr"
 @onready var back_left:ViVeWheel = $"rl"
@@ -20,22 +14,10 @@ var c_pws:Array[ViVeWheel]
 @onready var rear_wheels:Array[ViVeWheel] = [back_left, back_right]
 
 @export_group("Controls")
+##The control set of this car.
 @export var car_controls:ViVeCarControls = ViVeCarControls.new()
+##The control preset for this car to use.
 @export_enum("Keyboard and Mouse", "Keyboard", "Touch controls (Gyro)", "Joypad") var control_type:int = 0
-##Which control type the car is going to be associated with.
-enum ControlType {
-	##Use the keyboard and mouse for control.
-	CONTROLS_KEYBOARD_MOUSE,
-	##Use just the keyboard for control.
-	CONTROLS_KEYBOARD,
-	##Use the touchscreen for control.
-	CONTROLS_TOUCH,
-	##Use a connected game controller for control.
-	CONTROLS_JOYPAD,
-}
-
-var car_controls_cache:ControlType
-var _control_func:Callable = car_controls.controls_keyboard_mouse
 
 ## Gear Assistance.
 @export var GearAssist:ViVeGearAssist = ViVeGearAssist.new()
@@ -86,14 +68,6 @@ var _control_func:Callable = car_controls.controls_keyboard_mouse
 
 ##The [ViVeCar.TransmissionTypes] used for this car.
 @export_enum("Fully Manual", "Automatic", "Continuously Variable", "Semi-Auto") var TransmissionType:int = 0
-
-##Selection of transmission types that are implemented in VitaVehicle.
-enum TransmissionTypes {
-	full_manual = 0,
-	auto = 1,
-	continuous_variable = 2,
-	semi_auto = 3
-}
 
 @export var AutoSettings:ViVeAutoSettings = ViVeAutoSettings.new()
 
@@ -219,6 +193,35 @@ enum TransmissionTypes {
 const magic_1:float = 0.609
 const magic_2:float = 1.475
 
+##Which control type the car is going to be associated with.
+enum ControlType {
+	##Use the keyboard and mouse for control.
+	CONTROLS_KEYBOARD_MOUSE,
+	##Use just the keyboard for control.
+	CONTROLS_KEYBOARD,
+	##Use the touchscreen for control.
+	CONTROLS_TOUCH,
+	##Use a connected game controller for control.
+	CONTROLS_JOYPAD,
+}
+
+##Selection of transmission types that are implemented in VitaVehicle.
+enum TransmissionTypes {
+	##Full manual transmission.
+	full_manual = 0,
+	##Automatic transmission.
+	auto = 1,
+	##CVT (continuously variable transmission)
+	continuous_variable = 2,
+	##Semi auto transmission.
+	semi_auto = 3
+}
+
+##This is value compared to determine if the control scheme should be changed.
+var car_controls_cache:ControlType
+##The control function
+var _control_func:Callable = car_controls.controls_keyboard_mouse
+
 var rpm:float = 0.0
 
 #var _rpmspeed:float = 0.0
@@ -300,7 +303,8 @@ var ds_weight:float = 0.0
 #var _steer_torque:float = 0.0
 
 var drivewheels_size:float = 1.0
-##An array of the global_rotation.y values of each steering wheel at the current physics frame
+##An array of the global_rotation.y values of each steering wheel at the current physics frame.
+##These angles are in degrees.
 var steering_angles:PackedFloat32Array = []
 ##The largest value in [steering_angles], set each physics frame.
 var max_steering_angle:float = 0.0
@@ -324,14 +328,18 @@ var r_velocity:Vector3 = Vector3.ZERO
 var stalled:float = 0.0
 
 var front_load:float = 0.0
-var total:float = 0.0
+
+var total_load:float = 0.0
 
 var weight_dist:Array[float] = [0.0,0.0]
 
 var physics_tick:int = 60
 
-## Emitted when the wheels are ready.
-signal wheels_ready
+##A set of wheels that are powered parented under the vehicle.
+var powered_wheels:Array[ViVeWheel]
+
+## Emitted when the wheel arrays are updated.
+signal wheels_updated
 
 #Holdover from Godot 3. 
 #Still here because Bullet is available as an optional GDExtension, so you never know
@@ -356,12 +364,18 @@ func _ready() -> void:
 	
 	mass = Weight / 10.0
 	
-	c_pws = get_powered_wheels()
-	emit_signal("wheels_ready")
+	#powered_wheels = get_powered_wheels()
+	update_wheel_arrays()
+	
+	emit_signal("wheels_updated")
 
 ##Get the wheels of the car.
 func get_wheels() -> Array[ViVeWheel]:
-	return [front_left, front_right, back_left, back_right]
+	var found_wheels:Array[ViVeWheel]
+	for nodes:Node in get_children():
+		if nodes.is_class("RayCast3D"):
+			found_wheels.append(nodes)
+	return found_wheels
 
 ##Get the powered wheels of the car.
 func get_powered_wheels() -> Array[ViVeWheel]:
@@ -369,6 +383,24 @@ func get_powered_wheels() -> Array[ViVeWheel]:
 	for wheels:String in Powered_Wheels:
 		return_this.append(get_node(wheels))
 	return return_this
+
+##Updates several internal arrays used for iterating over wheels of various types.
+func update_wheel_arrays() -> void:
+	front_wheels.clear()
+	rear_wheels.clear()
+	powered_wheels.clear()
+	
+	for nodes:Node in get_children():
+		if nodes.is_class("RayCast3D"): #When in C++, check for "ViVeWheel"
+			#front or rear wheels
+			if nodes.position.z > 0:
+				front_wheels.append(nodes)
+			else:
+				rear_wheels.append(nodes)
+			#powered wheel
+			if Powered_Wheels.has(nodes.name):
+				powered_wheels.append(nodes)
+	emit_signal("wheels_updated")
 
 func _mouse_wrapper() -> void:
 	var mouseposx:float = 0.0
@@ -394,7 +426,7 @@ func newer_controls() -> void:
 		var mouseposx:float = get_window().get_mouse_position().x / get_window().size.x
 		car_controls.controls(mouseposx)
 	elif control_type == ControlType.CONTROLS_KEYBOARD:
-		car_controls.controls()
+		car_controls.controls(Input.get_axis(car_controls.ActionNameSteerLeft, car_controls.ActionNameSteerRight))
 	elif control_type == ControlType.CONTROLS_TOUCH:
 		car_controls.controls(Input.get_accelerometer().x / 10.0)
 	elif control_type == ControlType.CONTROLS_JOYPAD:
@@ -435,18 +467,18 @@ func controls() -> void:
 		if absf(car_controls.steer) > 1.0:
 			car_controls.steer_velocity *= -0.5
 		
-		for i:ViVeWheel in [front_left,front_right]:
-			car_controls.steer_velocity += (i.directional_force.x * 0.00125) * i.Caster
-			car_controls.steer_velocity -= (i.stress * 0.0025) * (atan2(absf(i.wv), 1.0) * i.angle)
+		for front_wheel:ViVeWheel in [front_left,front_right]:
+			car_controls.steer_velocity += (front_wheel.directional_force.x * 0.00125) * front_wheel.Caster
+			car_controls.steer_velocity -= (front_wheel.stress * 0.0025) * (atan2(absf(front_wheel.wv), 1.0) * front_wheel.angle)
 			
-			car_controls.steer_velocity += car_controls.steer * (i.directional_force.z * 0.0005) * i.Caster
+			car_controls.steer_velocity += car_controls.steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 			
-			if i.position.x > 0:
-				car_controls.steer_velocity += i.directional_force.z * 0.0001
+			if front_wheel.position.x > 0:
+				car_controls.steer_velocity += front_wheel.directional_force.z * 0.0001
 			else:
-				car_controls.steer_velocity -= i.directional_force.z * 0.0001
+				car_controls.steer_velocity -= front_wheel.directional_force.z * 0.0001
 		
-			car_controls.steer_velocity /= i.stress / (i.slip_percpre * (i.slip_percpre * 100.0) + 1.0) + 1.0
+			car_controls.steer_velocity /= front_wheel.stress / (front_wheel.slip_percpre * (front_wheel.slip_percpre * 100.0) + 1.0) + 1.0
 	
 	if Controlled:
 		if GearAssist.assist_level == 2:
@@ -734,12 +766,13 @@ func automatic_transmission() -> void:
 		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
 	else:
 		current_gear_ratio = GearRatios[car_controls.gear - 1] * FinalDriveRatio * RatioMult
+	
 	if actualgear > 0:
 		var lastratio:float = GearRatios[car_controls.gear - 2] * FinalDriveRatio * RatioMult
 		
 		car_controls.shiftUp = false
 		car_controls.shiftDown = false
-		for i:ViVeWheel in c_pws:
+		for i:ViVeWheel in powered_wheels:
 			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / current_gear_ratio:
 				car_controls.shiftUp = true
 			elif (i.wv / GearAssist.speed_influence) < ((AutoSettings.shift_rpm - AutoSettings.downshift_thresh) * (car_controls.gaspedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / lastratio:
@@ -789,8 +822,8 @@ func cvt_transmission() -> void:
 	car_controls.gear = actualgear
 	var wv:float = 0.0
 	
-	for i:ViVeWheel in c_pws:
-		wv += i.wv / c_pws.size()
+	for i:ViVeWheel in powered_wheels:
+		wv += i.wv / powered_wheels.size()
 	
 	cvt_accel -= (cvt_accel - (car_controls.gaspedal * CVTSettings.throt_eff_thresh + (1.0 - CVTSettings.throt_eff_thresh))) * CVTSettings.accel_rate
 	
@@ -889,13 +922,13 @@ func drivetrain() -> void:
 		c_locked = absf(wv_difference) * (Centre_Locking / 10.0) + Centre_Preload
 	
 	c_locked = clampf(c_locked, 0.0, 1.0)
-	if c_pws.size() < 4:
+	if powered_wheels.size() < 4:
 		c_locked = 0.0
 	
 	
-	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(c_pws)
+	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(powered_wheels)
 	assert(is_instance_valid(maxd), "Maxd is borked")
-	#var mind:ViVeWheel = VitaVehicleSimulation.slowest_wheel(c_pws)
+	#var mind:ViVeWheel = VitaVehicleSimulation.slowest_wheel(powered_wheels)
 	
 	
 	var float_reduction:float = ClutchFloatReduction
@@ -930,10 +963,10 @@ func drivetrain() -> void:
 	
 	wv_difference = 0.0
 	drivewheels_size = 0.0
-	for i:ViVeWheel in c_pws:
-		drivewheels_size += i.w_size / c_pws.size()
+	for i:ViVeWheel in powered_wheels:
+		drivewheels_size += i.w_size / powered_wheels.size()
 		i.live_power_bias = i.W_PowerBias
-		wv_difference += ((i.wv - what / current_gear_ratio) / c_pws.size()) * pow(car_controls.clutchpedal, 2.0)
+		wv_difference += ((i.wv - what / current_gear_ratio) / powered_wheels.size()) * pow(car_controls.clutchpedal, 2.0)
 		if car_controls.gear < 0:
 			i.dist = dist * (1 - c_locked) + (i.wv + what / current_gear_ratio) * c_locked
 		else:
@@ -949,12 +982,12 @@ func drivetrain() -> void:
 
 ##Applies aerodynamics to the car.
 func aerodynamics() -> void:
-	var veloc:Vector3 = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
+	var normal_velocity:Vector3 = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
 	
-	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3((-veloc.length() * 0.3) * LiftAngle, 0.0, 0.0)))
+	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3((-normal_velocity.length() * 0.3) * LiftAngle, 0.0, 0.0)))
 	
-	var drag_velocity:Vector3 = (veloc * 0.15)
-	var drag_velocity_length:float = veloc.length() * 0.15
+	var drag_velocity:Vector3 = (normal_velocity * 0.15)
+	var drag_velocity_length:float = normal_velocity.length() * 0.15
 	
 	#drag_velocity.x = -drag_velocity.x * DragCoefficient
 	drag_velocity.x *= -DragCoefficient
@@ -1069,8 +1102,7 @@ func _physics_process(_delta:float) -> void:
 	#var stab:float = 300.0
 	
 	if TurboEnabled:
-		var thr:float = 0.0
-		thr = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
+		var thr:float = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
 		
 		if boosting > thr:
 			boosting = thr
@@ -1130,24 +1162,24 @@ func _process(_delta:float) -> void:
 		front_wheels.clear()
 		rear_wheels.clear()
 		#Why is this run?
-		for i:ViVeWheel in get_wheels():
-			if i.position.z > 0:
-				front_wheels.append(i)
+		for wheel:ViVeWheel in get_wheels():
+			if wheel.position.z > 0:
+				front_wheels.append(wheel)
 			else:
-				rear_wheels.append(i)
+				rear_wheels.append(wheel)
 		
 		front_load = 0.0
-		total = 0.0
+		total_load = 0.0
 		
-		for f:ViVeWheel in front_wheels:
-			front_load += f.directional_force.y
-			total += f.directional_force.y
-		for r:ViVeWheel in rear_wheels:
-			front_load -= r.directional_force.y
-			total += r.directional_force.y
+		for front_wheel:ViVeWheel in front_wheels:
+			front_load += front_wheel.directional_force.y
+			total_load += front_wheel.directional_force.y
+		for rear_wheel:ViVeWheel in rear_wheels:
+			front_load -= rear_wheel.directional_force.y
+			total_load += rear_wheel.directional_force.y
 		
-		if total > 0:
-			weight_dist[0] = (front_load / total) * 0.5 + 0.5
+		if total_load > 0:
+			weight_dist[0] = (front_load / total_load) * 0.5 + 0.5
 			weight_dist[1] = 1.0 - weight_dist[0]
 		
 		readout_torque = multivariate()
@@ -1163,6 +1195,7 @@ const multivariation_inputs:PackedStringArray = [
 "DeclineSharpness","VVT_DeclineSharpness"
 ]
 
+##Determine power/torque output on specific rpm values.
 func multivariate() -> float:
 	var psi:float = turbo_psi
 	
@@ -1197,5 +1230,69 @@ func multivariate() -> float:
 	
 	torque -= rpm / (pow(rpm, 2.0) / EngineFriction + 1.0)
 	torque -= rpm * EngineDrag
+	
+	return torque
+
+##Determine power/torque output on specific rpm values, taking into account turbo and supercharger.
+func multivariate_2() -> float:
+	if TurboEnabled:
+		var thr:float = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
+		
+		if boosting > thr:
+			boosting = thr
+		else:
+			boosting -= (boosting - thr) * TurboEfficiency
+		 
+		turbo_psi += (boosting * rpm) / ((TurboSize / Compressor) * 60.9)
+		
+		turbo_psi = clampf(turbo_psi - (turbo_psi * BlowoffRate), -TurboVacuum, MaxPSI)
+	
+	elif SuperchargerEnabled:
+		sc_rpm = rpm * SCRPMInfluence
+		turbo_psi = clampf((sc_rpm / 10000.0) * BlowRate - SCThreshold, 0.0, MaxPSI)
+	
+	else:
+		turbo_psi = 0.0
+	
+	#Wouldn't this be the other way around...?
+	vvt = rpm > VVTRPM
+	
+	var torque:float = 0.0
+	
+	var torque_local:ViVeCarTorque
+	if vvt:
+		torque_local = torque_vvt
+	else:
+		torque_local = torque_norm
+	
+	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
+	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
+	
+	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	
+	torque += ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * magic_1) )
+	
+	#Apply rpm reductions to the torque
+	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
+	
+	torque /= pow(rpm, 2.0) * (torque_local.FloatRate / 10000000.0) + 1.0
+	
+	rpm_force = (rpm / (pow(rpm, 2.0) / (EngineFriction / clock_mult) + 1.0))
+	if rpm < DeadRPM:
+		torque = 0.0
+		rpm_force /= 5.0
+		stalled = 1.0 - rpm / DeadRPM
+	else:
+		stalled = 0.0
+	
+	rpm_force += (rpm * (EngineDrag / clock_mult))
+	rpm_force -= (torque / clock_mult)
+	rpm -= rpm_force * RevSpeed
+
+	return 0.0
+
+
+func torque() -> float:
+	var torque:float
 	
 	return torque

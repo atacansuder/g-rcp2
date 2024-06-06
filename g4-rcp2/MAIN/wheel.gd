@@ -107,6 +107,9 @@ const magic_number_a:float = 1.15296
 const magic_number_b:float = 0.1475
 const magic_number_c:float = 1.3558
 const magic_number_d:float = 0.003269
+##This appears to be for some sort of conversion between radians and degrees.
+const conversion_1: float = 90.0
+
 
 ##Distance, seems like it's probably something else given the codes relation to the clutch.
 var dist:float = 0.0
@@ -134,8 +137,7 @@ var effectiveness:float = 0.0
 ##Only ever set in suspension calculation.
 ##It's in radians.
 var angle:float = 0.0
-##The x and y offset of the axle added together.
-var axle_offset:float
+
 
 var snap:float = 0.0
 ##Absolute velocity of the wheel(?)
@@ -290,20 +292,23 @@ func apply_braking() -> void:
 	wheelpower_global = wheelpower
 
 func _physics_process(_delta:float) -> void:
-	
-	
-	var sign_pos:float = signf(position.x)
-	if is_zero_approx(sign_pos):
-		sign_pos = 1.0
+	#This is used to automatically flip the value to match the side of the car the wheel is on
+	var car_side:float = signf(position.x)
+	if is_zero_approx(car_side):
+		car_side = 1.0
 	
 	#Do steer rotation things if this wheel is a steering wheel
-	if Steer and absf(car.car_controls.steer) > 0:
-		var last_translation:Vector3 = position
+	#if Steer and absf(car.car_controls.steer) > 0:
+	if Steer and not is_zero_approx(car.car_controls.steer):
+		var last_position:Vector3 = position
 		var last_transform:Transform3D = global_transform
+		var directional_rotate:float =  -deg_to_rad(90.0) * signf(car.car_controls.steer)
 		
 		#The y value should be 0; this use case works
 		#because it never gets set to anything other than 0
 		assert(is_zero_approx(car.steering_geometry.y), "steering_geometry.y is not zero")
+		
+		#simply using look_at did not work here when I tried it, not sure why
 		look_at_from_position(position, car.steering_geometry)
 		
 		if car.car_controls.steer > 0.0:
@@ -313,8 +318,8 @@ func _physics_process(_delta:float) -> void:
 		
 		var roter:float = global_rotation.y
 		
-		#look_at(Vector3(car.Steer_Radius, 0.0, car.steering_geometry.z))
-		look_at(Vector3(car.Steer_Radius, 0.0, car.AckermannPoint))
+		look_at(Vector3(car.Steer_Radius, 0.0, car.steering_geometry.z))
+		#look_at(Vector3(car.Steer_Radius, 0.0, car.AckermannPoint))
 		
 		rotate_y(deg_to_rad(90.0))
 		
@@ -324,16 +329,15 @@ func _physics_process(_delta:float) -> void:
 		
 		rotation.y = roter
 		
-		#rotation_degrees.y += - (Toe * sign_pos)
-		rotation_degrees.y += -Toe
+		#rotation_degrees.y += - (Toe * car_side)
+		rotation_degrees.y -= Toe
 		
-		position = last_translation
+		position = last_position
 	else:
-		#rotation_degrees = Vector3(0.0, -(Toe * sign_pos), 0.0)
+		#rotation_degrees = Vector3(0.0, -(Toe * car_side), 0.0)
 		rotation_degrees = Vector3(0.0, -Toe, 0.0)
 	
-	camber_w_caster = Camber + (Caster * rotation.y * signf(position.x))
-	#camber_w_caster = Camber + (Caster * rotation_degrees.y * signf(position.x))
+	camber_w_caster = Camber + (Caster * rotation.y * car_side)
 	
 	directional_force = Vector3.ZERO
 	velo_1.position = Vector3.ZERO
@@ -342,6 +346,7 @@ func _physics_process(_delta:float) -> void:
 	#so it's disabled unless debug is on.
 	if car.Debug_Mode:
 		set_physical_stats()
+	
 	
 	#Sync positions. Without this, the car is very bouncy for some reason
 	velo_2.global_position = geometry.global_position
@@ -542,30 +547,28 @@ func _physics_process(_delta:float) -> void:
 	
 	geometry.position.y += w_size
 	
-	geometry.position.x = -pow(cambered / 90.0, 2.0) * position.x
+	geometry.position.x = -pow(cambered / conversion_1, 2.0) * position.x
 	
 	anim_camber.rotation_degrees.z = -(camber_w_caster - cambered) * signf(position.x)
 	anim_camber.rotation.z *= AxleSettings.Camber_Gain
 	
 	axle_position = geometry.position.y
 	
+	#The x and y offset of the axle added together.
+	var axle_offset:float
 	
 	if not is_instance_valid(solidify_axles_wheel):
 		axle_offset = (geometry.position.y + (absf(target_position.y) - AxleSettings.Vertical_Mount)) / (absf(position.x) + AxleSettings.Lateral_Mount_Pos + 1.0)
 		axle_offset /= absf(axle_offset) + 1.0
 		#conversion to radians, I'm guessing
-		cambered = (axle_offset * 90.0) - AxleSettings.Geometry4
-		#cambered = (axle_offset * 90.0) - AxleSettings.Vertical_Mount
+		cambered = (axle_offset * conversion_1) - AxleSettings.Geometry4
+		#cambered = (axle_offset * conversion_1) - AxleSettings.Vertical_Mount
 		
 	else:
 		axle_offset = (geometry.position.y - solidify_axles_wheel.axle_position) / (absf(position.x) + 1.0)
 		axle_offset /= absf(axle_offset) + 1.0
 		#conversion to radians, I'm guessing
-		cambered = (axle_offset * 90.0)
-	
-	#"slam" fix pt 1
-	#geometry.position.y += axle_offset
-	#directional_force.y += axle_offset
+		cambered = (axle_offset * conversion_1)
 	
 	anim.position = geometry.position
 	
@@ -608,7 +611,7 @@ func suspension() -> float:
 	velo_1.global_transform = alignAxisToVector(velo_1.global_transform, get_collision_normal())
 	velo_2.global_transform = alignAxisToVector(velo_2.global_transform, get_collision_normal())
 	
-	angle = (geometry.rotation_degrees.z - ((-camber_w_caster - cambered) * signf(position.x)) * (AxleSettings.Camber_Gain) / 90.0)
+	angle = (geometry.rotation_degrees.z - ((-camber_w_caster - cambered) * signf(position.x)) * (AxleSettings.Camber_Gain) / conversion_1)
 	
 	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.UP)).length()
 	

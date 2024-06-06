@@ -27,7 +27,7 @@ func stop() -> void:
 
 func _ready() -> void:
 	parent = get_parent_node_3d()
-	var _err:Error = parent.connect("wheels_ready", load_wheels)
+	var _err:Error = parent.connect("wheels_updated", load_wheels)
 	
 	play()
 
@@ -58,12 +58,12 @@ func _physics_process(_delta:float) -> void:
 	
 	width = clampf(width, 0.0, 1.0)
 	
-	var total:float = 0.0
+	var total_volume:float = 0.0
 	
 	for i:ViVeWheel in wheels:
-		total += i.skid_volume
+		total_volume += i.skid_volume
 	
-	total = minf(total / 10.0, 1.0)
+	total_volume = minf(total_volume / 10.0, 1.0)
 	
 	var mult:float = (parent.linear_velocity.length() / 5000.0 + 1.0)
 	
@@ -72,7 +72,7 @@ func _physics_process(_delta:float) -> void:
 	roll2.pitch_scale = 1.0 / mult
 	peel0.pitch_scale = 0.95 + length / 8.0 / mult
 	peel1.pitch_scale = 1.0 / mult
-	peel2.pitch_scale =  1.1 - total * 0.1 / mult
+	peel2.pitch_scale =  1.1 - total_volume * 0.1 / mult
 	
 	var drit:float = minf((parent.linear_velocity.length() * wheel.stress) / 1000.0 - 0.1, 0.5)
 	

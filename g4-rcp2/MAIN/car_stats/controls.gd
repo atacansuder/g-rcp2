@@ -98,7 +98,7 @@ enum ControlType {
 ## Maxiumum clutch amount.
 @export var MaxClutch:float = 1.0
 
-#An internal handler for buttons so that it's easier to handle them.
+#An internal class for buttons so that it's easier to handle them.
 #When ViVe gets ported to C++, this will become an internal struct
 class ButtonWrapper:
 	extends Resource
@@ -109,21 +109,17 @@ class ButtonWrapper:
 	var on_rate:float
 	var off_rate:float
 	var minimum:float #unused
-	var maximum:float
+	var maximum:float = 1.0
 	
-	func poll() -> float:
-		if digital:
-			poll_digital_ease(Input.is_action_pressed(name))
-		else:
-			strength = Input.get_action_strength(name)
-		strength = clampf(strength, minimum, maximum)
-		return strength
-	
-	func poll_digital_ease(pressed:bool) -> float:
+	func poll(pressed:bool = Input.is_action_pressed(name)) -> float:
 		if pressed:
-			strength += on_rate / clock_mult
+			if digital:
+				strength += on_rate / clock_mult
+			else: 
+				strength = Input.get_action_strength(name)
 		else:
 			strength -= off_rate / clock_mult
+		strength = clampf(strength, minimum, maximum)
 		return strength
 
 var throttle_button:ButtonWrapper = ButtonWrapper.new()
@@ -210,49 +206,44 @@ func loose_steering() -> void:
 	
 	if absf(steer) > 1.0:
 		steer_velocity *= -0.5
-	for i:ViVeWheel in [front_left,front_right]:
-		steer_velocity += (i.directional_force.x * 0.00125) * i.Caster
-		#steer_velocity -= (i.stress * 0.0025) * (atan2(absf(i.wv), 1.0) * i.angle)
-		steer_velocity -= (i.stress * 0.0025) * (atan(absf(i.wv)) * i.angle)
+	for front_wheel:ViVeWheel in [front_left,front_right]:
+		steer_velocity += (front_wheel.directional_force.x * 0.00125) * front_wheel.Caster
+		steer_velocity -= (front_wheel.stress * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
 		
-		steer_velocity += steer * (i.directional_force.z * 0.0005) * i.Caster
+		steer_velocity += steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 		
-		if i.position.x > 0:
-			steer_velocity += i.directional_force.z * 0.0001
-		else:
-			steer_velocity -= i.directional_force.z * 0.0001
+		#if front_wheel.position.x > 0:
+		#	steer_velocity += front_wheel.directional_force.z * 0.0001
+		#else:
+		#	steer_velocity -= front_wheel.directional_force.z * 0.0001
 		
-		steer_velocity /= i.stress / (i.slip_percpre * (i.slip_percpre * 100.0) + 1.0) + 1.0
+		steer_velocity += (front_wheel.directional_force.z * 0.0001 * signf(front_wheel.position.x))
+		
+		
+		steer_velocity /= front_wheel.stress / (front_wheel.slip_percpre * (front_wheel.slip_percpre * 100.0) + 1.0) + 1.0
 
 ##Apply gear shifting assistance.
 func apply_gear_assist() -> void:
 	match GearAssist.assist_level:
-		2:
-			gaspedal = digital_button_curve(
-			((gas and not gasrestricted and not gear == -1) or (brake and gear == -1) or revmatch),
-			gaspedal, OnThrottleRate, OffThrottleRate)
-			
-			brakepedal = digital_button_curve(
-			((brake and not gear == -1) or (gas and gear == -1)),
-			brakepedal, OnBrakeRate, OffBrakeRate)
-		1:
-			gaspedal = digital_button_curve(
-				(gas and not gasrestricted or revmatch), 
-				gaspedal, OnThrottleRate, OffThrottleRate)
-			
-			brakepedal = digital_button_curve(
-				brake, brakepedal, OnBrakeRate, OffBrakeRate)
-		0:
+		2: #automatically go "forwards" regardless of pedal pressed, using the current gear to decide direction.
+			if gear == -1: #going in reverse
+				gaspedal = throttle_button.poll(brake or revmatch)
+				brakepedal = brake_button.poll(gas)
+			else: #Forward moving gear
+				gaspedal = throttle_button.poll((gas and not gasrestricted) or revmatch)
+				brakepedal = brake_button.poll(brake)
+		1: #go forward if gas is pressed, go backwards if brake is pressed.
+			gaspedal = throttle_button.poll(gas and not gasrestricted or revmatch)
+			brakepedal = brake_button.poll()
+		0: #1, but also automatically disable clutch
 			gasrestricted = false
 			clutchin = false
 			revmatch = false
 			
-			gaspedal = digital_button_curve(
-				(gas and not gasrestricted or revmatch), 
-				gaspedal, OnThrottleRate, OffThrottleRate)
-			
-			brakepedal = digital_button_curve(brake, brakepedal, OnBrakeRate, OffBrakeRate)
-	handbrakepull = digital_button_curve(handbrake, handbrakepull, OnHandbrakeRate, OffHandbrakeRate)
+			gaspedal = throttle_button.poll(gas and not gasrestricted or revmatch)
+			brakepedal = brake_button.poll()
+	
+	handbrakepull = handbrake_button.poll()
 
 ##Apply the steering assistance in an input implementation 
 func apply_assistance_factor(forward_force:float) -> void:
@@ -290,55 +281,32 @@ func steer_analog(steer_axis:float) -> void:
 
 func controls(steer_axis:float = 0.0) -> void:
 	#poll inputs
-	left = Input.is_action_pressed(ActionNameSteerLeft)
-	right = Input.is_action_pressed(ActionNameSteerRight)
-	shiftUp = Input.is_action_pressed(ActionNameShiftUp)
-	shiftDown = Input.is_action_pressed(ActionNameShiftDown)
 	gas = Input.is_action_pressed(throttle_button.name)
 	brake = Input.is_action_pressed(brake_button.name)
+	shiftUp = Input.is_action_pressed(ActionNameShiftUp)
+	shiftDown = Input.is_action_pressed(ActionNameShiftDown)
+	
+	left = Input.is_action_pressed(ActionNameSteerLeft)
+	right = Input.is_action_pressed(ActionNameSteerRight)
+	
+	
 	handbrakepull = handbrake_button.poll()
 	clutchpedal = clutch_button.poll()
 	
-	
 	#Something to do with loose steering?
-	if not UseAnalogSteering: #idr why I put this check here
-		if left:
-			steer_velocity -= 0.01
-		elif right:
-			steer_velocity += 0.01
+	if left:
+		steer_velocity -= 0.01
+	elif right:
+		steer_velocity += 0.01
 	
 	#loose steering
 	if LooseSteering:
 		loose_steering()
 	
+	#if not Controlled:
+	#	return
 	#gear assistance for applying gas and braking
-	match GearAssist.assist_level:
-		2: #automatically go "forwards" regardless of pedal pressed, using the current gear to decide direction.
-			if gear == -1:
-				gaspedal = brake_button.poll()
-				brakepedal = throttle_button.poll()
-			else:
-				throttle_button.poll()
-				brakepedal = brake_button.poll()
-			
-			
-			#if (gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch:
-			#	pass
-			
-			#gaspedal = throttle_button.poll_digital_ease((gas and not gasrestricted and gear != -1) or (brake and gear == -1) or revmatch)
-			#brakepedal = brake_button.poll_digital_ease((brake and gear != -1) or (gas and gear == -1))
-		1: #go forward if gas is pressed, go backwards if brake is pressed.
-			#if not gasrestricted or revmatch:
-			#	gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
-			gaspedal = throttle_button.poll()
-			brakepedal = brake_button.poll()
-		0: #1, but also automatically disable clutch
-			gasrestricted = false
-			clutchin = false
-			revmatch = false
-			#gaspedal = throttle_button.poll_digital_ease(gas and not gasrestricted or revmatch)
-			gaspedal = throttle_button.poll()
-			brakepedal = brake_button.poll()
+	apply_gear_assist()
 	
 	#previously called "going"
 	var forward_force:float
@@ -347,25 +315,37 @@ func controls(steer_axis:float = 0.0) -> void:
 	if (velocity.x > 0 and steer2 > 0) or (velocity.x < 0 and steer2 < 0):
 		forward_force = maxf(velocity.z, 0.0)
 	else:
-		forward_force = maxf(velocity.z / (absf(velocity.x) + 1.0), 0.0)
+		#forward_force = maxf(velocity.z / (absf(velocity.x) + 1.0), 0.0)
+		forward_force = maxf(velocity.z / (absf(velocity.x)), 0.0)
 	
 	#handle steering
 	if UseAnalogSteering:
 		steer2 = clampf(steer_axis * SteerSensitivity, -1.0, 1.0)
 		steer2 *= minf(absf(steer2) + 0.5, 1.0)
 	else:
-		if right:
-			if steer2 > 0:
-				steer2 = move_toward(steer2, 1.0, KeyboardSteerSpeed)
-			else:
-				steer2 = move_toward(steer2, 1.0, KeyboardCompensateSpeed)
-		elif left:
-			if steer2 < 0:
-				steer2 = move_toward(steer2, -1.0, KeyboardSteerSpeed)
-			else:
-				steer2 = move_toward(steer2, -1.0, KeyboardCompensateSpeed)
-		else:
+		 #if we need to compensate for steering in the oppsite direction of the car
+		var opposite_compensate:bool = (steer_axis > 0 and steer2 < 0) or (steer_axis < 0 and steer2 > 0)
+		
+		if is_zero_approx(steer_axis): #if the car is not steering
 			steer2 = move_toward(steer2, 0.0, KeyboardReturnSpeed)
+		elif opposite_compensate:
+			steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
+		else: #We're steering normally
+			steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
+		
+		#if right:
+		#	if steer2 > 0:
+		#		steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
+		#	else:
+		#		steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
+		#elif left:
+		#	if steer2 < 0:
+		#		steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
+		#	else:
+		#		steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
+		#else:
+		#	steer2 = move_toward(steer2, 0.0, KeyboardReturnSpeed)
+		
 		steer2 = clampf(steer2, -1.0, 1.0)
 	
 	#steering assistance

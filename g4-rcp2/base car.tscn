@@ -1,13 +1,52 @@
-[gd_scene load_steps=17 format=3 uid="uid://crtwme8ggggra"]
+[gd_scene load_steps=19 format=3 uid="uid://crtwme8ggggra"]
 
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
 [ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
+[ext_resource type="Script" path="res://MAIN/car_stats/controls.gd" id="2_lu5je"]
 [ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3"]
 [ext_resource type="Texture2D" uid="uid://del2h14nydk3g" path="res://MAIN/misc/textures/rim.jpg" id="4"]
 [ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="5"]
 [ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6"]
 [ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7"]
 [ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_tk2wk"]
+
+[sub_resource type="Resource" id="Resource_vg370"]
+script = ExtResource("2_lu5je")
+Use_Global_Control_Settings = false
+ActionNameShiftUp = &"shiftup"
+ActionNameShiftDown = &"shiftdown"
+UseAnalogSteering = false
+SteerSensitivity = 1.0
+ActionNameSteerLeft = &"left"
+ActionNameSteerRight = &"right"
+KeyboardSteerSpeed = 0.025
+KeyboardReturnSpeed = 0.05
+KeyboardCompensateSpeed = 0.1
+SteerAmountDecay = 0.015
+EnableSteeringAssistance = false
+SteeringAssistance = 1.0
+SteeringAssistanceAngular = 0.12
+LooseSteering = false
+ActionNameThrottle = &"gas"
+IsThrottleDigital = false
+OnThrottleRate = 0.2
+OffThrottleRate = 0.2
+MaxThrottle = 1.0
+ActionNameBrake = &"brake"
+IsBrakeDigital = true
+OnBrakeRate = 0.05
+OffBrakeRate = 0.1
+MaxBrake = 1.0
+ActionNameHandbrake = &"handbrake"
+IsHandbrakeDigital = false
+OnHandbrakeRate = 0.2
+OffHandbrakeRate = 0.2
+MaxHandbrake = 1.0
+ActionNameClutch = &"clutch"
+IsClutchDigital = true
+OnClutchRate = 0.2
+OffClutchRate = 0.2
+MaxClutch = 1.0
 
 [sub_resource type="ConvexPolygonShape3D" id="12"]
 points = PackedVector3Array(2.75605, 1.27715, 6.68259, 1.75444, 2.13382, 3.26614, -2.75659, 1.27715, 6.68259, 2.75605, -0.4, 6.68259, 2.75605, 0.921974, -4.96708, 1.75444, 2.13382, -0.149161, -1.75498, 2.13382, 3.26614, -2.75659, -0.4, 6.68259, -1.75498, 2.13382, -0.149161, -2.75659, 0.921974, -4.96708, 2.75605, -0.4, -4.96708, -2.75659, -0.4, -4.96708)
@@ -230,6 +269,8 @@ point_count = 2
 mass = 90.0
 can_sleep = false
 script = ExtResource("2")
+car_controls = SubResource("Resource_vg370")
+control_type = 3
 Debug_Mode = true
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="."]

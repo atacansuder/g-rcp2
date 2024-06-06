@@ -103,6 +103,7 @@ func threaded_load_car_step_2() -> void:
 	Please ensure scene.tscn is present and properly loaded.")
 	
 	var control_cache:ViVeCarControls = ViVeEnvironment.get_singleton().car.car_controls
+	var control_option_cache:int = ViVeEnvironment.get_singleton().car.control_type
 	var new_car:ViVeCar = car_packed_scene.instantiate()
 	
 	ViVeEnvironment.get_singleton().car.queue_free()
@@ -110,6 +111,7 @@ func threaded_load_car_step_2() -> void:
 	ViVeEnvironment.get_singleton().car = new_car
 	
 	ViVeEnvironment.get_singleton().car.car_controls = control_cache
+	ViVeEnvironment.get_singleton().car.control_type = control_option_cache
 	
 	new_car.global_position = default_position + Vector3(0.0, 5.0, 0.0)
 	
