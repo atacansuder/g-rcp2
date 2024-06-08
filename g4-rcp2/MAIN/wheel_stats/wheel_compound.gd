@@ -12,7 +12,8 @@ class_name TyreCompoundSettings
 	#This is currently the only setting used in this way, thus the only with the trigger here so far.
 	set(new_factor):
 		TractionFactor = new_factor
-		wheel_parent.set_physical_stats()
+		if is_instance_valid(wheel_parent):
+			wheel_parent.set_physical_stats()
 
 @export var DeformFactor:float = 1.0
 

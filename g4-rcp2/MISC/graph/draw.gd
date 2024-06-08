@@ -32,8 +32,7 @@ var car:ViVeCar = ViVeCar.new()
 
 #This keeps getting re-called somewhere when it shouldn't be, when swapping cars
 func _ready() -> void:
-	if not ViVeEnvironment.get_singleton().is_connected("car_changed", draw_graph):
-		var _err:Error = ViVeEnvironment.get_singleton().connect("car_changed", draw_graph)
+	ViVeEnvironment.get_singleton().connect("car_changed", draw_graph)
 
 func draw_graph() -> void:
 	car = ViVeEnvironment.get_singleton().car

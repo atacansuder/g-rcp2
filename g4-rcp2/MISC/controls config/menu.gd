@@ -1,89 +1,87 @@
 extends HBoxContainer
 
+const file_name_template:String = "mapping_{}.tres"
+
+@onready var prof_name:LineEdit = $"JumpTo/ProfileName"
+
 var car:ViVeCar
+
+var user_root:String 
+var setting_count:int = 0
+
 
 func setcar() -> void:
 	car = ViVeEnvironment.get_singleton().car
 	ViVeGUIControlVariable.control_ref = car.car_controls
+	prof_name.text = car.car_controls.ControlMapName
 
 func _ready() -> void:
+	user_root = ProjectSettings.globalize_path("user://mappings")
 	ViVeEnvironment.get_singleton().connect("ready", setup)
 	ViVeEnvironment.get_singleton().connect("car_changed", setcar)
+	load_preset_list()
 
 func setup() -> void:
 	setcar()
 	ViVeEnvironment.get_singleton().emit_signal("car_changed")
 
-func old_setup() -> void:
-	for i:Control in $Config/List.get_children():
-		match i.get_class():
-			"HSlider":
-				if i.treat_as_int:
-					#Currently, and only because of this one exception, 
-					# this works. But this should be changed in the future.
-					i.value = car.GearAssist.get(i.var_name)
-					i.get_node("amount").text = str(int(i.value))
-				else:
-					i.value = car.car_controls.get(i.var_name)
-					i.get_node("amount").text = str(i.value)
-			"OptionButton":
-				i.select(car.control_type)
-			"CheckBox":
-				i.button_pressed = car.car_controls.get(i.var_name)
-				i.get_node("amount").text = str(i.button_pressed)
-			_:
-				continue
+func load_preset_list() -> void:
+	if not DirAccess.dir_exists_absolute(user_root):
+		DirAccess.make_dir_absolute(user_root)
+	
+	if not DirAccess.get_files_at(user_root).is_empty():
+		var load_queue:PackedStringArray
+		
+		for files:String in DirAccess.get_files_at(user_root):
+			#check that they're actual tres files
+			if files == file_name_template.format(str(setting_count)):
+				load_queue.append(files)
+
+func process_presets() -> void:
+	pass
+
 
 
 func _on_top_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/input_options".grab_focus()
 
 func _on_steer_digital_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/SteerDigital/Label".grab_focus()
 
 func _on_steer_analog_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/SteerAnalog/Label".grab_focus()
 
 func _on_throttle_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/Throttle/Label".grab_focus()
 
 func _on_brake_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/Brake/Label".grab_focus()
 
 func _on_handbrake_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/Handbrake/Label".grab_focus()
 
 func _on_clutch_pressed() -> void:
-	pass # Replace with function body.
-
+	$"Config/List/Clutch/Label".grab_focus()
 
 func _on_apply_pressed() -> void:
-	pass # Replace with function body.
-
+	car.car_controls = ViVeGUIControlVariable.control_ref
 
 func _on_cancel_pressed() -> void:
-	pass # Replace with function body.
-
+	ViVeGUIControlVariable.control_ref = car.car_controls
+	ViVeEnvironment.get_singleton().emit_signal("car_changed")
 
 func _on_save_pressed() -> void:
 	pass # Replace with function body.
 
-
 #these misc options are directly connected up here
-
 func _on_input_options_item_selected(index: int) -> void:
 	car.control_type = index
-
 
 func _on_gear_assist_drag_ended(value_changed: bool) -> void:
 	pass # Replace with function body.
 
-
 func _on_gear_assist_value_changed(value: float) -> void:
 	pass # Replace with function body.
+
+func _on_label_text_changed(new_text: String) -> void:
+	ViVeGUIControlVariable.control_ref.ControlMapName = new_text

@@ -55,15 +55,9 @@ func setup() -> void:
 	for d:ViVeWheel in car_node.get_wheels():
 		vgs.append_wheel(d)
 	
-	#What in the world-
-	
-#	for i:Dictionary in $power_graph.get_script().get_script_property_list():
-#		print(i)
-#		const blacklist:PackedStringArray = ["peakhp", "tr", "hp", "skip", "scale"]
-#		#if not i["name"] == "peakhp" and not i["name"] == "tr" and not i["name"] == "tr" and not i["name"] == "hp" and not i["name"] == "skip" and not i["name"] == "scale":
-#		if not blacklist.has(i.get("name")):
-#			if i["name"] in car_node:
-#				$power_graph.set(i["name"], car_node.get(i["name"]))
+	#sync the power graph
+	power_graph.draw_graph()
+
 
 func _process(delta:float) -> void:
 	if not is_instance_valid(car_node):

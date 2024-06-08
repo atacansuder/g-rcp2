@@ -9,6 +9,8 @@ static var control_ref:ViVeCarControls = ViVeCarControls.new():
 
 ##Variable this is responsible for changing
 @export var var_name:StringName
+##The node with the button, slider, etc.
+@onready var editing_node:Control
 ##Text label to show value
 @onready var amount:Label = $info/amount
 ##Value cache for sliders. This prevents the UI from lagging.
@@ -24,8 +26,20 @@ var var_type:int
 func load_information() -> void:
 	control_ref = ViVeEnvironment.get_singleton().car.car_controls
 	var_type = typeof(control_ref.get(var_name))
+	var monitored_variable:Variant = control_ref.get(var_name)
 	
 	$"info/amount".text = str(control_ref.get(var_name))
+	
+	match editing_node.get_class():
+		"HSlider", "VSlider":
+			var slider:Slider = editing_node as Slider
+			slider.value = float(monitored_variable)
+		"CheckBox", "CheckButton", "Button":
+			var checkbox:BaseButton = editing_node as BaseButton
+			checkbox.button_pressed = bool(monitored_variable)
+		"TextEdit", "LineEdit":
+			##TODO: Implement text nodes
+			pass
 
 func _init() -> void:
 	ViVeEnvironment.get_singleton().connect("car_changed", load_information)
@@ -33,7 +47,8 @@ func _init() -> void:
 func _ready() -> void:
 	$info/text.text = var_name
 	
-	var editing_node:Control = get_node("value")
+	if has_node("value"):
+		editing_node = get_node("value")
 	
 	if not is_instance_valid(editing_node):
 		push_error("No valid value node for setting ", var_name)

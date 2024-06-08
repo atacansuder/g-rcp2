@@ -684,4 +684,5 @@ func set_physical_stats() -> void:
 	#tyre_stiffness_2 = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
 	tyre_stiffness_2 = TyreSettings.get_stiffness()
 	
-	tol = (magic_number_b / magic_number_c) * car.ClutchGrip
+	if is_instance_valid(car):
+		tol = (magic_number_b / magic_number_c) * car.ClutchGrip

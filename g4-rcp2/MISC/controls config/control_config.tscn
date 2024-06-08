@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://cebpm4s1kkak1"]
 
-[ext_resource type="Script" path="res://MISC/controls config/menu.gd" id="1_rtpil"]
-[ext_resource type="PackedScene" uid="uid://dppawnttepfja" path="res://MISC/controls config/control_option.tscn" id="3_3kmeh"]
+[ext_resource type="Script" path="res://MISC/controls config/menu.gd" id="1_u565i"]
+[ext_resource type="PackedScene" uid="uid://dppawnttepfja" path="res://MISC/controls config/control_option.tscn" id="2_yfduw"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xljuc"]
 
@@ -11,14 +11,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_rtpil")
+script = ExtResource("1_u565i")
 
 [node name="JumpTo" type="VBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="JumpTo"]
+[node name="ProfileName" type="LineEdit" parent="JumpTo"]
 layout_mode = 2
-text = "Default"
 
 [node name="Top" type="Button" parent="JumpTo"]
 layout_mode = 2
@@ -68,8 +67,12 @@ text = "Cancel"
 [node name="Config" type="ScrollContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+follow_focus = true
 
 [node name="List" type="VBoxContainer" parent="Config"]
+layout_mode = 2
+
+[node name="HSeparator8" type="HSeparator" parent="Config/List"]
 layout_mode = 2
 
 [node name="input_options" type="OptionButton" parent="Config/List"]
@@ -84,6 +87,9 @@ popup/item_2/text = "Touch Controls"
 popup/item_2/id = 0
 popup/item_3/text = "Joypad"
 popup/item_3/id = 2
+
+[node name="HSeparator7" type="HSeparator" parent="Config/List"]
+layout_mode = 2
 
 [node name="gear_assist" type="HSlider" parent="Config/List"]
 custom_minimum_size = Vector2(240, 60)
@@ -103,6 +109,9 @@ anchor_bottom = 1.0
 text = "0.0"
 vertical_alignment = 2
 
+[node name="HSeparator6" type="HSeparator" parent="Config/List"]
+layout_mode = 2
+
 [node name="SteerAnalog" type="VBoxContainer" parent="Config/List"]
 layout_mode = 2
 
@@ -111,7 +120,7 @@ layout_mode = 2
 text = "Analog Steering:"
 horizontal_alignment = 1
 
-[node name="SteerSensitivity" parent="Config/List/SteerAnalog" instance=ExtResource("3_3kmeh")]
+[node name="SteerSensitivity" parent="Config/List/SteerAnalog" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"SteerSensitivity"
 
@@ -122,11 +131,14 @@ max_value = 2.0
 step = 0.001
 value = 1.0
 
-[node name="UseAnalogSteering" parent="Config/List/SteerAnalog" instance=ExtResource("3_3kmeh")]
+[node name="UseAnalogSteering" parent="Config/List/SteerAnalog" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"UseAnalogSteering"
 
 [node name="value" type="CheckBox" parent="Config/List/SteerAnalog/UseAnalogSteering"]
+layout_mode = 2
+
+[node name="HSeparator5" type="HSeparator" parent="Config/List"]
 layout_mode = 2
 
 [node name="SteerDigital" type="VBoxContainer" parent="Config/List"]
@@ -137,59 +149,76 @@ layout_mode = 2
 text = "Digital Steering"
 horizontal_alignment = 1
 
-[node name="KeyboardCompensateSpeed" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="comp_speed" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"KeyboardCompensateSpeed"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/KeyboardCompensateSpeed"]
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/comp_speed"]
 layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="KeyboardReturnSpeed" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="return_speed" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"KeyboardReturnSpeed"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/KeyboardReturnSpeed"]
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/return_speed"]
 layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="KeyboardSteerSpeed" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="steer_speed" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"KeyboardSteerSpeed"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/KeyboardSteerSpeed"]
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/steer_speed"]
 layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="SteeringAssistanceAngular" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="loose_steer" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
-var_name = &"SteeringAssistanceAngular"
+var_name = &"LooseSteering"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/SteeringAssistanceAngular"]
+[node name="value" type="CheckBox" parent="Config/List/SteerDigital/loose_steer"]
 layout_mode = 2
-max_value = 1.0
-step = 0.001
 
-[node name="SteeringAssistance" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="enable_assist" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
+layout_mode = 2
+var_name = &"EnableSteeringAssistance"
+
+[node name="value" type="CheckBox" parent="Config/List/SteerDigital/enable_assist"]
+layout_mode = 2
+
+[node name="assist" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"SteeringAssistance"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/SteeringAssistance"]
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/assist"]
 layout_mode = 2
 max_value = 2.0
 step = 0.001
 
-[node name="SteerAmountDecay" parent="Config/List/SteerDigital" instance=ExtResource("3_3kmeh")]
+[node name="assist_angular" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
+layout_mode = 2
+var_name = &"SteeringAssistanceAngular"
+
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/assist_angular"]
+layout_mode = 2
+max_value = 1.0
+step = 0.001
+
+[node name="steer_decay" parent="Config/List/SteerDigital" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"SteerAmountDecay"
 
-[node name="value" type="HSlider" parent="Config/List/SteerDigital/SteerAmountDecay"]
+[node name="value" type="HSlider" parent="Config/List/SteerDigital/steer_decay"]
 layout_mode = 2
 max_value = 0.2
 step = 0.001
+
+[node name="HSeparator4" type="HSeparator" parent="Config/List"]
+layout_mode = 2
 
 [node name="Throttle" type="VBoxContainer" parent="Config/List"]
 layout_mode = 2
@@ -199,14 +228,14 @@ layout_mode = 2
 text = "Throttle"
 horizontal_alignment = 1
 
-[node name="digital" parent="Config/List/Throttle" instance=ExtResource("3_3kmeh")]
+[node name="digital" parent="Config/List/Throttle" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"IsThrottleDigital"
 
 [node name="value" type="CheckBox" parent="Config/List/Throttle/digital"]
 layout_mode = 2
 
-[node name="on" parent="Config/List/Throttle" instance=ExtResource("3_3kmeh")]
+[node name="on" parent="Config/List/Throttle" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OnThrottleRate"
 
@@ -215,7 +244,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="off" parent="Config/List/Throttle" instance=ExtResource("3_3kmeh")]
+[node name="off" parent="Config/List/Throttle" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OffThrottleRate"
 
@@ -224,7 +253,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="max" parent="Config/List/Throttle" instance=ExtResource("3_3kmeh")]
+[node name="max" parent="Config/List/Throttle" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"MaxThrottle"
 
@@ -232,6 +261,9 @@ var_name = &"MaxThrottle"
 layout_mode = 2
 max_value = 1.0
 step = 0.001
+
+[node name="HSeparator3" type="HSeparator" parent="Config/List"]
+layout_mode = 2
 
 [node name="Clutch" type="VBoxContainer" parent="Config/List"]
 layout_mode = 2
@@ -241,14 +273,14 @@ layout_mode = 2
 text = "Clutch"
 horizontal_alignment = 1
 
-[node name="digital" parent="Config/List/Clutch" instance=ExtResource("3_3kmeh")]
+[node name="digital" parent="Config/List/Clutch" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"IsClutchDigital"
 
 [node name="value" type="CheckBox" parent="Config/List/Clutch/digital"]
 layout_mode = 2
 
-[node name="on" parent="Config/List/Clutch" instance=ExtResource("3_3kmeh")]
+[node name="on" parent="Config/List/Clutch" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OnClutchRate"
 
@@ -257,7 +289,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="off" parent="Config/List/Clutch" instance=ExtResource("3_3kmeh")]
+[node name="off" parent="Config/List/Clutch" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OffClutchRate"
 
@@ -266,7 +298,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="max" parent="Config/List/Clutch" instance=ExtResource("3_3kmeh")]
+[node name="max" parent="Config/List/Clutch" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"MaxClutch"
 
@@ -274,6 +306,9 @@ var_name = &"MaxClutch"
 layout_mode = 2
 max_value = 1.0
 step = 0.001
+
+[node name="HSeparator2" type="HSeparator" parent="Config/List"]
+layout_mode = 2
 
 [node name="Handbrake" type="VBoxContainer" parent="Config/List"]
 layout_mode = 2
@@ -283,14 +318,14 @@ layout_mode = 2
 text = "Handbrake"
 horizontal_alignment = 1
 
-[node name="digital" parent="Config/List/Handbrake" instance=ExtResource("3_3kmeh")]
+[node name="digital" parent="Config/List/Handbrake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"IsHandbrakeDigital"
 
 [node name="value" type="CheckBox" parent="Config/List/Handbrake/digital"]
 layout_mode = 2
 
-[node name="on" parent="Config/List/Handbrake" instance=ExtResource("3_3kmeh")]
+[node name="on" parent="Config/List/Handbrake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OnHandbrakeRate"
 
@@ -299,7 +334,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="off" parent="Config/List/Handbrake" instance=ExtResource("3_3kmeh")]
+[node name="off" parent="Config/List/Handbrake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OffHandbrakeRate"
 
@@ -308,7 +343,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="max" parent="Config/List/Handbrake" instance=ExtResource("3_3kmeh")]
+[node name="max" parent="Config/List/Handbrake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"MaxHandbrake"
 
@@ -316,6 +351,9 @@ var_name = &"MaxHandbrake"
 layout_mode = 2
 max_value = 1.0
 step = 0.001
+
+[node name="HSeparator" type="HSeparator" parent="Config/List"]
+layout_mode = 2
 
 [node name="Brake" type="VBoxContainer" parent="Config/List"]
 layout_mode = 2
@@ -325,14 +363,14 @@ layout_mode = 2
 text = "Brake"
 horizontal_alignment = 1
 
-[node name="digital" parent="Config/List/Brake" instance=ExtResource("3_3kmeh")]
+[node name="digital" parent="Config/List/Brake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"IsBrakeDigital"
 
 [node name="value" type="CheckBox" parent="Config/List/Brake/digital"]
 layout_mode = 2
 
-[node name="on" parent="Config/List/Brake" instance=ExtResource("3_3kmeh")]
+[node name="on" parent="Config/List/Brake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OnBrakeRate"
 
@@ -341,7 +379,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="off" parent="Config/List/Brake" instance=ExtResource("3_3kmeh")]
+[node name="off" parent="Config/List/Brake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"OffBrakeRate"
 
@@ -350,7 +388,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 
-[node name="max" parent="Config/List/Brake" instance=ExtResource("3_3kmeh")]
+[node name="max" parent="Config/List/Brake" instance=ExtResource("2_yfduw")]
 layout_mode = 2
 var_name = &"MaxBrake"
 
@@ -371,6 +409,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "Presets:"
 
+[connection signal="text_changed" from="JumpTo/ProfileName" to="." method="_on_label_text_changed"]
 [connection signal="pressed" from="JumpTo/Top" to="." method="_on_top_pressed"]
 [connection signal="pressed" from="JumpTo/SteerDigital" to="." method="_on_steer_digital_pressed"]
 [connection signal="pressed" from="JumpTo/SteerAnalog" to="." method="_on_steer_analog_pressed"]
