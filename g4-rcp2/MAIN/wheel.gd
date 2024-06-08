@@ -22,9 +22,17 @@ class_name ViVeWheel
 ##Power Bias (when driven).
 @export var W_PowerBias:float = 1.0
 ##The [ViVeTyreSettings] for this wheel.
-@export var TyreSettings:ViVeTyreSettings = ViVeTyreSettings.new()
+@export var TyreSettings:ViVeTyreSettings = ViVeTyreSettings.new():
+	set(new_settings):
+		TyreSettings = new_settings
+		TyreSettings.wheel_parent = self
+		set_physical_stats()
 ##The [TyreCompoundSettings] for this wheel.
-@export var CompoundSettings:TyreCompoundSettings = TyreCompoundSettings.new()
+@export var CompoundSettings:TyreCompoundSettings = TyreCompoundSettings.new():
+	set(new_settings):
+		CompoundSettings = new_settings
+		CompoundSettings.wheel_parent = self
+		set_physical_stats()
 ##Represents information about the axle the [ViVeWheel] is attached to in the car.
 @export var AxleSettings:ViVeWheelAxle = ViVeWheelAxle.new()
 
@@ -605,7 +613,6 @@ func suspension() -> float:
 	var damping_rebound:float = S_ReboundDamping * (AR_Stiff * rolldist + 1.0)
 	
 	geometry.global_position = get_collision_point()
-	#geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), -ground_distance)
 	geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), -ground_distance)
 	
 	velo_1.global_transform = alignAxisToVector(velo_1.global_transform, get_collision_normal())

@@ -423,9 +423,11 @@ func decide_controls() -> Callable:
 
 func newer_controls() -> void:
 	if control_type == ControlType.CONTROLS_KEYBOARD_MOUSE:
+		car_controls.UseAnalogSteering = true
 		var mouseposx:float = get_window().get_mouse_position().x / get_window().size.x
 		car_controls.controls(mouseposx)
 	elif control_type == ControlType.CONTROLS_KEYBOARD:
+		car_controls.UseAnalogSteering = false
 		car_controls.controls(Input.get_axis(car_controls.ActionNameSteerLeft, car_controls.ActionNameSteerRight))
 	elif control_type == ControlType.CONTROLS_TOUCH:
 		car_controls.controls(Input.get_accelerometer().x / 10.0)
@@ -1047,8 +1049,9 @@ func _physics_process(_delta:float) -> void:
 	car_controls.velocity = velocity
 	car_controls.rvelocity = r_velocity
 	car_controls.linear_velocity = linear_velocity
-	new_controls()
+	#new_controls()
 	#controls()
+	newer_controls()
 	
 	current_gear_ratio = 10.0
 	

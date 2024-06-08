@@ -17,6 +17,8 @@ enum ControlType {
 ## @depreciated
 ## Applies all control settings globally. This also affects cars that were already spawned.
 @export var Use_Global_Control_Settings:bool = false
+##The asthetic name of the control preset
+@export var ControlMapName:String = "Default"
 ##Action name for shifting up.
 @export var ActionNameShiftUp:StringName = &"shiftup"
 ##Action name for shifting down.
@@ -53,53 +55,114 @@ enum ControlType {
 ##@experimental Simulate rack and pinion steering physics.
 @export var LooseSteering:bool = false
 
+#In C++, none of these will be indepenent variables: The setgets will map directly to their structs.
 @export_group("Throttle")
 ##Action name for throttle.
-@export var ActionNameThrottle:StringName = &"gas"
+@export var ActionNameThrottle:StringName = &"gas":
+	set(new_name):
+		ActionNameThrottle = new_name
+		throttle_button.name = new_name
 ##If throttle is from a digital source (button).
-@export var IsThrottleDigital:bool = true
+@export var IsThrottleDigital:bool = true:
+	set(new_value):
+		IsThrottleDigital = new_value
+		throttle_button.digital = new_value
 ## Throttle pressure rate.
-@export var OnThrottleRate:float = 0.2
+@export var OnThrottleRate:float = 0.2:
+	set(new_rate):
+		OnThrottleRate = new_rate
+		throttle_button.on_rate = new_rate
 ## Throttle depress rate.
-@export var OffThrottleRate:float = 0.2
+@export var OffThrottleRate:float = 0.2:
+	set(new_rate):
+		OffThrottleRate = new_rate
+		throttle_button.off_rate = new_rate
 ## Maximum throttle amount.
-@export var MaxThrottle:float = 1.0
+@export var MaxThrottle:float = 1.0:
+	set(new_max):
+		MaxThrottle = new_max
+		throttle_button.maximum = new_max
 @export_group("Brake")
 ##Action name for braking.
-@export var ActionNameBrake:StringName = &"brake"
+@export var ActionNameBrake:StringName = &"brake":
+	set(new_name):
+		ActionNameBrake = new_name
+		brake_button.name = new_name
 ##If braking is from a digital source (button).
-@export var IsBrakeDigital:bool = true
+@export var IsBrakeDigital:bool = true:
+	set(new_value):
+		IsBrakeDigital = new_value
+		brake_button.digital = new_value
 ## Brake pressure rate.
-@export var OnBrakeRate:float = 0.05
+@export var OnBrakeRate:float = 0.05:
+	set(new_rate):
+		OnBrakeRate = new_rate
+		brake_button.on_rate = new_rate
 ## Brake depress rate.
-@export var OffBrakeRate:float = 0.1
+@export var OffBrakeRate:float = 0.1:
+	set(new_rate):
+		OffBrakeRate = new_rate
+		brake_button.off_rate = new_rate
 ## Maximum brake amount.
-@export var MaxBrake:float = 1.0
+@export var MaxBrake:float = 1.0:
+	set(new_max):
+		MaxBrake = new_max
+		brake_button.maximum = new_max
 @export_group("Handbrake")
 ##Action name for handbraking.
-@export var ActionNameHandbrake:StringName = &"handbrake"
+@export var ActionNameHandbrake:StringName = &"handbrake":
+	set(new_name):
+		ActionNameHandbrake = new_name
+		handbrake_button.name = new_name
 ##If handbrake is from a digital source (button).
-@export var IsHandbrakeDigital:bool = true
+@export var IsHandbrakeDigital:bool = true:
+	set(new_value):
+		IsHandbrakeDigital = new_value
+		handbrake_button.digital = new_value
 ## Handbrake pull rate.
-@export var OnHandbrakeRate:float = 0.2
+@export var OnHandbrakeRate:float = 0.2:
+	set(new_rate):
+		OnHandbrakeRate = new_rate
+		handbrake_button.on_rate = new_rate
 ## Handbrake push rate.
-@export var OffHandbrakeRate:float = 0.2
+@export var OffHandbrakeRate:float = 0.2:
+	set(new_rate):
+		OffHandbrakeRate = new_rate
+		handbrake_button.off_rate = new_rate
 ## Maximum handbrake amount.
-@export var MaxHandbrake:float = 1.0
+@export var MaxHandbrake:float = 1.0:
+	set(new_max):
+		MaxHandbrake = new_max
+		handbrake_button.maximum = new_max
 @export_group("Clutch")
 ##Action name for clutching.
-@export var ActionNameClutch:StringName = &"clutch"
+@export var ActionNameClutch:StringName = &"clutch":
+	set(new_name):
+		ActionNameClutch = new_name
+		clutch_button.name = new_name
 ##If clutch is from a digital source (button).
-@export var IsClutchDigital:bool = true
+@export var IsClutchDigital:bool = true:
+	set(new_value):
+		IsClutchDigital = new_value
+		clutch_button.digital = new_value
 ## Clutch release rate.
-@export var OnClutchRate:float = 0.2
+@export var OnClutchRate:float = 0.2:
+	set(new_rate):
+		OnClutchRate = new_rate
+		clutch_button.on_rate = new_rate
 ## Clutch engage rate.
-@export var OffClutchRate:float = 0.2
+@export var OffClutchRate:float = 0.2:
+	set(new_rate):
+		OffClutchRate = new_rate
+		clutch_button.off_rate = new_rate
 ## Maxiumum clutch amount.
-@export var MaxClutch:float = 1.0
+@export var MaxClutch:float = 1.0:
+	set(new_max):
+		MaxClutch = new_max
+		clutch_button.maximum = new_max
 
 #An internal class for buttons so that it's easier to handle them.
-#When ViVe gets ported to C++, this will become an internal struct
+#When ViVe gets ported to C++, this will become a private struct
 class ButtonWrapper:
 	extends Resource
 	static var clock_mult:float = 1.0
@@ -108,7 +171,7 @@ class ButtonWrapper:
 	var digital:bool
 	var on_rate:float
 	var off_rate:float
-	var minimum:float #unused
+	var minimum:float = 0.0 #unused
 	var maximum:float = 1.0
 	
 	func poll(pressed:bool = Input.is_action_pressed(name)) -> float:
@@ -289,7 +352,6 @@ func controls(steer_axis:float = 0.0) -> void:
 	left = Input.is_action_pressed(ActionNameSteerLeft)
 	right = Input.is_action_pressed(ActionNameSteerRight)
 	
-	
 	handbrakepull = handbrake_button.poll()
 	clutchpedal = clutch_button.poll()
 	
@@ -320,32 +382,30 @@ func controls(steer_axis:float = 0.0) -> void:
 	
 	#handle steering
 	if UseAnalogSteering:
+		#analog steering takes steer_axis literally
+		
+		#apply steering sensitivity
 		steer2 = clampf(steer_axis * SteerSensitivity, -1.0, 1.0)
+		#???
 		steer2 *= minf(absf(steer2) + 0.5, 1.0)
 	else:
-		 #if we need to compensate for steering in the oppsite direction of the car
-		var opposite_compensate:bool = (steer_axis > 0 and steer2 < 0) or (steer_axis < 0 and steer2 > 0)
+		var raw_steer_strength:float = Input.get_axis(ActionNameSteerLeft, ActionNameSteerRight)
+		#if we need to compensate for steering in the oppsite direction of the car
+		var opposite_compensate:bool = (raw_steer_strength > 0 and steer2 < 0) or (raw_steer_strength < 0 and steer2 > 0)
 		
-		if is_zero_approx(steer_axis): #if the car is not steering
+		
+		#if the car is not steering
+		if is_zero_approx(raw_steer_strength):
+			#move steering towards 0
 			steer2 = move_toward(steer2, 0.0, KeyboardReturnSpeed)
 		elif opposite_compensate:
-			steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
-		else: #We're steering normally
-			steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
-		
-		#if right:
-		#	if steer2 > 0:
-		#		steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
-		#	else:
-		#		steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
-		#elif left:
-		#	if steer2 < 0:
-		#		steer2 = move_toward(steer2, steer_axis, KeyboardSteerSpeed)
-		#	else:
-		#		steer2 = move_toward(steer2, steer_axis, KeyboardCompensateSpeed)
-		#else:
-		#	steer2 = move_toward(steer2, 0.0, KeyboardReturnSpeed)
-		
+			#move steer2 towards the direction of steer_axis, but fast
+			steer2 = move_toward(steer2, raw_steer_strength, KeyboardCompensateSpeed)
+		 #We're steering normally
+		else:
+			#move steer2 towards the direction of steer_axis
+			steer2 = move_toward(steer2, raw_steer_strength, KeyboardSteerSpeed)
+		#clamp it between -1 and 1
 		steer2 = clampf(steer2, -1.0, 1.0)
 	
 	#steering assistance
@@ -361,13 +421,13 @@ func controls(steer_axis:float = 0.0) -> void:
 
 ##The control implementation for touchscreen + accelerometer
 func controls_touchscreen() -> void:
-	gas = Input.is_action_pressed("gas")
-	brake = Input.is_action_pressed("brake")
-	shiftUp = Input.is_action_just_pressed("shiftup")
-	shiftDown = Input.is_action_just_pressed("shiftdown")
-	handbrake = Input.is_action_pressed("handbrake")
-	left = Input.is_action_pressed("left")
-	right = Input.is_action_pressed("right")
+	gas = Input.is_action_pressed(ActionNameThrottle)
+	brake = Input.is_action_pressed(ActionNameBrake)
+	shiftUp = Input.is_action_just_pressed(ActionNameShiftUp)
+	shiftDown = Input.is_action_just_pressed(ActionNameShiftDown)
+	handbrake = Input.is_action_pressed(ActionNameHandbrake)
+	left = Input.is_action_pressed(ActionNameSteerLeft)
+	right = Input.is_action_pressed(ActionNameSteerRight)
 	
 	if not UseAnalogSteering:
 		if left:
@@ -399,11 +459,11 @@ func controls_touchscreen() -> void:
 func controls_joypad() -> void:
 	const joypad_index:int = 0 #This can be switched to anything else later on for splitscreen
 	
-	shiftUp = Input.is_action_pressed("shiftup")
-	shiftDown = Input.is_action_pressed("shiftdown")
-	gas = Input.is_action_pressed("gas")
-	brake = Input.is_action_pressed("brake")
-	handbrake = Input.is_action_pressed("handbrake")
+	shiftUp = Input.is_action_pressed(ActionNameShiftUp)
+	shiftDown = Input.is_action_pressed(ActionNameShiftDown)
+	gas = Input.is_action_pressed(ActionNameThrottle)
+	brake = Input.is_action_pressed(ActionNameBrake)
+	handbrake = Input.is_action_pressed(ActionNameHandbrake)
 	left = Input.is_joy_button_pressed(joypad_index, JOY_BUTTON_DPAD_LEFT)
 	right = Input.is_joy_button_pressed(joypad_index, JOY_BUTTON_DPAD_RIGHT)
 	
@@ -416,9 +476,9 @@ func controls_joypad() -> void:
 	clutchin = false
 	revmatch = false
 	
-	gaspedal = Input.get_action_strength("gas")
-	brakepedal = Input.get_action_strength("brake")
-	handbrakepull = Input.get_action_strength("handbrake")
+	gaspedal = Input.get_action_strength(ActionNameThrottle)
+	brakepedal = Input.get_action_strength(ActionNameBrake)
+	handbrakepull = Input.get_action_strength(ActionNameHandbrake)
 	
 	var siding:float = absf(velocity.x)
 	

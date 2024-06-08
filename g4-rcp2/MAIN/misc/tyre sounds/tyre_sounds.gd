@@ -27,7 +27,7 @@ func stop() -> void:
 
 func _ready() -> void:
 	parent = get_parent_node_3d()
-	var _err:Error = parent.connect("wheels_updated", load_wheels)
+	parent.connect("wheels_updated", load_wheels)
 	
 	play()
 
@@ -67,7 +67,7 @@ func _physics_process(_delta:float) -> void:
 	
 	var mult:float = (parent.linear_velocity.length() / 5000.0 + 1.0)
 	
-	#roll0.pitch_scale = 1.0 / (parent.linear_velocity.length() / 500.0 + 1.0)
+	roll0.pitch_scale = 1.0 / (parent.linear_velocity.length() / 500.0 + 1.0)
 	roll1.pitch_scale = 1.0 / mult
 	roll2.pitch_scale = 1.0 / mult
 	peel0.pitch_scale = 0.95 + length / 8.0 / mult
