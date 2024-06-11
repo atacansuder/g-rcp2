@@ -12,6 +12,8 @@ var setting_count:int = 0
 
 func setcar() -> void:
 	car = ViVeEnvironment.get_singleton().car
+	if not is_instance_valid(car):
+		return
 	ViVeGUIControlVariable.control_ref = car.car_controls
 	prof_name.text = car.car_controls.ControlMapName
 
@@ -39,8 +41,6 @@ func load_preset_list() -> void:
 
 func process_presets() -> void:
 	pass
-
-
 
 func _on_top_pressed() -> void:
 	$"Config/List/input_options".grab_focus()

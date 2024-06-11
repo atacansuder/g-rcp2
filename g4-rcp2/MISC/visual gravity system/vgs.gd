@@ -3,6 +3,7 @@ extends Control
 class_name ViVeVGS
 
 @export var vgs_scale:float = 1.0
+
 @export var MaxG:float = 0.75
 
 @export var gforce:Vector2 = Vector2(0,0)
@@ -27,8 +28,8 @@ func append_wheel(node:ViVeWheel) -> void:
 	var settings:ViVeTyreSettings = node.TyreSettings
 	var pos:Vector3 = node.position
 	
-	var w_size:float = ((absi(settings.Width_mm) * ((absf(settings.Aspect_Ratio) * 2.0) / 100.0) + absi(settings.Rim_Size_in) * 25.4) * 0.003269) / 2.0
-	var width:float = (absi(settings.Width_mm) * 0.003269) / 2.0
+	var w_size:float = settings.get_size()
+	var width:float = (settings.Width_mm * 0.003269) / 2.0
 	
 	var w:ViVeDebugWheel = wheel.duplicate()
 	add_child(w)

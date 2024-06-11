@@ -126,7 +126,7 @@ var w_size:float = 1.0
 ##Size read of the wheel. This is w_size but capped to 1.0 or lower.
 var w_size_read:float = 1.0
 ##Weight read of the wheel. Seems to be (unintentionally) a constant?
-##Fuethermore, this should [i]never[/i] be 0.
+##Furthermore, this should [i]never[/i] be 0.
 var w_weight_read:float = 0.0
 ##Weight of the wheel. This is w_size but to the power of 2.
 var w_weight:float = 0.0
@@ -154,7 +154,7 @@ var absolute_wv:float = 0.0
 var absolute_wv_brake:float = 0.0
 ##Absolute velocity of the wheel when differed(?)
 var absolute_wv_diff:float = 0.0
-##Output wheel velocity?
+##Output wheel velocity? [wv] from the last frame.
 var output_wv:float = 0.0
 ##Seemingly related to [snap]?
 var offset:float = 0.0
@@ -234,10 +234,16 @@ func _ready() -> void:
 	physics_tick = ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60.0)
 	if Differed_Wheel_Path:
 		differed_wheel = car.get_node(Differed_Wheel_Path)
+		if not is_instance_valid(differed_wheel):
+			push_error("Wheel ", self.name,": Differed Wheel set, but could not be found")
 	if SwayBarConnection:
 		sway_bar_wheel = car.get_node(SwayBarConnection)
+		if not is_instance_valid(sway_bar_wheel):
+			push_error("Wheel ", self.name,": SwayBarConnection set, but could not be found")
 	if Solidify_Axles:
 		solidify_axles_wheel = car.get_node(Solidify_Axles)
+		if not is_instance_valid(solidify_axles_wheel):
+			push_error("Wheel ", self.name,": SolidifyAxles set, but could not be found")
 	
 	set_physical_stats()
 
@@ -249,13 +255,14 @@ func power() -> void:
 		
 		var dist2:float = clampf(dist, -tol, tol)
 		
-		car._dsweight += live_power_bias
+		car.ds_weight += live_power_bias
 		car.stress_total += stress * live_power_bias
 		
 		if car.ds_weight_run > 0.0:
 			if car.rpm > car.DeadRPM:
-				wheelpower -= (((dist2 / car.ds_weight) / (car.ds_weight_run / 2.5)) * live_power_bias) / w_weight
-			car.resistance += (((dist2 * (10.0)) / car.ds_weight_run) * live_power_bias)
+				wheelpower -= (((dist2 / car.ds_weight_2) / (car.ds_weight_run / 2.5)) * live_power_bias) / w_weight
+			car.resistance += (((dist2 * 10.0) / car.ds_weight_run) * live_power_bias)
+
 
 ##This "borrows" computations from a paired wheel in order to save on computation bandwidth.
 func diffs() -> void:
@@ -286,16 +293,16 @@ func apply_braking() -> void:
 	
 	if not car.actualgear == 0:
 		if car.ds_weight_run > 0.0:
-			brake_power += ((car.stalled * (live_power_bias / car.ds_weight)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.ds_weight_run / 2.5)) / w_weight_read)
+			brake_power += ((car.stalled * (live_power_bias / car.ds_weight_2)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.ds_weight_run / 2.5)) / w_weight_read)
 	if brake_power > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / brake_power
 			distanced = maxf(distanced - car.brake_line, snap * (w_size_read / B_Saturation))
-			#wheelpower += - absolute_wv / distanced
-			wheelpower -= absolute_wv / distanced
+			wheelpower += - absolute_wv / distanced
+			#wheelpower -= absolute_wv / distanced
 		else:
-			#wheelpower += -absolute_wv
-			wheelpower -= absolute_wv
+			wheelpower += -absolute_wv
+			#wheelpower -= absolute_wv
 	
 	wheelpower_global = wheelpower
 
@@ -385,7 +392,8 @@ func _physics_process(_delta:float) -> void:
 	speed_deform_factor /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
 	speed_deform_factor = maxf(speed_deform_factor, 1.0)
 	
-	var tyre_stiffness:float = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
+	#var tyre_stiffness:float = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
+	tyre_stiffness = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
 	
 	tyre_stiffness = maxf(tyre_stiffness, 1.0)
 	
@@ -671,8 +679,6 @@ func force_smoothing(input:Vector2) -> Vector2:
 ##since [TyreSettings] and [CompoundSettings] (which are used in calculating these values) usually never change at runtime.
 ##However, if those are being edited in real time, such as in an editor, these stats need to be re-set.
 func set_physical_stats() -> void:
-	#25.4 is likely a unit conversion constant
-	#w_size = ((absi(TyreSettings.Width_mm) * ((absf(TyreSettings.Aspect_Ratio) * 2.0) * 0.01) + absi(TyreSettings.Rim_Size_in) * 25.4) * magic_number_d) * 0.5
 	w_size = TyreSettings.get_size()
 	w_weight = pow(w_size, 2.0)
 	
@@ -681,7 +687,6 @@ func set_physical_stats() -> void:
 	
 	tyre_maxgrip = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
 	
-	#tyre_stiffness_2 = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
 	tyre_stiffness_2 = TyreSettings.get_stiffness()
 	
 	if is_instance_valid(car):

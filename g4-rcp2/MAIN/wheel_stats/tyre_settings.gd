@@ -9,7 +9,7 @@ class_name ViVeTyreSettings
 		if is_instance_valid(wheel_parent):
 			wheel_parent.set_physical_stats()
 ##Width of the tyre, in nanometers.
-@export_range(0, INF) var Width_mm:int = 185:
+@export_range(0, 999999) var Width_mm:int = 185:
 	set(new_size):
 		Width_mm = new_size
 		if is_instance_valid(wheel_parent):
@@ -23,7 +23,7 @@ class_name ViVeTyreSettings
 		if is_instance_valid(wheel_parent):
 			wheel_parent.set_physical_stats()
 ##Rim size, in inches(?).
-@export_range(0, INF) var Rim_Size_in:int = 14:
+@export_range(0, 99999999) var Rim_Size_in:int = 14:
 	set(new_size):
 		Rim_Size_in = new_size
 		if is_instance_valid(wheel_parent):
@@ -40,7 +40,9 @@ class_name ViVeTyreSettings
 var wheel_parent:ViVeWheel
 
 func get_size() -> float:
+	#likely some conversion multiplier between inches and Godot units
 	const magic_number_d:float = 0.003269
+	#25.4 is likely another unit conversion constant
 	return ((Width_mm * ((Aspect_Ratio * 2.0) * 0.01) + Rim_Size_in * 25.4) * magic_number_d) * 0.5
 
 func get_stiffness() -> float:

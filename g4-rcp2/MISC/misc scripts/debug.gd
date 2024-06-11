@@ -52,7 +52,7 @@ func update_car() -> void:
 func setup() -> void:
 	update_car()
 	vgs.clear()
-	for d:ViVeWheel in car_node.get_wheels():
+	for d:ViVeWheel in car_node.all_wheels:
 		vgs.append_wheel(d)
 	
 	#sync the power graph
@@ -86,7 +86,7 @@ func _process(delta:float) -> void:
 	$throttle.bar_scale = car_node.car_controls.gaspedal
 	$brake.bar_scale = car_node.car_controls.brakepedal
 	$handbrake.bar_scale = car_node.car_controls.handbrakepull
-	$clutch.bar_scale = car_node._clutchpedalreal
+	$clutch.bar_scale = car_node.clutch_pedal_real
 	
 	$tacho/speedk.text = "KM/PH: " +str(int(car_node.linear_velocity.length() * 1.10130592))
 	$tacho/speedm.text = "MPH: " +str(int((car_node.linear_velocity.length() * 1.10130592) / 1.609 ) )
@@ -94,7 +94,8 @@ func _process(delta:float) -> void:
 	$power_graph/rpm.position.x = (car_node.rpm / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	$power_graph/redline.position.x = (car_node.RPMLimit / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	
-	$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node.gforce.x * 100.0) / 100.0), str(int(car_node.gforce.y * 100.0) / 100.0), str(int(car_node.gforce.z * 100.0) / 100.0)]
+	#$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node.gforce.x * 100.0) / 100.0), str(int(car_node.gforce.y * 100.0) / 100.0), str(int(car_node.gforce.z * 100.0) / 100.0)]
+	$g.text = "Gs:\nx%s,\ny%s,\nz%s" % [str(int(car_node.gforce.x)), str(int(car_node.gforce.y)), str(int(car_node.gforce.z))]
 	
 	tacho.currentpsi = car_node.turbo_psi * (car_node.TurboAmount)
 	tacho.currentrpm = car_node.rpm

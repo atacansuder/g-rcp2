@@ -8,3 +8,4 @@ GripInfluence = 1.0
 Width_mm = 335
 Aspect_Ratio = 30.0
 Rim_Size_in = 18
+AirPressure = 65.0

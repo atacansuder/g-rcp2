@@ -36,6 +36,9 @@ func _ready() -> void:
 
 func draw_graph() -> void:
 	car = ViVeEnvironment.get_singleton().car
+	if not is_instance_valid(car):
+		return
+	
 	Generation_Range = float(int(car.RPMLimit / 1000.0) * 1000 + 1000) #???
 	Draw_RPM = car.IdleRPM
 	calculate()

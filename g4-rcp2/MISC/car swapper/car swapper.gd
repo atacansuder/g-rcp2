@@ -84,6 +84,9 @@ func old_load_car(naem:StringName) -> void:
 
 ##Part 1 of loading a car with threaded loading. Causes minimal lag.
 func threaded_load_car(naem:StringName) -> void:
+	if loading_check_thread.is_alive() or loading_check_thread.is_started():
+		return
+	
 	ViVeDebug.singleton.vgs.clear()
 	
 	default_position = ViVeEnvironment.get_singleton().car.global_position

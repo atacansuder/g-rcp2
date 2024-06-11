@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://MAIN/car.gd" id="1_oxppr"]
 [ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="2_4hi2m"]
-[ext_resource type="Resource" uid="uid://c7ge6xss2h2h2" path="res://MISC/car swapper/cars/Miranda Proto/assets/abs.tres" id="2_hlk6j"]
-[ext_resource type="Resource" uid="uid://vwj5saoxpr4g" path="res://MISC/car swapper/cars/Miranda Proto/assets/torque_normal.tres" id="3_3hlla"]
+[ext_resource type="Resource" uid="uid://c7ge6xss2h2h2" path="res://MISC/car swapper/cars/Miranda Proto/resources/abs.tres" id="2_hlk6j"]
+[ext_resource type="Resource" uid="uid://vwj5saoxpr4g" path="res://MISC/car swapper/cars/Miranda Proto/resources/torque_normal.tres" id="3_3hlla"]
 [ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3_utf86"]
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="4_ewk3o"]
 [ext_resource type="Texture2D" uid="uid://del2h14nydk3g" path="res://MAIN/misc/textures/rim.jpg" id="5_8stf4"]
@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6_ldss1"]
 [ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7_gkjb0"]
 [ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_i1gj4"]
-[ext_resource type="Resource" uid="uid://qmxln8g2jgvv" path="res://MISC/car swapper/cars/Miranda Proto/assets/rear_tyre_settings.tres" id="9_hm1jj"]
+[ext_resource type="Resource" uid="uid://qmxln8g2jgvv" path="res://MISC/car swapper/cars/Miranda Proto/resources/rear_tyre_settings.tres" id="9_hm1jj"]
 
 [sub_resource type="ConvexPolygonShape3D" id="12"]
 points = PackedVector3Array(2.75605, 1.27715, 6.68259, 1.75444, 2.13382, 3.26614, -2.75659, 1.27715, 6.68259, 2.75605, -0.4, 6.68259, 2.75605, 0.921974, -4.96708, 1.75444, 2.13382, -0.149161, -1.75498, 2.13382, 3.26614, -2.75659, -0.4, 6.68259, -1.75498, 2.13382, -0.149161, -2.75659, 0.921974, -4.96708, 2.75605, -0.4, -4.96708, -2.75659, -0.4, -4.96708)

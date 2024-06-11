@@ -24,6 +24,9 @@ var var_type:int
 
 
 func load_information() -> void:
+	if not is_instance_valid(ViVeEnvironment.get_singleton().car):
+		return
+	
 	control_ref = ViVeEnvironment.get_singleton().car.car_controls
 	var_type = typeof(control_ref.get(var_name))
 	var monitored_variable:Variant = control_ref.get(var_name)

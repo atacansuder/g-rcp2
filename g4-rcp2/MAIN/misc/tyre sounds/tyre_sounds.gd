@@ -32,7 +32,7 @@ func _ready() -> void:
 	play()
 
 func load_wheels() -> void:
-	wheels = parent.get_wheels()
+	wheels = parent.all_wheels
 
 func most_skidding(array:Array[ViVeWheel]) -> ViVeWheel:
 	var val:float = -10000000000000000000000000000000000.0

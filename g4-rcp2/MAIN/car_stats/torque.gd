@@ -25,11 +25,15 @@ class_name ViVeCarTorque
 
 func _init(variation:String = "") -> void:
 	if variation == "VVT":
-		BuildUpTorque = 0.0
-		TorqueRise = 60.0
-		RiseRPM = 1000.0
-		OffsetTorque = 70.0
-		FloatRate = 0.1
-		DeclineRate = 2.0
-		DeclineRPM = 5000.0
-		DeclineSharpness = 1.0
+		apply_vvt_defaults()
+
+
+func apply_vvt_defaults() -> void:
+	BuildUpTorque = 0.0
+	TorqueRise = 60.0
+	RiseRPM = 1000.0
+	OffsetTorque = 70.0
+	FloatRate = 0.1
+	DeclineRate = 2.0
+	DeclineRPM = 5000.0
+	DeclineSharpness = 1.0
