@@ -114,7 +114,6 @@ const rigidity:float = 0.67
 const magic_number_a:float = 1.15296
 const magic_number_b:float = 0.1475
 const magic_number_c:float = 1.3558
-const magic_number_d:float = 0.003269
 ##This appears to be for some sort of conversion between radians and degrees.
 const conversion_1: float = 90.0
 
@@ -123,14 +122,13 @@ const conversion_1: float = 90.0
 var dist:float = 0.0
 ##Wheel size.
 var w_size:float = 1.0
-##Size read of the wheel. This is w_size but capped to 1.0 or lower.
+##Size read of the wheel. This is w_size but capped to 1.0 or higher.
 var w_size_read:float = 1.0
-##Weight read of the wheel. Seems to be (unintentionally) a constant?
-##Furthermore, this should [i]never[/i] be 0.
+##Weight read of the wheel. This is w_weight but capped to 1.0 or higher.
 var w_weight_read:float = 0.0
-##Weight of the wheel. This is w_size but to the power of 2.
+##Weight of the wheel. This is w_size squared.
 var w_weight:float = 0.0
-##Maximum grip of the tyre
+##Maximum grip of the tyre.
 var tyre_maxgrip:float = 0.0
 
 
@@ -167,11 +165,13 @@ var wheelpower:float = 0.0
 var wheelpower_global:float = 0.0
 ##This is related to the [grip] of the wheel, and is tied to the stress var on the parent [ViVeCar].
 var stress:float = 0.0
-
+##Set in SwayBar calculations using [rd], and is used in calculating some values for suspension().
 ##This value is clamped between -1 and 1
 var rolldist:float = 0.0
-
+##Some sort of compression factor, set during suspension() and used in SwayBar calculations.
 var rd:float = 0.0
+
+
 ##The Camber with Caster values properly factored into it.
 ##This is in degrees.
 var camber_w_caster:float = 0.0
@@ -180,7 +180,6 @@ var camber_w_caster:float = 0.0
 var cambered:float = 0.0
 ##The volume of the wheel rolling/skidding.
 var roll_vol:float = 0.0
-
 ##The skidding volume.
 ##Specifically related to the volume of peel2.
 var skid_volume:float = 0.0
@@ -255,23 +254,28 @@ func power() -> void:
 		
 		var dist2:float = clampf(dist, -tol, tol)
 		
-		car.ds_weight += live_power_bias
+		car.power_bias_total += live_power_bias
 		car.stress_total += stress * live_power_bias
 		
-		if car.ds_weight_run > 0.0:
+		if car.previous_power_bias_total > 0.0:
 			if car.rpm > car.DeadRPM:
-				wheelpower -= (((dist2 / car.ds_weight_2) / (car.ds_weight_run / 2.5)) * live_power_bias) / w_weight
-			car.resistance += (((dist2 * 10.0) / car.ds_weight_run) * live_power_bias)
+				wheelpower -= (((dist2 / car.ds_weight_2) / (car.previous_power_bias_total / 2.5)) * live_power_bias) / w_weight
+			
+			car.resistance += (((dist2 * 10.0) / car.previous_power_bias_total) * live_power_bias)
 
 
-##This "borrows" computations from a paired wheel in order to save on computation bandwidth.
-func diffs() -> void:
-	if car.locked > 0.0 and is_instance_valid(differed_wheel):
-		snap = absf(differed_wheel.wheelpower_global) / (car.locked * 16.0) + 1.0
+##This runs computations for differentials between two wheels.
+func differentials() -> void:
+	if car.differential_lock_influence > 0.0 and is_instance_valid(differed_wheel):
+		var cache_1:float = absf(differed_wheel.wheelpower_global) / (car.differential_lock_influence * 16.0)
+		
+		#snap = absf(differed_wheel.wheelpower_global) / (car.differential_lock_influence * 16.0) + 1.0
+		snap = cache_1 + 1.0
 		absolute_wv = output_wv + (offset * snap)
 		
-		var distanced2:float = absf(absolute_wv - differed_wheel.absolute_wv_diff) / (car.locked * 16.0)
-		distanced2 += absf(differed_wheel.wheelpower_global) / (car.locked * 16.0)
+		var distanced2:float = absf(absolute_wv - differed_wheel.absolute_wv_diff) / (car.differential_lock_influence * 16.0)
+		#distanced2 += absf(differed_wheel.wheelpower_global) / (car.differential_lock_influence * 16.0)
+		distanced2 += cache_1
 		
 		distanced2 = maxf(distanced2, snap)
 		
@@ -292,8 +296,8 @@ func apply_braking() -> void:
 	var brake_power:float = (B_Torque * total_brake_effect) / w_weight_read
 	
 	if not car.actualgear == 0:
-		if car.ds_weight_run > 0.0:
-			brake_power += ((car.stalled * (live_power_bias / car.ds_weight_2)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.ds_weight_run / 2.5)) / w_weight_read)
+		if car.previous_power_bias_total > 0.0:
+			brake_power += ((car.stalled * (live_power_bias / car.ds_weight_2)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.previous_power_bias_total / 2.5)) / w_weight_read)
 	if brake_power > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / brake_power
@@ -408,7 +412,7 @@ func _physics_process(_delta:float) -> void:
 	apply_braking()
 	
 	power()
-	diffs()
+	differentials()
 	
 	snap = 1.0
 	offset = 0.0
@@ -528,7 +532,7 @@ func _physics_process(_delta:float) -> void:
 		hitposition = get_collision_point()
 		
 		if is_instance_valid(differed_wheel):
-			dist_force.y = velocity2.z - ((wv * (1.0 - car.locked) + differed_wheel.wv_diff * car.locked) * w_size) / (surface_vars.drag + 1)
+			dist_force.y = velocity2.z - ((wv * (1.0 - car.differential_lock_influence) + differed_wheel.wv_diff * car.differential_lock_influence) * w_size) / (surface_vars.drag + 1)
 		
 		dist_force.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
 		
@@ -576,14 +580,12 @@ func _physics_process(_delta:float) -> void:
 	if not is_instance_valid(solidify_axles_wheel):
 		axle_offset = (geometry.position.y + (absf(target_position.y) - AxleSettings.Vertical_Mount)) / (absf(position.x) + AxleSettings.Lateral_Mount_Pos + 1.0)
 		axle_offset /= absf(axle_offset) + 1.0
-		#conversion to radians, I'm guessing
 		cambered = (axle_offset * conversion_1) - AxleSettings.Geometry4
 		#cambered = (axle_offset * conversion_1) - AxleSettings.Vertical_Mount
 		
 	else:
 		axle_offset = (geometry.position.y - solidify_axles_wheel.axle_position) / (absf(position.x) + 1.0)
 		axle_offset /= absf(axle_offset) + 1.0
-		#conversion to radians, I'm guessing
 		cambered = (axle_offset * conversion_1)
 	
 	anim.position = geometry.position

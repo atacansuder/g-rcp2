@@ -1,5 +1,7 @@
 extends Resource
-## Gear Assistance.
+##This is a module that manages gear shifting assistance variables.
+##These needs to be manually configured to match your car, or else automatic shifting will be broken.
+##Furthermore, these need to be configured regardless of transmission type.
 class_name ViVeGearAssist
 
 ## Shift Delay.
@@ -7,7 +9,7 @@ class_name ViVeGearAssist
 ## Assistance Level.
 ## [br] 0 means the player will have to manually hold clutch and then shift up/down.
 ## [br] 1 means the player will only have to press shift up/down.
-## [br] 2 means the car is effectively automatic.
+## [br] 2 means tgear shifting is entirely automatic.
 @export_range(0, 2) var assist_level:int = 2 #1
 ## Speed influence relative to wheel sizes. (This will be set automatically).
 @export var speed_influence:float = 0.944087 #2

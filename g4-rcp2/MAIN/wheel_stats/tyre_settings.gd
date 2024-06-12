@@ -8,7 +8,7 @@ class_name ViVeTyreSettings
 		GripInfluence = new_influence
 		if is_instance_valid(wheel_parent):
 			wheel_parent.set_physical_stats()
-##Width of the tyre, in nanometers.
+##Width of the tyre, in millimeters.
 @export_range(0, 999999) var Width_mm:int = 185:
 	set(new_size):
 		Width_mm = new_size
@@ -39,11 +39,14 @@ class_name ViVeTyreSettings
 ##Reference to the owning/parent ViVeWheel
 var wheel_parent:ViVeWheel
 
+##Get the size of the tyre.
 func get_size() -> float:
-	#likely some conversion multiplier between inches and Godot units
+	#likely some conversion multiplier between meters and Godot units
 	const magic_number_d:float = 0.003269
-	#25.4 is likely another unit conversion constant
-	return ((Width_mm * ((Aspect_Ratio * 2.0) * 0.01) + Rim_Size_in * 25.4) * magic_number_d) * 0.5
+	#1 inch is 25.4 millimeters
+	const inch_to_millimeters:float = 25.4
+	return ((Width_mm * ((Aspect_Ratio * 2.0) * 0.01) + Rim_Size_in * inch_to_millimeters) * magic_number_d) * 0.5
 
+##Get the stiffness of the tyre.
 func get_stiffness() -> float:
 	return Width_mm / (Aspect_Ratio / 1.5)

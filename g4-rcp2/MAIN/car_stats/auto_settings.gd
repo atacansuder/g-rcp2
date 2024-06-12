@@ -1,6 +1,8 @@
 extends Resource
 
-##Transmission automation settings (for Automatic, CVT and Semi-Auto).
+##Transmission automation settings.
+##These are for Automatic, CVT and Semi-Auto transmissions; if your car is 
+##a full-manual transmission, then these settings will be ignored.
 class_name ViVeAutoSettings
 
 ## Upshift RPM (auto).

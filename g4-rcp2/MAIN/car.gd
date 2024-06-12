@@ -69,15 +69,19 @@ enum TransmissionTypes {
 @export var AckermannPoint:float = -3.8
 ##Minimum turning circle (measured in default unit scale).
 @export var Steer_Radius:float = 13.0
-
-@export var Powered_Wheels:PackedStringArray = ["fl", "fr"]
+#there's an upstream glitch where these values don't save properly when this is a PackedStringArray
+#@export var Powered_Wheels:PackedStringArray = ["fl", "fr"]
+#The node names of the [ViVeWheels] actively driving (powering) the car.
+@export var Powered_Wheels:Array[String] = ["fl", "fr"]
 
 @export_group("Drivetrain")
 ##Final Drive Ratio refers to the last set of gears that connect a vehicle's engine to the driving axle.
 @export var FinalDriveRatio:float = 4.250
-##A set of gears a vehicle%ss transmission has in order. [br]
+##A set of gears a vehicle's transmission has, in order. [br]
 ##A gear ratio is the ratio of the number of rotations of a driver gear to the number of rotations of a driven gear.
-@export var GearRatios:PackedFloat32Array = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
+#there's an upstream glitch where these values don't save properly when this is a PackedFloat32Array
+#@export var GearRatios:PackedFloat32Array = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
+@export var GearRatios:Array[float] = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
 ##The reversed equivalent to GearRatios, only containing one gear.
 @export var ReverseRatio:float = 3.153
 ##Similar to FinalDriveRatio, but this should not relate to any real-life data. You may keep the value as it is.
@@ -87,6 +91,7 @@ enum TransmissionTypes {
 ##A space between the teeth of all gears to perform clutchless gear shifts. Higher values means more noise. Compensate with StressFactor.
 @export var GearGap:float = 60.0
 ## Leave this be, unless you know what you're doing.
+##Possibly driveshaft weight?
 @export var DSWeight:float = 150.0
 
 ##The [ViVeCar.TransmissionTypes] used for this car.
@@ -160,7 +165,7 @@ enum TransmissionTypes {
 @export_group("Clutch")
 ## Fix for engine's responses to friction. Higher values would make it sluggish.
 @export var ClutchStable:float = 0.5
-## Usually on a really short gear, the engine would jitter. This fixes it to say the least.
+## Usually on a really short gear, the engine would jitter. This fixes it.
 @export var GearRatioRatioThreshold:float = 200.0
 ## Fix correlated to GearRatioRatioThreshold. Keep this value as it is.
 @export var ThresholdStable:float = 0.01
@@ -264,18 +269,18 @@ var brake_allowed:float = 0.0
 var readout_torque:float = 0.0
 
 var brake_line:float = 0.0
-
-var ds_weight:float = 0.0
-
-var ds_weight_run:float = 0.0
+##The total power bias of all powered wheels together.
+var power_bias_total:float = 0.0
+##[power_bias_total] from the last physics frame.
+var previous_power_bias_total:float = 0.0
 
 #var _diffspeed:float = 0.0
 
 #var _diffspeedun:float = 0.0
+##Related to Locking/CoastLocking
+var differential_lock_influence:float = 0.0
 
-var locked:float = 0.0
-
-var c_locked:float = 0.0
+var center_differential_lock_influence:float = 0.0
 
 var wv_difference:float = 0.0
 
@@ -306,8 +311,8 @@ var clutch_wobble:float = 0.0
 var ds_weight_2:float = 0.0
 
 #var _steer_torque:float = 0.0
-
-var drivewheels_size:float = 1.0
+##This is the average of [w_size] of all the drive wheel combined.
+var average_drivewheel_size:float = 1.0
 ##An array of the global_rotation.y values of each steering wheel at the current physics frame.
 ##These angles are in degrees.
 var steering_angles:PackedFloat32Array = []
@@ -888,7 +893,7 @@ func drivetrain() -> void:
 	else:
 		rpm += ((rpm_cs / clock_mult) * (RevSpeed / magic_2))
 	
-	#I still don't know why this is here
+	#I think this is here for testing
 	if false:
 		rpm = 7000.0
 		Locking = 0.0
@@ -905,20 +910,20 @@ func drivetrain() -> void:
 	whine_pitch = absf(rpm / current_gear_ratio) * 1.5
 	
 	if resistance > 0.0:
-		locked = absf(resistance / ds_weight_2) * (CoastLocking / 100.0) + Preload
+		differential_lock_influence = absf(resistance / ds_weight_2) * (CoastLocking / 100.0) + Preload
 	else:
-		locked = absf(resistance / ds_weight_2) * (Locking / 100.0) + Preload
+		differential_lock_influence = absf(resistance / ds_weight_2) * (Locking / 100.0) + Preload
 	
-	locked = clampf(locked, 0.0, 1.0)
+	differential_lock_influence = clampf(differential_lock_influence, 0.0, 1.0)
 	
 	if wv_difference > 0.0:
-		c_locked = absf(wv_difference) * (Centre_CoastLocking / 10.0) + Centre_Preload
+		center_differential_lock_influence = absf(wv_difference) * (Centre_CoastLocking / 10.0) + Centre_Preload
 	else:
-		c_locked = absf(wv_difference) * (Centre_Locking / 10.0) + Centre_Preload
+		center_differential_lock_influence = absf(wv_difference) * (Centre_Locking / 10.0) + Centre_Preload
 	
-	c_locked = clampf(c_locked, 0.0, 1.0)
+	center_differential_lock_influence = clampf(center_differential_lock_influence, 0.0, 1.0)
 	if powered_wheels.size() < 4:
-		c_locked = 0.0
+		center_differential_lock_influence = 0.0
 	
 	
 	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(powered_wheels)
@@ -927,12 +932,12 @@ func drivetrain() -> void:
 	
 	var float_reduction:float = ClutchFloatReduction
 	
-	if ds_weight_run > 0.0:
-		float_reduction = ClutchFloatReduction / ds_weight_run
+	if previous_power_bias_total > 0.0:
+		float_reduction = ClutchFloatReduction / previous_power_bias_total
 	else:
 		float_reduction = 0.0
 	
-	var stabling:float = - (GearRatioRatioThreshold - current_gear_ratio * drivewheels_size) * ThresholdStable
+	var stabling:float = - (GearRatioRatioThreshold - current_gear_ratio * average_drivewheel_size) * ThresholdStable
 	stabling = maxf(stabling, 0.0)
 	
 	current_stable = ClutchStable + stabling
@@ -940,9 +945,9 @@ func drivetrain() -> void:
 	
 	var what:float
 	
-	if ds_weight_run > 0.0:
-		what = (rpm -(((rpm_force * float_reduction) * current_stable) / (ds_weight_2 / ds_weight_run)))
-	else:
+	if previous_power_bias_total > 0.0:
+		what = (rpm -(((rpm_force * float_reduction) * current_stable) / (ds_weight_2 / previous_power_bias_total)))
+	else: #idling?
 		what = rpm
 	
 	if car_controls.gear < 0.0:
@@ -956,21 +961,25 @@ func drivetrain() -> void:
 		dist = 0.0
 	
 	wv_difference = 0.0
-	drivewheels_size = 0.0
+	average_drivewheel_size = 0.0
+	
+	#update stats of all the powered wheels
 	for i:ViVeWheel in powered_wheels:
-		drivewheels_size += i.w_size / powered_wheels.size()
+		average_drivewheel_size += i.w_size / powered_wheels.size()
 		i.live_power_bias = i.W_PowerBias
 		wv_difference += ((i.wv - what / current_gear_ratio) / powered_wheels.size()) * pow(car_controls.clutchpedal, 2.0)
 		if car_controls.gear < 0:
-			i.dist = dist * (1 - c_locked) + (i.wv + what / current_gear_ratio) * c_locked
+			i.dist = dist * (1 - center_differential_lock_influence) + (i.wv + what / current_gear_ratio) * center_differential_lock_influence
 		else:
-			i.dist = dist * (1 - c_locked) + (i.wv - what / current_gear_ratio) * c_locked
+			i.dist = dist * (1 - center_differential_lock_influence) + (i.wv - what / current_gear_ratio) * center_differential_lock_influence
 		if car_controls.gear == 0:
 			i.dist = 0.0
-	GearAssist.speed_influence = drivewheels_size
+	
+	
+	GearAssist.speed_influence = average_drivewheel_size
 	resistance = 0.0
-	ds_weight_run = ds_weight
-	ds_weight = 0.0
+	previous_power_bias_total = power_bias_total
+	power_bias_total = 0.0
 	tcs_weight = 0.0
 	stress_total = 0.0
 
