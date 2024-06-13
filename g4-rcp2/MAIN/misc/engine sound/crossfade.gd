@@ -73,7 +73,7 @@ func _physics_process(_delta:float) -> void:
 	
 	fade = clampf(fade, childcount - 1, 0.0)
 	
-	vacuum = clampf((car.car_controls.gaspedal - car.throttle) * 4, 0, 1)
+	vacuum = clampf((car.gas_pedal - car.throttle) * 4, 0, 1)
 	
 	var sfk:float = maxf(1.0 - (vacuum * car.throttle), vacuum_crossfade)
 	

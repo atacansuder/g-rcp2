@@ -6,8 +6,8 @@ var viewport_size:Vector2i
 
 const default_sky:Environment = preload("res://default_env.tres")
 
-func setcar() -> void:
-	car = get_parent().get_node(get_parent().car)
+#func setcar() -> void:
+#	car = get_parent().get_node(get_parent().car)
 
 func _ready() -> void:
 	viewport_size.x = ProjectSettings.get("display/window/size/viewport_width")

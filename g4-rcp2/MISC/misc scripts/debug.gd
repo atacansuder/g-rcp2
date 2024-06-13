@@ -70,8 +70,8 @@ func _process(delta:float) -> void:
 		#This gives performs slightly better but gives a less precise FPS
 		fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
 	
-	$sw.rotation_degrees = car_node.car_controls.steer * 380.0
-	$sw_desired.rotation_degrees = car_node.car_controls.steer2 * 380.0
+	$sw.rotation_degrees = car_node.steer * 380.0
+	$sw_desired.rotation_degrees = car_node.steer_2 * 380.0
 	if car_node.Debug_Mode:
 		weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
 	else:
@@ -83,9 +83,9 @@ func _process(delta:float) -> void:
 	
 	$"fix engine".visible = car_node.rpm < car_node.DeadRPM
 	
-	$throttle.bar_scale = car_node.car_controls.gaspedal
-	$brake.bar_scale = car_node.car_controls.brakepedal
-	$handbrake.bar_scale = car_node.car_controls.handbrakepull
+	$throttle.bar_scale = car_node.gas_pedal
+	$brake.bar_scale = car_node.brake_pedal
+	$handbrake.bar_scale = car_node.handbrake_pull
 	$clutch.bar_scale = car_node.clutch_pedal_real
 	
 	$tacho/speedk.text = "KM/PH: " +str(int(car_node.linear_velocity.length() * 1.10130592))
@@ -106,15 +106,15 @@ func _process(delta:float) -> void:
 	else:
 		tacho_rpm.self_modulate = Color.WHITE
 	
-	if car_node.car_controls.gear == 0:
+	if car_node.gear == 0:
 		tacho_gear.text = "N"
-	elif car_node.car_controls.gear == -1:
+	elif car_node.gear == -1:
 		tacho_gear.text = "R"
 	else:
 		if car_node.TransmissionType == 1 or car_node.TransmissionType == 2:
 			tacho_gear.text = "D"
 		else:
-			tacho_gear.text = str(car_node.car_controls.gear)
+			tacho_gear.text = str(car_node.gear)
 
 func _physics_process(_delta:float) -> void:
 	if not is_instance_valid(car_node):
@@ -122,7 +122,7 @@ func _physics_process(_delta:float) -> void:
 	vgs.gforce -= (vgs.gforce - Vector2(car_node.gforce.x, car_node.gforce.z)) * 0.5
 	
 	var tacho_label:Label = $tacho/abs
-	tacho_label.visible = car_node.abs_pump > 0 and car_node.car_controls.brakepedal > 0.1
+	tacho_label.visible = car_node.abs_pump > 0 and car_node.brake_pedal > 0.1
 	tacho_label = $tacho/tcs
 	tacho_label.visible = car_node.tcs_flash
 	tacho_label = $tacho/esp

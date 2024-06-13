@@ -247,10 +247,10 @@ func _ready() -> void:
 	set_physical_stats()
 
 ##Apply power. This function only does something if the wheel is a drive wheel,
-##according to the settings of the parent ViVeCar
+##decided according to the settings of the parent ViVeCar
 func power() -> void:
 	if not is_zero_approx(live_power_bias):
-		dist *= pow(car.car_controls.clutchpedal, 2.0) / (car.current_stable)
+		dist *= pow(car.clutch_pedal, 2.0) / (car.current_stable)
 		
 		var dist2:float = clampf(dist, -tol, tol)
 		
@@ -273,15 +273,15 @@ func differentials() -> void:
 		snap = cache_1 + 1.0
 		absolute_wv = output_wv + (offset * snap)
 		
-		var distanced2:float = absf(absolute_wv - differed_wheel.absolute_wv_diff) / (car.differential_lock_influence * 16.0)
-		#distanced2 += absf(differed_wheel.wheelpower_global) / (car.differential_lock_influence * 16.0)
-		distanced2 += cache_1
+		var distance_2:float = absf(absolute_wv - differed_wheel.absolute_wv_diff) / (car.differential_lock_influence * 16.0)
+		#distance_2 += absf(differed_wheel.wheelpower_global) / (car.differential_lock_influence * 16.0)
+		distance_2 += cache_1
 		
-		distanced2 = maxf(distanced2, snap)
+		distance_2 = maxf(distance_2, snap)
 		
-		distanced2 += 1.0 / cache_tyrestiffness
-		if distanced2 > 0.0:
-			wheelpower += -((absolute_wv_diff - differed_wheel.absolute_wv_diff) / distanced2)
+		distance_2 += 1.0 / cache_tyrestiffness
+		if distance_2 > 0.0:
+			wheelpower += -((absolute_wv_diff - differed_wheel.absolute_wv_diff) / distance_2)
 
 ##Run logic for the Sway Bar connection, if one is properly set.
 func sway_bar() -> void:
@@ -290,14 +290,14 @@ func sway_bar() -> void:
 
 ##Factor in the effects of braking and/or handbraking to the velocity of the wheel.
 func apply_braking() -> void:
-	var total_brake_effect:float = minf(car.brake_line * B_Bias + car.car_controls.handbrakepull * HB_Bias, 1.0)
+	var total_brake_effect:float = minf(car.brake_line * B_Bias + car.handbrake_pull * HB_Bias, 1.0)
 	#Get brake power by multiplying the total_brake_effect factor by the brake force, 
 	#and dividing that result by the weight of the wheel
 	var brake_power:float = (B_Torque * total_brake_effect) / w_weight_read
 	
 	if not car.actualgear == 0:
 		if car.previous_power_bias_total > 0.0:
-			brake_power += ((car.stalled * (live_power_bias / car.ds_weight_2)) * car.car_controls.clutchpedal) * (((5.0 / car.RevSpeed) / (car.previous_power_bias_total / 2.5)) / w_weight_read)
+			brake_power += ((car.stalled * (live_power_bias / car.ds_weight_2)) * car.clutch_pedal) * (((5.0 / car.RevSpeed) / (car.previous_power_bias_total / 2.5)) / w_weight_read)
 	if brake_power > 0.0:
 		if absf(absolute_wv) > 0.0:
 			var distanced:float = absf(absolute_wv) / brake_power
@@ -317,11 +317,11 @@ func _physics_process(_delta:float) -> void:
 		car_side = 1.0
 	
 	#Do steer rotation things if this wheel is a steering wheel
-	#if Steer and absf(car.car_controls.steer) > 0:
-	if Steer and not is_zero_approx(car.car_controls.steer):
+	#if Steer and absf(car.steer) > 0:
+	if Steer and not is_zero_approx(car.steer):
 		var last_position:Vector3 = position
 		var last_transform:Transform3D = global_transform
-		var directional_rotate:float =  -deg_to_rad(90.0) * signf(car.car_controls.steer)
+		var directional_rotate:float =  -deg_to_rad(90.0) * signf(car.steer)
 		
 		#The y value should be 0; this use case works
 		#because it never gets set to anything other than 0
@@ -330,7 +330,7 @@ func _physics_process(_delta:float) -> void:
 		#simply using look_at did not work here when I tried it, not sure why
 		look_at_from_position(position, car.steering_geometry)
 		
-		if car.car_controls.steer > 0.0:
+		if car.steer > 0.0:
 			rotate_y( -deg_to_rad(90.0))
 		else:
 			rotate_y(deg_to_rad(90.0))
