@@ -117,6 +117,10 @@ const magic_number_c:float = 1.3558
 ##This appears to be for some sort of conversion between radians and degrees.
 const conversion_1: float = 90.0
 
+##This is a multiplier so that values can flip to match the side of the car the wheel is on
+var car_side:float = signf(position.x)
+##This is Toe * car_side
+var relative_toe:float = 0.0
 
 ##Distance, seems like it's probably something else given the codes relation to the clutch.
 var dist:float = 0.0
@@ -143,8 +147,7 @@ var effectiveness:float = 0.0
 ##Only ever set in suspension calculation.
 ##It's in radians.
 var angle:float = 0.0
-
-
+##
 var snap:float = 0.0
 ##Absolute velocity of the wheel(?)
 var absolute_wv:float = 0.0
@@ -154,7 +157,7 @@ var absolute_wv_brake:float = 0.0
 var absolute_wv_diff:float = 0.0
 ##Output wheel velocity? [wv] from the last frame.
 var output_wv:float = 0.0
-##Seemingly related to [snap]?
+##This is likely some value closely related to tyre deflection or the contact patch.
 var offset:float = 0.0
 ##If this wheel is a driving wheel (as dictated by the parent [ViVeCar], this value gets set to [W_PowerBias] by the parent [ViVeCar].
 ##Otherwise, it stays at 0.
@@ -170,8 +173,6 @@ var stress:float = 0.0
 var rolldist:float = 0.0
 ##Some sort of compression factor, set during suspension() and used in SwayBar calculations.
 var rd:float = 0.0
-
-
 ##The Camber with Caster values properly factored into it.
 ##This is in degrees.
 var camber_w_caster:float = 0.0
@@ -185,7 +186,7 @@ var roll_vol:float = 0.0
 var skid_volume:float = 0.0
 
 var velocity:Vector3 = Vector3.ZERO
-
+##Used in calculating various tyre deformation variables
 var velocity2:Vector3 = Vector3.ZERO
 ##This is compensation for the forward velocity/grip on a slope being affected by the [tyre_stiffness].
 var compensate:float = 0.0
@@ -243,7 +244,6 @@ func _ready() -> void:
 		solidify_axles_wheel = car.get_node(Solidify_Axles)
 		if not is_instance_valid(solidify_axles_wheel):
 			push_error("Wheel ", self.name,": SolidifyAxles set, but could not be found")
-	
 	set_physical_stats()
 
 ##Apply power. This function only does something if the wheel is a drive wheel,
@@ -303,42 +303,35 @@ func apply_braking() -> void:
 			var distanced:float = absf(absolute_wv) / brake_power
 			distanced = maxf(distanced - car.brake_line, snap * (w_size_read / B_Saturation))
 			wheelpower += - absolute_wv / distanced
-			#wheelpower -= absolute_wv / distanced
 		else:
 			wheelpower += -absolute_wv
-			#wheelpower -= absolute_wv
 	
 	wheelpower_global = wheelpower
 
 func _physics_process(_delta:float) -> void:
+	var last_position:Vector3 = position
 	#This is used to automatically flip the value to match the side of the car the wheel is on
-	var car_side:float = signf(position.x)
-	if is_zero_approx(car_side):
-		car_side = 1.0
+	#car_side = signf(position.x)
 	
 	#Do steer rotation things if this wheel is a steering wheel
-	#if Steer and absf(car.steer) > 0:
-	if Steer and not is_zero_approx(car.steer):
-		var last_position:Vector3 = position
-		var last_transform:Transform3D = global_transform
-		var directional_rotate:float =  -deg_to_rad(90.0) * signf(car.steer)
+	#if Steer and absf(car.effective_steer) > 0:
+	if Steer and not is_zero_approx(car.effective_steer):
 		
-		#The y value should be 0; this use case works
-		#because it never gets set to anything other than 0
-		assert(is_zero_approx(car.steering_geometry.y), "steering_geometry.y is not zero")
+		look_at_from_position(position, Vector3(car.steer_to_direction, rotation.y, car.AckermannPoint), Vector3.UP)
+		position = last_position
 		
-		#simply using look_at did not work here when I tried it, not sure why
-		look_at_from_position(position, car.steering_geometry)
+		rotate_y(-(deg_to_rad(90) * signf(car.effective_steer)))
 		
-		if car.steer > 0.0:
-			rotate_y( -deg_to_rad(90.0))
-		else:
-			rotate_y(deg_to_rad(90.0))
+		#Using local rotation for literal_steer_rotation *could* be used for some sort of steer centering assist
 		
-		var roter:float = global_rotation.y
+		#fix for the "wheel jitter". I am not sure why it sometimes completely flips out (literally),
+		#but this check does correct it, because it flips to almost if not exactly pi (or -pi).
+		var literal_steer_rotation:float = wrapf(global_rotation.y, -3.0, 3.0) #3 is a little less than PI
 		
-		look_at(Vector3(car.Steer_Radius, 0.0, car.steering_geometry.z))
-		#look_at(Vector3(car.Steer_Radius, 0.0, car.AckermannPoint))
+		#calculations for steering_angles
+		#look_at_from_position(position, Vector3(car.Steer_Radius, 0.0, car.AckermannPoint), Vector3.UP)
+		look_at_from_position(position, Vector3(car.Steer_Radius, rotation.y, car.AckermannPoint), Vector3.UP)
+		position = last_position
 		
 		rotate_y(deg_to_rad(90.0))
 		
@@ -346,29 +339,29 @@ func _physics_process(_delta:float) -> void:
 		
 		rotation = Vector3.ZERO
 		
-		rotation.y = roter
+		rotation.y = literal_steer_rotation
 		
-		#rotation_degrees.y += - (Toe * car_side)
-		rotation_degrees.y -= Toe
-		
-		position = last_position
+		rotation_degrees.y += relative_toe
 	else:
-		#rotation_degrees = Vector3(0.0, -(Toe * car_side), 0.0)
-		rotation_degrees = Vector3(0.0, -Toe, 0.0)
+		rotation_degrees = Vector3(0.0, relative_toe, 0.0)
 	
-	camber_w_caster = Camber + (Caster * rotation.y * car_side)
+	position = last_position
+	
+	camber_w_caster = Camber + Caster * rotation.y * car_side
 	
 	directional_force = Vector3.ZERO
-	velo_1.position = Vector3.ZERO
 	
-	#You don't [i]really[/i] need this to be run under normal circumstances (see the desc of set_physical_stats),
-	#so it's disabled unless debug is on.
+	#You don't [i]really[/i] need these to be repeatedly calculated under 
+	#normal circumstances (see the desc of set_physical_stats), so it's
+	#disabled unless debug is on.
 	if car.Debug_Mode:
 		set_physical_stats()
 	
 	
 	#Sync positions. Without this, the car is very bouncy for some reason
-	velo_2.global_position = geometry.global_position
+	velo_1.position = Vector3.ZERO
+	#velo_2.global_position = geometry.global_position
+	velo_2.position = geometry.position
 	
 	velo_1_step.global_position = velocity_last
 	velo_2_step.global_position = velocity2_last
@@ -387,24 +380,21 @@ func _physics_process(_delta:float) -> void:
 	
 	sway_bar()
 	
-	#moved to set_physical_stats
-	#tyre_maxgrip = TyreSettings.GripInfluence / CompoundSettings.TractionFactor
-	#tyre_stiffness_2 = absi(TyreSettings.Width_mm) / (absf(TyreSettings.Aspect_Ratio) / 1.5)
+	var surface_deform_factor:float = (Vector2(velocity.x, velocity.z).length() / 50.0 + 0.5) * CompoundSettings.DeformFactor
 	
-	var speed_deform_factor:float = (Vector2(velocity.x, velocity.z).length() / 50.0 + 0.5) * CompoundSettings.DeformFactor
+	surface_deform_factor /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
+	surface_deform_factor = maxf(surface_deform_factor, 1.0)
 	
-	speed_deform_factor /= surface_vars.ground_stiffness + surface_vars.fore_stiffness * CompoundSettings.ForeStiffness
-	speed_deform_factor = maxf(speed_deform_factor, 1.0)
-	
-	#var tyre_stiffness:float = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
-	tyre_stiffness = ((tyre_stiffness_2 / speed_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
+	tyre_stiffness = ((tyre_stiffness_2 / surface_deform_factor) * ((TyreSettings.AirPressure / 30.0) * 0.1 + 0.9) ) * CompoundSettings.Stiffness + effectiveness
 	
 	tyre_stiffness = maxf(tyre_stiffness, 1.0)
 	
 	cache_tyrestiffness = tyre_stiffness
 	
+	#TODO: make a variable for offset * snap
 	absolute_wv = output_wv + (offset * snap) - compensate * magic_number_a
 	absolute_wv_brake = output_wv + ((offset / w_size_read) * snap) - compensate * magic_number_a
+	#so, wv from last frame
 	absolute_wv_diff = output_wv
 	
 	wheelpower = 0.0
@@ -420,8 +410,8 @@ func _physics_process(_delta:float) -> void:
 	var grip:float
 	
 	var gravity_incline:Vector3
-	
-	var dist_force:Vector2
+	#the tire scrub, ie. how the contact patch deforms as the tyre is stretched when moving.
+	var tire_scrub:Vector2
 	
 	
 	# WHEEL
@@ -460,31 +450,35 @@ func _physics_process(_delta:float) -> void:
 		
 		wv += (wheelpower * (1.0 - (1.0 / tyre_stiffness)))
 		
-		#the distribution of the wheel's velocity(?)
-		var dist_v:Vector2 = Vector2(velocity2.x, velocity2.z - (wv * w_size))
-		#A version of dist_v used in force calculations
-		#dist_force = dist_v / (surface_vars.drag + 1.0)
-		dist_force = dist_v
-		dist_force.y /= (surface_vars.drag + 1.0)
+		#the deformation from the tyre being pressed when factoring in its velocity counteracting that
+		var rolling_deformation:Vector2 = Vector2(velocity2.x, velocity2.z - wv * w_size)
 		
-		offset = clampf(dist_v.y / w_size, -grip, grip)
+		#tire_scrub = Vector2(velocity2.x, velocity2.z - (wv * w_size) / (surface_vars.drag + 1.0))
+		tire_scrub = rolling_deformation
+		tire_scrub.y /= (surface_vars.drag + 1.0)
+		
+		offset = clampf(rolling_deformation.y / w_size, -grip, grip)
 		
 		gravity_incline = (geometry.global_transform.basis.orthonormalized().transposed() * Vector3.UP)
 		
 		compensate = gravity_incline.z * (directional_force.y / tyre_stiffness)
 		
-		dist_v.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
+		rolling_deformation.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
 		
-		slip_perc = dist_v
+		slip_perc = rolling_deformation
 		
-		dist_v *= tyre_stiffness
+		rolling_deformation *= tyre_stiffness
 		
-		dist_v.x -= atan(absf(wv)) * ((angle * 10.0) * w_size)
+		rolling_deformation.x -= atan(absf(wv)) * ((angle * 10.0) * w_size)
 		
 		#calculate the grip of the tire
 		if grip > 0:
-			var dist_v_squared:Vector2 = dist_v * dist_v
-			var slipraw:float = sqrt(dist_v_squared.y + dist_v_squared.x)
+			var roll_deform_squared:Vector2 = rolling_deformation * rolling_deformation
+			#You'd think this would be dist_force_squared.length(), but Godot
+			#does some extras behind the scene to make sure this isn't 0 when 
+			#it otherwise should be.
+			var slipraw:float = sqrt(roll_deform_squared.y + roll_deform_squared.x)
+			
 			var slip:float = slipraw / grip
 			
 			slipraw = maxf(slipraw / CompoundSettings.TractionFactor, tyre_stiffness * (grip / tyre_stiffness))
@@ -497,12 +491,12 @@ func _physics_process(_delta:float) -> void:
 			slip /= slip * surface_vars.ground_builduprate + 1
 			slip = maxf(slip - CompoundSettings.TractionFactor, 0.0)
 			
-			if absf(dist_v.y) / (tyre_stiffness / 3.0) > (car.ABS.threshold / grip) * pow(surface_vars.ground_friction, 2.0) and car.ABS.enabled and absf(velocity.z) > car.ABS.speed_pre_active and ContactABS:
+			if absf(rolling_deformation.y) / (tyre_stiffness / 3.0) > (car.ABS.threshold / grip) * pow(surface_vars.ground_friction, 2.0) and car.ABS.enabled and absf(velocity.z) > car.ABS.speed_pre_active and ContactABS:
 				car.abs_pump = car.ABS.pump_time
-				if absf(dist_v.x) / (tyre_stiffness / 3.0) > (car.ABS.lat_thresh / grip) * pow(surface_vars.ground_friction, 2.0):
+				if absf(rolling_deformation.x) / (tyre_stiffness / 3.0) > (car.ABS.lat_thresh / grip) * pow(surface_vars.ground_friction, 2.0):
 					car.abs_pump = car.ABS.lat_pump_time
 			
-			var force_v:Vector2 = force_smoothing(- dist_v / (slip + 1.0))
+			var force_v:Vector2 = force_smoothing(- rolling_deformation / (slip + 1.0))
 			cache_friction_action = force_v.y * ok
 			
 			wv -= cache_friction_action
@@ -511,7 +505,7 @@ func _physics_process(_delta:float) -> void:
 			roll_vol = velocity.length() * grip
 			
 			#Volume calculation?
-			var new_slip_sk:float = sqrt(pow(dist_v.x * 2.0, 2.0) + dist_v_squared.y) / grip
+			var new_slip_sk:float = sqrt(pow(rolling_deformation.x * 2.0, 2.0) + roll_deform_squared.y) / grip
 			new_slip_sk /= slip * surface_vars.ground_builduprate + 1
 			new_slip_sk = maxf(new_slip_sk - CompoundSettings.TractionFactor, 0.0)
 			skid_volume = maxf(new_slip_sk - tyre_stiffness, 0.0) / 4.0
@@ -532,18 +526,18 @@ func _physics_process(_delta:float) -> void:
 		hitposition = get_collision_point()
 		
 		if is_instance_valid(differed_wheel):
-			dist_force.y = velocity2.z - ((wv * (1.0 - car.differential_lock_influence) + differed_wheel.wv_diff * car.differential_lock_influence) * w_size) / (surface_vars.drag + 1)
+			tire_scrub.y = velocity2.z - ((wv * (1.0 - car.differential_lock_influence) + differed_wheel.wv_diff * car.differential_lock_influence) * w_size) / (surface_vars.drag + 1)
 		
-		dist_force.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
+		tire_scrub.x -= (gravity_incline.x * (directional_force.y / tyre_stiffness)) * 1.1
 		
-		slip_perc = dist_force
+		slip_perc = tire_scrub
 		
-		dist_force *= tyre_stiffness
+		tire_scrub *= tyre_stiffness
 		
-		dist_force.x -= atan(absf(wv)) * ((angle * 10.0) * w_size)
+		tire_scrub.x -= atan(absf(wv)) * ((angle * 10.0) * w_size)
 		
 		if grip > 0:
-			var dist_force_squared:Vector2 = dist_force * dist_force
+			var dist_force_squared:Vector2 = tire_scrub * tire_scrub
 			var slipraw:float = sqrt(dist_force_squared.y + dist_force_squared.x)
 			
 			var slip:float = slipraw / grip
@@ -553,7 +547,7 @@ func _physics_process(_delta:float) -> void:
 			
 			slip_perc2 = slip
 			
-			var force_v:Vector2 = force_smoothing(- dist_force / (slip + 1.0))
+			var force_v:Vector2 = force_smoothing(- tire_scrub / (slip + 1.0))
 			
 			directional_force.x = force_v.x
 			directional_force.z = force_v.y
@@ -569,7 +563,8 @@ func _physics_process(_delta:float) -> void:
 	
 	geometry.position.x = -pow(cambered / conversion_1, 2.0) * position.x
 	
-	anim_camber.rotation_degrees.z = -(camber_w_caster - cambered) * signf(position.x)
+	#anim_camber.rotation_degrees.z = -(camber_w_caster - cambered) * signf(position.x)
+	anim_camber.rotation_degrees.z = -(camber_w_caster - cambered) * car_side
 	anim_camber.rotation.z *= AxleSettings.Camber_Gain
 	
 	axle_position = geometry.position.y
@@ -611,24 +606,25 @@ func alignAxisToVector(xform:Transform3D, norm:Vector3) -> Transform3D: # i name
 	xform.basis = xform.basis.orthonormalized()
 	return xform
 
-
-const suspension_args:String = "own,maxcompression,incline_free,incline_impact,rest,elasticity,damping,damping_rebound,linearz,ground_distance,located,hit_located,weight,ground_bump,ground_bump_height"
+const suspension_args:String = "own,maxcompression,incline_free,incline_impact,rest,elasticity,damping,damping_rebound,linearz,grounded_position,located,hit_located,weight,ground_bump,ground_bump_height"
 const suspension_inputs:String = "self,S_MaxCompression,A_InclineArea,A_ImpactForce,S_RestLength, elasticity,damping,damping_rebound, velocity.y,abs(cast_to.y),global_translation,get_collision_point(),car.mass,ground_bump,ground_bump_height"
 
 ##Calculate suspension, which is the y force on the wheel.
 func suspension() -> float:
-	var ground_distance:float = absf(target_position.y)
+	var grounded_position:float = absf(target_position.y)
 	var elasticity:float = S_Stiffness * (AR_Elast * rolldist + 1.0)
 	var damping:float = S_Damping * (AR_Stiff * rolldist + 1.0)
 	var damping_rebound:float = S_ReboundDamping * (AR_Stiff * rolldist + 1.0)
 	
 	geometry.global_position = get_collision_point()
-	geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), -ground_distance)
+	geometry.position.y = maxf(geometry.position.y - (ground_bump * surface_vars.ground_bump_height), -grounded_position)
 	
 	velo_1.global_transform = alignAxisToVector(velo_1.global_transform, get_collision_normal())
 	velo_2.global_transform = alignAxisToVector(velo_2.global_transform, get_collision_normal())
 	
-	angle = (geometry.rotation_degrees.z - ((-camber_w_caster - cambered) * signf(position.x)) * (AxleSettings.Camber_Gain) / conversion_1)
+	#angle = (geometry.rotation_degrees.z - ((-camber_w_caster - cambered) * signf(position.x)) * (AxleSettings.Camber_Gain) / conversion_1)
+	#This is reminiscent of the calculation for anim camber
+	angle = (geometry.rotation_degrees.z - ((-camber_w_caster - cambered) * car_side) * (AxleSettings.Camber_Gain) / conversion_1)
 	
 	var incline:float = (get_collision_normal() - (global_transform.basis.orthonormalized() * Vector3.UP)).length()
 	
@@ -636,7 +632,7 @@ func suspension() -> float:
 	
 	incline = clampf((incline - A_InclineArea) * A_ImpactForce, 0.0, 1.0)
 	
-	geometry.position.y = minf(geometry.position.y, - ground_distance + S_MaxCompression * (1.0 - incline))
+	geometry.position.y = minf(geometry.position.y, - grounded_position + S_MaxCompression * (1.0 - incline))
 	
 	var damp_variant:float = damping_rebound
 	
@@ -644,21 +640,20 @@ func suspension() -> float:
 	if velocity.y < 0:
 		damp_variant = damping
 	
-	var hit_translation:float = (global_position - get_collision_point()).length()
+	var hit_position:float = (global_position - get_collision_point()).length()
 	
-	
-	var compressed:float = ground_distance - hit_translation - (ground_bump * surface_vars.ground_bump_height)
+	var compressed:float = grounded_position - hit_position - (ground_bump * surface_vars.ground_bump_height)
 	var compressed2:float =  maxf(compressed - (S_MaxCompression + (ground_bump * surface_vars.ground_bump_height)), 0.0)
 	
-	var elasticity3:float = (car.mass / 10.0)
+	var tenth_car_body_weight:float = (car.mass / 10.0)
 	var elasticity2:float = elasticity * (1.0 - incline) + (car.mass) * incline
-	var damping2:float = damp_variant * (1.0 - incline) + elasticity3 * incline
+	var damping2:float = damp_variant * (1.0 - incline) + tenth_car_body_weight * incline
 	
 	var suspforce:float = maxf(compressed - S_RestLength, 0.0) * elasticity2
 	
 	
 	if compressed2 > 0.0:
-		suspforce -= (velocity.y * elasticity3)
+		suspforce -= (velocity.y * tenth_car_body_weight)
 		suspforce += compressed2 * car.mass
 	
 	suspforce -= velocity.y * damping2
@@ -681,6 +676,9 @@ func force_smoothing(input:Vector2) -> Vector2:
 ##since [TyreSettings] and [CompoundSettings] (which are used in calculating these values) usually never change at runtime.
 ##However, if those are being edited in real time, such as in an editor, these stats need to be re-set.
 func set_physical_stats() -> void:
+	car_side = sign(position.x)
+	relative_toe = - (Toe * car_side)
+	
 	w_size = TyreSettings.get_size()
 	w_weight = pow(w_size, 2.0)
 	

@@ -49,4 +49,5 @@ func get_size() -> float:
 
 ##Get the stiffness of the tyre.
 func get_stiffness() -> float:
+	#var calc_2:float = (Width_mm * 3) / (Aspect_Ratio * 2)
 	return Width_mm / (Aspect_Ratio / 1.5)

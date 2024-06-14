@@ -23,7 +23,6 @@ config/icon="res://vlogo.png"
 
 [autoload]
 
-VitaVehicleSimulation="*res://MAIN/vitavehicle.gd"
 misc_graphics_settings="*res://MISC/autoload/graphics.gd"
 
 [debug]

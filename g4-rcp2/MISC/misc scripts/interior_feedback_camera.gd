@@ -20,4 +20,4 @@ func _physics_process(delta:float) -> void:
 	mometum.x /= 2.0
 	mometum_ro.y /= 2.0
 	position = defaultpos-(mometum/15.0)
-	rotation = Vector3(defaultrot.x - (mometum_ro.x / 15.0),defaultrot.y - (mometum_ro.y / 15.0) -get_parent().steer * 0.25,defaultrot.z - (mometum_ro.z / 15.0))
+	rotation = Vector3(defaultrot.x - (mometum_ro.x / 15.0),defaultrot.y - (mometum_ro.y / 15.0) -get_parent().effective_steer * 0.25,defaultrot.z - (mometum_ro.z / 15.0))

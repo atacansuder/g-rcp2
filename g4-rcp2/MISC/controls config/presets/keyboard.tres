@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_p3gl6")
 Use_Global_Control_Settings = false
+ControlMapName = "Default"
 ActionNameShiftUp = &"shiftup"
 ActionNameShiftDown = &"shiftdown"
 UseAnalogSteering = false

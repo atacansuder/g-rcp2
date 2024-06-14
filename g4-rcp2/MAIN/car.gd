@@ -71,7 +71,7 @@ enum TransmissionTypes {
 @export var Steer_Radius:float = 13.0
 #there's an upstream glitch where these values don't save properly when this is a PackedStringArray
 #@export var Powered_Wheels:PackedStringArray = ["fl", "fr"]
-#The node names of the [ViVeWheels] actively driving (powering) the car.
+##The node names of the [ViVeWheels] actively driving (powering) the car.
 @export var Powered_Wheels:Array[String] = ["fl", "fr"]
 
 @export_group("Drivetrain")
@@ -300,9 +300,7 @@ var rpm_csm:float = 0.0
 
 var current_stable:float = 0.0
 
-#var steering_geometry:Array[float] = [0.0,0.0] #0 is x, 1 is z?
-#Only x and z are used, it's not a Vec2 for consistency
-var steering_geometry:Vector3 = Vector3.ZERO 
+var steer_to_direction:float 
 
 var resistance:float = 0.0
 
@@ -315,7 +313,7 @@ var ds_weight_2:float = 0.0
 var average_drivewheel_size:float = 1.0
 ##An array of the global_rotation.y values of each steering wheel at the current physics frame.
 ##These angles are in degrees.
-var steering_angles:PackedFloat32Array = []
+var steering_angles:Array[float] = []
 ##The largest value in [steering_angles], set each physics frame.
 var max_steering_angle:float = 0.0
 
@@ -387,9 +385,9 @@ var handbrake_pull:float = 0.0
 
 var clutch_pedal:float = 0.0
 
-var steer:float
+var effective_steer:float
 
-var steer_2:float
+var steer_from_input:float
 
 
 
@@ -404,11 +402,11 @@ signal wheels_updated
 #Still here because Bullet is available as an optional GDExtension, so you never know
 ##Function for fixing ViVe under Bullet physics. Not needed when using Godot physics.
 func bullet_fix() -> void:
-	var offset:Vector3 = drag_center.position
-	AckermannPoint -= offset.z
+	var fix_offset:Vector3 = drag_center.position
+	AckermannPoint -= fix_offset.z
 	
 	for i:Node3D in get_children():
-		i.position -= offset
+		i.position -= fix_offset
 
 func _ready() -> void:
 #	bullet_fix()
@@ -491,9 +489,9 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 	clutch_pressed = car_controls.is_clutch_pressed()
 	
 	if car_controls.LooseSteering:
-		steer += steer_velocity
+		effective_steer += steer_velocity
 		
-		if absf(steer) > 1.0:
+		if absf(effective_steer) > 1.0:
 			steer_velocity *= -0.5
 		
 		for front_wheel:ViVeWheel in front_wheels:
@@ -501,7 +499,7 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 			#steer_velocity -= (front_wheel.stress * 0.0025) * (atan2(absf(front_wheel.wv), 1.0) * front_wheel.angle)
 			steer_velocity -= (front_wheel.stress * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
 			
-			steer_velocity += steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
+			steer_velocity += effective_steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 			
 			steer_velocity += front_wheel.directional_force.z * 0.0001 * signf(front_wheel.position.x)
 			
@@ -535,7 +533,7 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 	var forward_force:float
 	
 	#if the car is actively going left or right (and is not stationary)
-	if (velocity.x > 0 and steer_2 > 0) or (velocity.x < 0 and steer_2 < 0):
+	if (velocity.x > 0 and steer_from_input > 0) or (velocity.x < 0 and steer_from_input < 0):
 		forward_force = maxf(velocity.z, 0.0)
 	else:
 		forward_force = maxf(velocity.z / (absf(velocity.x)), 0.0)
@@ -543,21 +541,19 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 	if car_controls.LooseSteering:
 		return
 	
-	steer_2 = car_controls.get_steer_axis(analog_axis)
+	steer_from_input = car_controls.get_steer_axis(analog_axis)
 	
 	#steering assistance
 	if assistance_factor > 0.0:
 		var max_steer:float = 1.0 / (forward_force * (car_controls.SteerAmountDecay / assistance_factor) + 1.0)
-		var assist_mult:float = 0.0
-		
-		if car_controls.EnableSteeringAssistance:
-			assist_mult = car_controls.SteeringAssistance * assistance_factor
-		
 		var assist_commence:float = minf(linear_velocity.length() / 10.0, 1.0)
 		
-		steer = (steer_2 * max_steer) - (velocity.normalized().x * assist_commence) * assist_mult + r_velocity.y * assist_mult
+		if car_controls.EnableSteeringAssistance:
+			effective_steer = (steer_from_input * max_steer) - (velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * assistance_factor) + r_velocity.y * (car_controls.SteeringAssistanceAngular * assistance_factor)
+		else:
+			effective_steer = (steer_from_input * max_steer)
 	else:
-		steer = steer_2
+		effective_steer = steer_from_input
 
 func old_controls() -> void:
 	#Tbh I don't see why these need to be divided, but...
@@ -583,16 +579,16 @@ func old_controls() -> void:
 		steer_velocity += 0.01
 	
 	if car_controls.LooseSteering:
-		steer += steer_velocity
+		effective_steer += steer_velocity
 		
-		if absf(steer) > 1.0:
+		if absf(effective_steer) > 1.0:
 			steer_velocity *= -0.5
 		
 		for front_wheel:ViVeWheel in [front_left,front_right]:
 			steer_velocity += (front_wheel.directional_force.x * 0.00125) * front_wheel.Caster
 			steer_velocity -= (front_wheel.stress * 0.0025) * (atan2(absf(front_wheel.wv), 1.0) * front_wheel.angle)
 			
-			steer_velocity += steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
+			steer_velocity += effective_steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 			
 			if front_wheel.position.x > 0:
 				steer_velocity += front_wheel.directional_force.z * 0.0001
@@ -635,7 +631,7 @@ func old_controls() -> void:
 		var siding:float = absf(velocity.x)
 		
 		#Based on the syntax, I'm unsure if this is doing what it "should" do...?
-		if (velocity.x > 0 and steer_2 > 0) or (velocity.x < 0 and steer_2 < 0):
+		if (velocity.x > 0 and steer_from_input > 0) or (velocity.x < 0 and steer_from_input < 0):
 			siding = 0.0
 		
 		var going:float = velocity.z / (siding + 1.0)
@@ -651,49 +647,45 @@ func old_controls() -> void:
 				if get_window().size.x > 0.0:
 					mouseposx = get_window().get_mouse_position().x / get_window().size.x
 				
-				steer_2 = (mouseposx - 0.5) * 2.0
-				steer_2 *= car_controls.SteerSensitivity
+				steer_from_input = (mouseposx - 0.5) * 2.0
+				steer_from_input *= car_controls.SteerSensitivity
 				
-				steer_2 = clampf(steer_2, -1.0, 1.0)
+				steer_from_input = clampf(steer_from_input, -1.0, 1.0)
 				
-				var s:float = absf(steer_2) * 1.0 + 0.5
+				var s:float = absf(steer_from_input) * 1.0 + 0.5
 				s = minf(s, 1.0)
 				
-				steer_2 *= s
+				steer_from_input *= s
 				mouseposx = (mouseposx - 0.5) * 2.0
-				#steer2 = control_steer_analog(mouseposx)
-				
-				#steer2 = control_steer_analog(Input.get_joy_axis(0, JOY_AXIS_LEFT_X))
-				
 			elif car_controls.UseAnalogSteering:
-				steer_2 = Input.get_accelerometer().x / 10.0
-				steer_2 *= car_controls.SteerSensitivity
+				steer_from_input = Input.get_accelerometer().x / 10.0
+				steer_from_input *= car_controls.SteerSensitivity
 				
-				steer_2 = clampf(steer_2, -1.0, 1.0)
+				steer_from_input = clampf(steer_from_input, -1.0, 1.0)
 				
-				var s:float = absf(steer_2) * 1.0 + 0.5
+				var s:float = absf(steer_from_input) * 1.0 + 0.5
 				s = minf(s, 1.0)
 				
-				steer_2 *= s
+				steer_from_input *= s
 			else:
 				if right:
-					if steer_2 > 0:
-						steer_2 += car_controls.KeyboardSteerSpeed
+					if steer_from_input > 0:
+						steer_from_input += car_controls.KeyboardSteerSpeed
 					else:
-						steer_2 += car_controls.KeyboardCompensateSpeed
+						steer_from_input += car_controls.KeyboardCompensateSpeed
 				elif left:
-					if steer_2 < 0:
-						steer_2 -= car_controls.KeyboardSteerSpeed
+					if steer_from_input < 0:
+						steer_from_input -= car_controls.KeyboardSteerSpeed
 					else:
-						steer_2 -= car_controls.KeyboardCompensateSpeed
+						steer_from_input -= car_controls.KeyboardCompensateSpeed
 				else:
-					if steer_2 > car_controls.KeyboardReturnSpeed:
-						steer_2 -= car_controls.KeyboardReturnSpeed
-					elif steer_2 < - car_controls.KeyboardReturnSpeed:
-						steer_2 += car_controls.KeyboardReturnSpeed
+					if steer_from_input > car_controls.KeyboardReturnSpeed:
+						steer_from_input -= car_controls.KeyboardReturnSpeed
+					elif steer_from_input < - car_controls.KeyboardReturnSpeed:
+						steer_from_input += car_controls.KeyboardReturnSpeed
 					else:
-						steer_2 = 0.0
-				steer_2 = clampf(steer_2, -1.0, 1.0)
+						steer_from_input = 0.0
+				steer_from_input = clampf(steer_from_input, -1.0, 1.0)
 			
 			
 			if assistance_factor > 0.0:
@@ -702,9 +694,9 @@ func old_controls() -> void:
 				var assist_commence:float = linear_velocity.length() / 10.0
 				assist_commence = minf(assist_commence, 1.0)
 				
-				steer = (steer_2 * maxsteer) - (velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * assistance_factor) + r_velocity.y * (car_controls.SteeringAssistanceAngular * assistance_factor)
+				effective_steer = (steer_from_input * maxsteer) - (velocity.normalized().x * assist_commence) * (car_controls.SteeringAssistance * assistance_factor) + r_velocity.y * (car_controls.SteeringAssistanceAngular * assistance_factor)
 			else:
-				steer = steer_2
+				effective_steer = steer_from_input
 
 func transmission() -> void:
 	if not GearAssist.assist_level == 0:
@@ -1045,7 +1037,8 @@ func drivetrain() -> void:
 		center_differential_lock_influence = 0.0
 	
 	
-	var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(powered_wheels)
+	#var maxd:ViVeWheel = VitaVehicleSimulation.fastest_wheel(powered_wheels)
+	var maxd:ViVeWheel = fastest_wheel()
 	#var mind:ViVeWheel = VitaVehicleSimulation.slowest_wheel(powered_wheels)
 	
 	
@@ -1129,25 +1122,17 @@ func _physics_process(_delta:float) -> void:
 	if steering_angles.size() > 0:
 		max_steering_angle = 0.0
 		
-		#for i:float in steering_angles:
-		#	max_steering_angle = maxf(max_steering_angle, i)
-		
-		#sort the values from smaller to larger
-		steering_angles.sort() 
-		#flip it so the first value is the largest one
-		steering_angles.reverse()
-		#We have now found the max angle without doing iterations in a time sensitive function :tada:
-		max_steering_angle = steering_angles[0]
+		for angles:float in steering_angles:
+			max_steering_angle = maxf(max_steering_angle, angles)
 		
 		assistance_factor = 90.0 / max_steering_angle
 	
 	steering_angles.clear()
 	
 	#TODO: Set these elsewhere, such as a settings file
-	if car_controls.Use_Global_Control_Settings:
-		car_controls = VitaVehicleSimulation.universal_controls
-		
-		GearAssist.assist_level = VitaVehicleSimulation.GearAssistant
+#	if car_controls.Use_Global_Control_Settings:
+#		car_controls = VitaVehicleSimulation.universal_controls
+#		GearAssist.assist_level = VitaVehicleSimulation.GearAssistant
 	
 	velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
 	r_velocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
@@ -1167,8 +1152,9 @@ func _physics_process(_delta:float) -> void:
 	gforce *= global_transform.basis.orthonormalized().transposed()
 	
 	new_controls()
+	#car_controls.SteeringAssistance = 0.0
+	#car_controls.SteeringAssistanceAngular = 0.0
 	#old_controls()
-
 	
 	current_gear_ratio = 10.0
 	
@@ -1179,20 +1165,18 @@ func _physics_process(_delta:float) -> void:
 	gas_pedal = clampf(gas_pedal, 0.0, car_controls.MaxThrottle)
 	brake_pedal = clampf(brake_pedal, 0.0, car_controls.MaxBrake)
 	handbrake_pull = clampf(handbrake_pull, 0.0, car_controls.MaxHandbrake)
-	steer = clampf(steer, -1.0, 1.0)
+	effective_steer = clampf(effective_steer, -1.0, 1.0)
 	
 	
 	#I graphed this function in a calculator, and it only curves significantly if max_steering_angle > 200
 	#I've tried it, this calculation is functionally redundant, but imma leave it in because Authenticity:tm:
 	#var uhh:float = pow((max_steering_angle / 90.0), 2.0) * 0.5
 	
-	#var steeroutput:float = steer * (absf(steer) * (uhh) + (1.0 - uhh))
-	var steeroutput:float = steer * absf(steer) #without the redundant calculation
+	#var steeroutput:float = effective_steer * (absf(effective_steer) * (uhh) + (1.0 - uhh))
+	var steeroutput:float = effective_steer * absf(effective_steer) #without the redundant calculation
 	
 	if not is_zero_approx(steeroutput):
-		steering_geometry = Vector3(-Steer_Radius / steeroutput, 0.0, AckermannPoint)
-	else:
-		steering_geometry = Vector3(0.0, 0.0, AckermannPoint)
+		steer_to_direction = -Steer_Radius / steeroutput
 	
 	abs_pump -= 1    
 	
@@ -1348,3 +1332,26 @@ func multivariate() -> float:
 	
 	return return_torque
 
+func fastest_wheel() -> ViVeWheel:
+	var val:float = -10000000000000000000000000000000000.0
+	var obj:ViVeWheel
+	
+	for i:ViVeWheel in powered_wheels:
+		val = maxf(val, absf(i.absolute_wv))
+		
+		if is_equal_approx(val, absf(i.absolute_wv)):
+			obj = i
+	
+	return obj
+
+func slowest_wheel() -> ViVeWheel:
+	var val:float = 10000000000000000000000000000000000.0
+	var obj:ViVeWheel
+	
+	for i:ViVeWheel in powered_wheels:
+		val = minf(val, absf(i.absolute_wv))
+		
+		if is_equal_approx(val, absf(i.absolute_wv)):
+			obj = i
+	
+	return obj

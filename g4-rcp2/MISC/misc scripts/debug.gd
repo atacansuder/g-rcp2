@@ -70,8 +70,8 @@ func _process(delta:float) -> void:
 		#This gives performs slightly better but gives a less precise FPS
 		fps.text = "fps: " + str(Performance.get_monitor(Performance.TIME_FPS))
 	
-	$sw.rotation_degrees = car_node.steer * 380.0
-	$sw_desired.rotation_degrees = car_node.steer_2 * 380.0
+	$sw.rotation_degrees = car_node.effective_steer * 380.0
+	$sw_desired.rotation_degrees = car_node.steer_from_input * 380.0
 	if car_node.Debug_Mode:
 		weight_dist.text = "weight distribution: F%f/R%f" % [car_node.weight_dist[0] * 100, car_node.weight_dist[1] * 100]
 	else:
