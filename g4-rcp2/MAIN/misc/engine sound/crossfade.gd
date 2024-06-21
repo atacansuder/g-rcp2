@@ -87,11 +87,11 @@ func _physics_process(_delta:float) -> void:
 		var maxpitch:float = i.pitch / 100000.0
 		
 		var index:float = float(i.get_index())
-		var dist:float = absf(index - fade)
+		var fade_dist:float = absf(index - fade)
 		
-		dist *= absf(dist)
+		fade_dist *= absf(fade_dist)
 		
-		var vol:float = clampf(1.0 - dist, 0.0, 1.0)
+		var vol:float = clampf(1.0 - fade_dist, 0.0, 1.0)
 		
 		i.volume_db = maxf(linear_to_db((vol * maxvol) * (volume * (overall_volume))), -60.0)
 		i.max_db = i.volume_db

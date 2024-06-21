@@ -43,6 +43,7 @@ func load_information() -> void:
 		"TextEdit", "LineEdit":
 			##TODO: Implement text nodes
 			pass
+		
 
 func _init() -> void:
 	ViVeEnvironment.get_singleton().connect("car_changed", load_information)
@@ -57,19 +58,23 @@ func _ready() -> void:
 		push_error("No valid value node for setting ", var_name)
 		return
 	
+	#set up according connections depending on the GUI element type
 	match editing_node.get_class():
 		"HSlider", "VSlider":
 			var slider:Slider = editing_node as Slider
-			slider.connect("value_changed", _on_value_changed)
-			slider.connect("drag_ended", _on_drag_end)
+			slider.connect(&"value_changed", _on_value_changed)
+			slider.connect(&"drag_ended", _on_drag_end)
 			#This ugly line just sets the value once when the parent eventually loads in (because children load first)
-			ViVeEnvironment.get_singleton().connect("car_changed", slider.set.bind(var_name, control_ref.get.bind(var_name)), CONNECT_ONE_SHOT)
+			ViVeEnvironment.get_singleton().connect(&"car_changed", slider.set.bind(var_name, control_ref.get.bind(var_name)), CONNECT_ONE_SHOT)
 		"CheckBox", "CheckButton", "Button":
 			var checkbox:BaseButton = editing_node as BaseButton
-			checkbox.connect("toggled", _on_toggled)
+			checkbox.connect(&"toggled", _on_toggled)
 		"TextEdit", "LineEdit":
 			##TODO: Implement text nodes
 			pass
+		"OptionButton":
+			var options:OptionButton = editing_node as OptionButton
+			options.connect(&"item_selected", _on_item_selected)
 
 #for checkbutton/checkbox
 func _on_toggled(active:bool) -> void:
@@ -89,3 +94,9 @@ func _on_drag_end(val_changed:bool) -> void:
 			control_ref.set(var_name, float_cache)
 
 #for text nodes (TODO)
+
+#for option buttons
+
+func _on_item_selected(index:int) -> void:
+	control_ref.set(var_name, index)
+	amount.text = str(index)

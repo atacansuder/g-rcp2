@@ -91,23 +91,20 @@ popup/item_3/id = 2
 [node name="HSeparator7" type="HSeparator" parent="Config/List"]
 layout_mode = 2
 
-[node name="gear_assist" type="HSlider" parent="Config/List"]
-custom_minimum_size = Vector2(240, 60)
+[node name="ShiftingAssist" parent="Config/List" instance=ExtResource("2_yfduw")]
 layout_mode = 2
-max_value = 2.0
+var_name = &"ShiftingAssistance"
 
-[node name="text" type="Label" parent="Config/List/gear_assist"]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-text = "Shift Assist Level"
-
-[node name="amount" type="Label" parent="Config/List/gear_assist"]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-text = "0.0"
-vertical_alignment = 2
+[node name="value" type="OptionButton" parent="Config/List/ShiftingAssist"]
+layout_mode = 2
+item_count = 3
+selected = 2
+popup/item_0/text = "Assist off"
+popup/item_0/id = 0
+popup/item_1/text = "Automatic clutch"
+popup/item_1/id = 1
+popup/item_2/text = "Fully automatic"
+popup/item_2/id = 2
 
 [node name="HSeparator6" type="HSeparator" parent="Config/List"]
 layout_mode = 2
@@ -421,5 +418,3 @@ text = "Presets:"
 [connection signal="pressed" from="JumpTo/Apply" to="." method="_on_apply_pressed"]
 [connection signal="pressed" from="JumpTo/Cancel" to="." method="_on_cancel_pressed"]
 [connection signal="item_selected" from="Config/List/input_options" to="." method="_on_input_options_item_selected"]
-[connection signal="drag_ended" from="Config/List/gear_assist" to="." method="_on_gear_assist_drag_ended"]
-[connection signal="value_changed" from="Config/List/gear_assist" to="." method="_on_gear_assist_value_changed"]

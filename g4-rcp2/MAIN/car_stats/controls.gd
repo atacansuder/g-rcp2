@@ -1,28 +1,20 @@
+@tool
 extends Resource
 ##A class that handles and controls the car's control options.
 class_name ViVeCarControls
 
-##Which control type the car is going to be associated with.
-enum ControlType {
-	##Use the keyboard and mouse for control.
-	CONTROLS_KEYBOARD_MOUSE,
-	##Use just the keyboard for control.
-	CONTROLS_KEYBOARD,
-	##Use the touchscreen for control.
-	CONTROLS_TOUCH,
-	##Use a connected game controller for control.
-	CONTROLS_JOYPAD,
-}
-
-## @depreciated
-## Applies all control settings globally. This also affects cars that were already spawned.
-@export var Use_Global_Control_Settings:bool = false
 ##The asthetic name of the control preset
 @export var ControlMapName:String = "Default"
+
+@export_group("Shifting")
 ##Action name for shifting up.
 @export var ActionNameShiftUp:StringName = &"shiftup"
 ##Action name for shifting down.
 @export var ActionNameShiftDown:StringName = &"shiftdown"
+##The shift assistance level.
+@export_enum("None", "Automatic clutch", "Fully automatic") var ShiftingAssistance:int = 2
+
+
 @export_group("Steering")
 ##If true, analog steering will be used
 @export var UseAnalogSteering:bool = false

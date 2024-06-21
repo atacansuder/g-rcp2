@@ -239,6 +239,7 @@ blend_shape_mode = 0
 mass = 90.0
 can_sleep = false
 script = ExtResource("2")
+car_name = &"Eclipse SRC"
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.624618, 0.725289)

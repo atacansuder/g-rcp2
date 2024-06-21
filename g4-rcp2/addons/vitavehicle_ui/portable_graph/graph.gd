@@ -36,13 +36,10 @@ var peaktq:Array[float] = [0.0,0.0]
 var temp_rpm_fix:float = 0.0
 
 func draw_graph() -> void:
-	#Some checks I've found are necessary
+	#Some checks ive've found are necessary
 	if not is_instance_valid(car):
-		print("Car instance is not valid")
+		push_warning("Car instance is not valid for graph calculations")
 		return
-#	elif car.get("rpm") == null:
-#		print("'rpm' could not be found in given car, drawing cannot proceed.")
-#		return
 	
 	peakhp = [0.0,0.0]
 	peaktq = [0.0,0.0]
@@ -50,12 +47,10 @@ func draw_graph() -> void:
 	power.clear_points()
 	var skip:int = 0
 	#var draw_scale:Vector2 = Vector2(size.x / Generation_Range, size.y / Generation_Range) 
-	for i:int in range(Generation_Range):
-		if i > Draw_RPM:
-			car.rpm = float(i)
-			#var trq:float = VitaVehicleSimulation.multivariate(car)
-			var trq:float = car.multivariate()
-			var hp:float = (i / 5252.0) * trq
+	for ranged_rpm:int in range(Generation_Range):
+		if ranged_rpm > Draw_RPM:
+			var trq:float = car.multivariate(ranged_rpm)
+			var hp:float = (ranged_rpm / 5252.0) * trq
 			
 			if Torque_Unit == 1:
 				trq *= 1.3558179483
@@ -70,15 +65,15 @@ func draw_graph() -> void:
 				3:
 					hp *= 0.7457
 			
-			var tr_p:Vector2 = Vector2((i / Generation_Range) * size.x, size.y - (trq * size.y) * graph_scale)
-			var hp_p:Vector2 = Vector2((i / Generation_Range) * size.x, size.y - (hp * size.y) * graph_scale)
+			var tr_p:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (trq * size.y) * graph_scale)
+			var hp_p:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (hp * size.y) * graph_scale)
 			
 			if hp > peakhp[0]:
-				peakhp = [hp, i]
+				peakhp = [hp, ranged_rpm]
 				power_p.position = hp_p
 			
 			if trq > peaktq[0]:
-				peaktq = [trq, i]
+				peaktq = [trq, ranged_rpm]
 				torque_p.position = tr_p
 			
 			skip -= 1

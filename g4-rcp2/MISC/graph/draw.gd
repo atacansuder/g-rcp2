@@ -25,8 +25,13 @@ class_name ViVeInEngineTorqueGraph
 @onready var power:Line2D = $"power"
 @onready var power_peak:Polygon2D = $"power/peak"
 
-var peakhp:Array[float] = [0.0,0.0]
-var peaktq:Array[float] = [0.0,0.0]
+var peakcurrent_horsepower:Array[float] = [0.0,0.0]
+
+var peak_torque:float = 0.0
+var peak_torque_rpm:float = 0.0
+
+var peak_horsepower:float 
+var peak_horsepower_rpm:float
 
 var car:ViVeCar = ViVeCar.new()
 
@@ -42,47 +47,50 @@ func draw_graph() -> void:
 	Generation_Range = float(int(car.RPMLimit / 1000.0) * 1000 + 1000) #???
 	Draw_RPM = car.IdleRPM
 	calculate()
-	draw_scale = 1.0 / max(peaktq[0], peakhp[0])
+	draw_scale = 1.0 / maxf(peak_torque, peak_horsepower)
 	calculate()
 
 func calculate() -> void:
-	peakhp = [0.0,0.0]
-	peaktq = [0.0,0.0]
+	peak_horsepower = 0.0
+	peak_horsepower_rpm = 0.0
+	peak_torque = 0.0
+	peak_torque_rpm = 0.0
 	torque.clear_points()
 	power.clear_points()
 	var skip:int = 0
-	for i:int in range(Generation_Range):
-		if i > Draw_RPM:
-			car.rpm = i
-			var trq:float = car.multivariate()
-			var hp:float = (i / 5252.0) * trq
+	for current_rpm:int in range(Generation_Range):
+		if current_rpm > Draw_RPM:
+			var current_torque:float = car.multivariate(current_rpm)
+			var current_horsepower:float = (current_rpm / 5252.0) * current_torque
 			
 			if Torque_Unit == 1:
-				trq *= 1.3558179483
+				current_torque *= 1.3558179483
 			elif Torque_Unit == 2:
-				trq *= 0.138255
+				current_torque *= 0.138255
 			
 			match Power_Unit:
 				1:
-					hp *= 0.986
+					current_horsepower *= 0.986
 				2:
-					hp *= 1.01387
+					current_horsepower *= 1.01387
 				3:
-					hp *= 0.7457
+					current_horsepower *= 0.7457
 			
-			var tr_p:Vector2 = Vector2((i / Generation_Range) * size.x, size.y - (trq * size.y) * draw_scale)
-			var hp_p:Vector2 = Vector2((i / Generation_Range) * size.x, size.y - (hp * size.y) * draw_scale)
+			var torque_position:Vector2 = Vector2((current_rpm / Generation_Range) * size.x, size.y - (current_torque * size.y) * draw_scale)
+			var horsepower_position:Vector2 = Vector2((current_rpm / Generation_Range) * size.x, size.y - (current_horsepower * size.y) * draw_scale)
 			
-			if hp > peakhp[0]:
-				peakhp = [hp, i]
-				power_peak.position = hp_p
+			if current_horsepower > peak_horsepower:
+				peak_horsepower = current_horsepower
+				peak_horsepower_rpm = current_rpm
+				power_peak.position = horsepower_position
 			
-			if trq > peaktq[0]:
-				peaktq = [trq, i]
-				torque_peak.position = tr_p
+			if current_torque > peak_torque:
+				peak_torque = current_torque
+				peak_torque_rpm = current_rpm
+				torque_peak.position = torque_position
 			
 			skip -= 1
 			if skip <= 0:
-				torque.add_point(tr_p)
-				power.add_point(hp_p)
+				torque.add_point(torque_position)
+				power.add_point(horsepower_position)
 				skip = 100

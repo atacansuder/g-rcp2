@@ -1,21 +1,30 @@
-[gd_scene load_steps=19 format=3 uid="uid://crtwme8ggggra"]
+[gd_scene load_steps=37 format=3 uid="uid://crtwme8ggggra"]
 
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
 [ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
-[ext_resource type="Script" path="res://MAIN/car_stats/controls.gd" id="2_lu5je"]
+[ext_resource type="Script" path="res://MAIN/car_stats/controls.gd" id="2_5e5rd"]
 [ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3"]
+[ext_resource type="Script" path="res://MAIN/car_stats/gear_assistant.gd" id="3_a8rfm"]
 [ext_resource type="Texture2D" uid="uid://del2h14nydk3g" path="res://MAIN/misc/textures/rim.jpg" id="4"]
+[ext_resource type="Script" path="res://MAIN/car_stats/auto_settings.gd" id="4_jwds8"]
 [ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="5"]
+[ext_resource type="Script" path="res://MAIN/car_stats/cvt.gd" id="5_pt60g"]
 [ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6"]
+[ext_resource type="Script" path="res://MAIN/car_stats/abs.gd" id="6_44ix1"]
+[ext_resource type="Resource" uid="uid://bsdgxdg8heuby" path="res://MISC/car swapper/misc_resources/base_car_front_suspension.tres" id="6_ai02f"]
 [ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7"]
+[ext_resource type="Script" path="res://MAIN/car_stats/esp.gd" id="7_kqdxa"]
+[ext_resource type="Script" path="res://MAIN/car_stats/btcs.gd" id="8_fwqui"]
 [ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_tk2wk"]
+[ext_resource type="Script" path="res://MAIN/car_stats/ttcs.gd" id="9_2gaas"]
+[ext_resource type="Script" path="res://MAIN/car_stats/torque.gd" id="10_j1lxw"]
 
-[sub_resource type="Resource" id="Resource_vg370"]
-script = ExtResource("2_lu5je")
-Use_Global_Control_Settings = false
+[sub_resource type="Resource" id="Resource_gwpjx"]
+script = ExtResource("2_5e5rd")
 ControlMapName = "Default"
 ActionNameShiftUp = &"shiftup"
 ActionNameShiftDown = &"shiftdown"
+ShiftingAssistance = 2
 UseAnalogSteering = false
 SteerSensitivity = 1.0
 ActionNameSteerLeft = &"left"
@@ -48,6 +57,84 @@ IsClutchDigital = true
 OnClutchRate = 0.2
 OffClutchRate = 0.2
 MaxClutch = 1.0
+
+[sub_resource type="Resource" id="Resource_810hy"]
+script = ExtResource("3_a8rfm")
+shift_delay = 20
+speed_influence = 0.944087
+down_RPM = 6000.0
+upshift_RPM = 6200.0
+clutch_out_RPM = 3000.0
+input_delay = 5
+
+[sub_resource type="Resource" id="Resource_1xwlw"]
+script = ExtResource("4_jwds8")
+shift_rpm = 6500.0
+downshift_thresh = 300.0
+throt_eff_thresh = 0.5
+engage_rpm_thresh = 0.0
+engage_rpm = 4000.0
+
+[sub_resource type="Resource" id="Resource_t46fn"]
+script = ExtResource("5_pt60g")
+throt_eff_thresh = 0.75
+accel_rate = 0.025
+iteration_1 = 0.9
+iteration_2 = 500.0
+iteration_3 = 2.0
+iteration_4 = 0.2
+
+[sub_resource type="Resource" id="Resource_1f7rx"]
+script = ExtResource("6_44ix1")
+threshold = 2500.0
+pump_time = 1
+speed_pre_active = 10.0
+enabled = true
+pump_force = 0.5
+lat_thresh = 500.0
+lat_pump_time = 2.0
+
+[sub_resource type="Resource" id="Resource_1v62j"]
+script = ExtResource("7_kqdxa")
+stab_thresh = 0.5
+stab_rate = 1.5
+yaw_thresh = 1.0
+yaw_rate = 3.0
+enabled = false
+
+[sub_resource type="Resource" id="Resource_jig0l"]
+script = ExtResource("8_fwqui")
+threshold = 10.0
+sensitivity = 0.05
+enabled = true
+
+[sub_resource type="Resource" id="Resource_yg8dn"]
+script = ExtResource("9_2gaas")
+threshold = 5.0
+sensitivity = 1.0
+enabled = false
+
+[sub_resource type="Resource" id="Resource_ykfki"]
+script = ExtResource("10_j1lxw")
+BuildUpTorque = 0.0035
+TorqueRise = 30.0
+RiseRPM = 1000.0
+OffsetTorque = 110.0
+FloatRate = 0.1
+DeclineRate = 1.5
+DeclineRPM = 3500.0
+DeclineSharpness = 1.0
+
+[sub_resource type="Resource" id="Resource_v7npc"]
+script = ExtResource("10_j1lxw")
+BuildUpTorque = 0.0
+TorqueRise = 60.0
+RiseRPM = 1000.0
+OffsetTorque = 70.0
+FloatRate = 0.1
+DeclineRate = 2.0
+DeclineRPM = 5000.0
+DeclineSharpness = 1.0
 
 [sub_resource type="ConvexPolygonShape3D" id="12"]
 points = PackedVector3Array(2.75605, 1.27715, 6.68259, 1.75444, 2.13382, 3.26614, -2.75659, 1.27715, 6.68259, 2.75605, -0.4, 6.68259, 2.75605, 0.921974, -4.96708, 1.75444, 2.13382, -0.149161, -1.75498, 2.13382, 3.26614, -2.75659, -0.4, 6.68259, -1.75498, 2.13382, -0.149161, -2.75659, 0.921974, -4.96708, 2.75605, -0.4, -4.96708, -2.75659, -0.4, -4.96708)
@@ -270,8 +357,18 @@ point_count = 2
 mass = 90.0
 can_sleep = false
 script = ExtResource("2")
-car_controls = SubResource("Resource_vg370")
+car_controls = SubResource("Resource_gwpjx")
+GearAssist = SubResource("Resource_810hy")
+car_name = &"Base Car"
 Debug_Mode = true
+AutoSettings = SubResource("Resource_1xwlw")
+CVTSettings = SubResource("Resource_t46fn")
+ABS = SubResource("Resource_1f7rx")
+ESP = SubResource("Resource_1v62j")
+BTCS = SubResource("Resource_jig0l")
+TTCS = SubResource("Resource_yg8dn")
+torque_norm = SubResource("Resource_ykfki")
+torque_vvt = SubResource("Resource_v7npc")
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.624618, 0.725289)
@@ -291,7 +388,9 @@ mesh = SubResource("10")
 [node name="fr" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.2, 3.8)
 target_position = Vector3(0, -2.7, 0)
+Differed_Wheel_Path = NodePath("fl")
 SwayBarConnection = NodePath("fl")
+Suspension = ExtResource("6_ai02f")
 Caster = 2.0
 S_Stiffness = 55.0
 S_Damping = 4.0
@@ -307,7 +406,9 @@ skeleton = NodePath("../../../../..")
 [node name="fl" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, 3.8)
 target_position = Vector3(0, -2.7, 0)
+Differed_Wheel_Path = NodePath("fr")
 SwayBarConnection = NodePath("fr")
+Suspension = ExtResource("6_ai02f")
 Caster = 2.0
 S_Stiffness = 55.0
 S_Damping = 4.0
@@ -338,7 +439,7 @@ skeleton = NodePath("../../../../..")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.2, -3.8)
 target_position = Vector3(0, -2.7, 0)
 Steer = false
-SwayBarConnection = NodePath("rl")
+SwayBarConnection = NodePath("rr")
 B_Torque = 30.0
 B_Bias = 0.2
 HB_Bias = 1.0

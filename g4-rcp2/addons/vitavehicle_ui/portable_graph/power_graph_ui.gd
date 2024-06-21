@@ -12,7 +12,7 @@ func _process(_delta: float) -> void:
 func _on_car_select_pressed() -> void:
 	var nods:Array[Node] = EditorInterface.get_selection().get_selected_nodes()
 	#TODO: Make this check a lot more... check-y (not as glaringly scuffed and flawed)
-	if nods.size() == 1 && nods[0].get_class() == "RigidBody3D": #RigidBody3D is the base class of ViVeCar
+	if nods.size() == 1 and nods[0].get_class() == "RigidBody3D": #RigidBody3D is the base class of ViVeCar
 		graph.car = nods[0] as ViVeCar
 		nods[0].get_script()
 	else:

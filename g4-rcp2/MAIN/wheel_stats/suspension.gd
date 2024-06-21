@@ -3,27 +3,29 @@ extends Resource
 class_name ViVeWheelSuspension
 
 ##Spring Force.
-#S_Stiffness
-@export var SpringStiffness:float = 47.0
+@export var SpringStiffness:float = 47.0 #S_Stiffness
 ##Compression Dampening.
-#S_Damping
-@export var CompressionDampening:float = 3.5
+@export var CompressionDampening:float = 3.5 #S_Damping
 ##Rebound Dampening.
-#S_ReboundDamping
-@export var ReboundDampening:float = 3.5
+@export var ReboundDampening:float = 3.5 #S_ReboundDamping
 ##Suspension Deadzone.
-#S_RestLength
-@export var Deadzone:float = 0.0
+@export var Deadzone:float = 0.0 #S_RestLength
 ##Compression Barrier.
-#S_MaxCompression
-@export var MaxCompression:float = 0.5
+@export var MaxCompression:float = 0.5 #S_MaxCompression
 ##Anti-roll Stiffness.
-#AR_Stiff
-@export var AntiRollStiffness:float = 0.5
-##Anti-roll Reformation Rate.
-#AR_Elast
-@export var AntiRoolElasticity:float = 0.1
+@export var AntiRollStiffness:float = 0.5 #AR_Stiff
+##Anti-roll Reformation Rate. 
+@export var AntiRollElasticity:float = 0.1 #AR_Elast
 ##Used in calculating suspension.
 @export var InclineArea:float = 0.2
 ##Used in calculating suspension.
 @export var ImpactForce:float = 1.5
+
+func get_elasticity(sway_bar_compression_offset:float) -> float:
+	return SpringStiffness * (AntiRollElasticity * sway_bar_compression_offset + 1.0)
+
+func get_dampening(sway_bar_compression_offset:float) -> float:
+	return CompressionDampening * (AntiRollStiffness * sway_bar_compression_offset + 1.0)
+
+func get_rebound_dampening(sway_bar_compression_offset:float) -> float:
+	return ReboundDampening * (AntiRollStiffness * sway_bar_compression_offset + 1.0)

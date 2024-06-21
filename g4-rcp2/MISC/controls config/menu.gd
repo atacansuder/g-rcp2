@@ -12,7 +12,7 @@ var setting_count:int = 0
 var cache_assist_level:int
 
 func setcar() -> void:
-	car = ViVeEnvironment.get_singleton().car
+	car = weakref(ViVeEnvironment.get_singleton().car).get_ref()
 	if not is_instance_valid(car):
 		return
 	ViVeGUIControlVariable.control_ref = car.car_controls
@@ -77,13 +77,6 @@ func _on_save_pressed() -> void:
 #these misc options are directly connected up here
 func _on_input_options_item_selected(index: int) -> void:
 	car.control_type = index
-
-func _on_gear_assist_drag_ended(value_changed: bool) -> void:
-	if value_changed:
-		car.GearAssist.assist_level = cache_assist_level
-
-func _on_gear_assist_value_changed(value: float) -> void:
-	cache_assist_level = int(value)
 
 func _on_label_text_changed(new_text: String) -> void:
 	ViVeGUIControlVariable.control_ref.ControlMapName = new_text

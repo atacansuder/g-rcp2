@@ -6,7 +6,7 @@ class_name ViVeVGS
 
 @export var MaxG:float = 0.75
 
-@export var gforce:Vector2 = Vector2(0,0)
+@export var gforce:Vector2 = Vector2.ZERO
 
 @onready var wheel:ViVeDebugWheel = $wheel.duplicate()
 

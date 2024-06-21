@@ -2,7 +2,7 @@ extends ScrollContainer
 
 @onready var button:Button = $"container/_DEFAULT"
 @onready var car_list:GridContainer = $"container"
-@onready var default_position:Vector3 #= ViVeEnvironment.get_singleton().car.global_position
+@onready var default_position:Vector3
 
 const base_path:String = "res://MISC/car swapper/"
 const default_car_name:StringName =  "_DEFAULT_CAR_"
@@ -71,7 +71,7 @@ func old_load_car(naem:StringName) -> void:
 	
 	d.global_position = default_position + Vector3(0, 5, 0)
 	
-	var debug_child:ViVeTachometer = ViVeDebug.singleton.get_node("tacho")
+	var debug_child:ViVeTachometer = ViVeDebug.singleton.get_node(^"tacho")
 	
 	debug_child.Redline = int(float(d.RPMLimit / 1000.0)) * 1000
 	debug_child.RPM_Range = int(float(d.RPMLimit / 1000.0)) * 1000 + 2000
@@ -118,7 +118,7 @@ func threaded_load_car_step_2() -> void:
 	
 	new_car.global_position = default_position + Vector3(0.0, 5.0, 0.0)
 	
-	var debug_child:ViVeTachometer = ViVeDebug.singleton.get_node("tacho")
+	var debug_child:ViVeTachometer = ViVeDebug.singleton.get_node(^"tacho")
 	
 	#debug_child.Redline = int(float(new_car.RPMLimit / 1000.0)) * 1000
 	debug_child.Redline = int(new_car.RPMLimit / 1000.0) * 1000
@@ -151,10 +151,10 @@ func _ready() -> void:
 	for i:StringName in d:
 		var but:Button = button.duplicate()
 		car_list.add_child(but)
-		but.get_node("carname").text = i
+		but.get_node(^"carname").text = i
 		var icon_path:String = base_path + "cars/" + i + "/thumbnail.png"
 		if FileAccess.file_exists(icon_path):
-			but.get_node("icon").texture = load(icon_path)
+			but.get_node(^"icon").texture = load(icon_path)
 #		but.connect("pressed", self, "swapcar",[i])
 		but.pressed.connect(swapcar.bind(i))
 	

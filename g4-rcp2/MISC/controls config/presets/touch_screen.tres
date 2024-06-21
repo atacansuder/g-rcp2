@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_urd5g")
-Use_Global_Control_Settings = false
 ControlMapName = "Default"
 ActionNameShiftUp = &"shiftup"
 ActionNameShiftDown = &"shiftdown"
+ShiftingAssistance = 2
 UseAnalogSteering = true
 SteerSensitivity = 1.0
 ActionNameSteerLeft = &"left"

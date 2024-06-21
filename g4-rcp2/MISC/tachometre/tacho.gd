@@ -33,16 +33,16 @@ func _ready() -> void:
 	var red:float = Redline / 1000.0 - 0.001
 	
 	for i:int in range(maximum + 1):
-		var dist:float = float(i) / float(maximum)
+		var dist1:float = float(i) / float(maximum)
 		var dist2:float = (float(i) + 0.25) / float(maximum)
 		var dist3:float = (float(i) + 0.5) / float(maximum)
 		var dist4:float = (float(i) + 0.75) / float(maximum)
 		
 		var d:ColorRect = $tacho/major.duplicate(true)
 		$tacho.add_child(d)
-		d.rotation_degrees = lowangle * (1.0 - dist) + highangle * dist
+		d.rotation_degrees = lowangle * (1.0 - dist1) + highangle * dist1
 		d.visible = true
-		var tetx:Label = d.get_node("tetx")
+		var tetx:Label = d.get_node(^"tetx")
 		tetx.text = str(i)
 		tetx.rotation_degrees = -d.rotation_degrees
 		generated.append(d)
