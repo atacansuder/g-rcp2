@@ -74,7 +74,7 @@ func _physics_process(_delta:float) -> void:
 	peel1.pitch_scale = 1.0 / mult
 	peel2.pitch_scale =  1.1 - total_volume * 0.1 / mult
 	
-	var drit:float = minf((parent.linear_velocity.length() * wheel.stress) / 1000.0 - 0.1, 0.5)
+	var drit:float = minf((parent.linear_velocity.length() * wheel.grip) / 1000.0 - 0.1, 0.5)
 	
 	drit = clampf(drit + wheel.skid_volume / 2.0 - 0.1, 0.0, 1.0)
 	

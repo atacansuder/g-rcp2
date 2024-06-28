@@ -161,24 +161,24 @@ anchor_bottom = 0.368333
 
 [node name="ColorRect" type="ColorRect" parent="power_graph"]
 show_behind_parent = true
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.184314)
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.137255, 0.137255, 0.137255, 0.635294)
 
 [node name="rpm" type="ColorRect" parent="power_graph"]
 show_behind_parent = true
-custom_minimum_size = Vector2(2, 107)
-layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-grow_vertical = 2
+custom_minimum_size = Vector2(2, 0)
+layout_mode = 0
+offset_right = 2.0
 
 [node name="redline" type="ColorRect" parent="power_graph"]
 show_behind_parent = true
-custom_minimum_size = Vector2(2, 107)
-layout_mode = 0
-anchor_bottom = 1.0
+custom_minimum_size = Vector2(2, 0)
+layout_mode = 2
 color = Color(1, 0, 0, 1)
 
 [node name="tacho" parent="." instance=ExtResource("13")]

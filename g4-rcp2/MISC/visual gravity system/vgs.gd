@@ -8,21 +8,19 @@ class_name ViVeVGS
 
 @export var gforce:Vector2 = Vector2.ZERO
 
-@onready var wheel:ViVeDebugWheel = $wheel.duplicate()
-
+@onready var wheel:ViVeDebugWheelMonitor = $wheel.duplicate()
 
 var glength:float = 0.0
 
-var appended:Array[ViVeDebugWheel] = []
+var appended:Array[ViVeDebugWheelMonitor] = []
 
 func _ready() -> void:
 	$wheel.queue_free()
 
 func clear() -> void:
-	for i:ViVeDebugWheel in appended:
-		i.queue_free()
+	for wheel:ViVeDebugWheelMonitor in appended:
+		wheel.queue_free()
 	appended = []
-
 
 func append_wheel(node:ViVeWheel) -> void:
 	var settings:ViVeTyreSettings = node.TyreSettings
@@ -31,9 +29,9 @@ func append_wheel(node:ViVeWheel) -> void:
 	var w_size:float = settings.get_size()
 	var width:float = (settings.Width_mm * 0.003269) / 2.0
 	
-	var w:ViVeDebugWheel = wheel.duplicate()
+	var w:ViVeDebugWheelMonitor = wheel.duplicate()
 	add_child(w)
-	w.pos = - Vector2(pos.x,pos.z) * 2.0
+	w.pos = - Vector2(pos.x, pos.z) * 2.0
 	w.setting = settings
 	w.node = node
 	
@@ -43,23 +41,8 @@ func append_wheel(node:ViVeWheel) -> void:
 	appended.append(w)
 
 func _physics_process(_delta:float) -> void:
-	for i:ViVeDebugWheel in appended:
-		if i.node == null:
-			continue
-		i.position = size * 0.5
-		i.position += ((i.pos * (64.0 / vgs_scale)) / 9.806)
-		
-		i.slippage.scale.y = maxf((i.node.slip_percpre) * 0.8, 0.0)
-		
-		i.rotation_degrees = - i.node.rotation_degrees.y
-		
-		i.self_modulate = Color.WHITE
-		
-		if i.slippage.scale.y > 0.8:
-			i.slippage.scale.y = 0.8
-			if absf(i.node.wv * i.node.w_size) > i.node.velocity.length():
-				i.self_modulate = Color.RED
-	
+	for wheel:ViVeDebugWheelMonitor in appended:
+		wheel.update(size, vgs_scale)
 	
 	var vector_cache:float = gforce.abs().length()
 	glength = maxf(vector_cache / vgs_scale - 1.0, 0.0)
@@ -68,10 +51,7 @@ func _physics_process(_delta:float) -> void:
 	else:
 		$centre/Circle.modulate = Color.GOLD #Color(1.0, 0.75, 0.0, 1.0)
 	
-	#glength = maxf(glength, 0.0)
-	
 	gforce /= glength + 1.0
 	
 	$centre.position = size / 2 + gforce * (64.0 / vgs_scale)
 	$field.position = size / 2
-	

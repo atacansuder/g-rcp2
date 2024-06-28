@@ -1,8 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://cnjbclsh2lklc"]
+[gd_scene load_steps=6 format=3 uid="uid://cnjbclsh2lklc"]
 
 [ext_resource type="Texture2D" uid="uid://bj0jt850o26wy" path="res://MISC/visual gravity system/circle.png" id="1"]
 [ext_resource type="Script" path="res://MISC/visual gravity system/vgs.gd" id="2"]
-[ext_resource type="Script" path="res://MISC/visual gravity system/wheel_variables.gd" id="3"]
+[ext_resource type="Script" path="res://MISC/visual gravity system/wheel_monitor.gd" id="3"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_61256"]
+load_path = "res://.godot/imported/circle.png-068f878377692621a577a08ad282694f.ctex"
 
 [sub_resource type="Gradient" id="1"]
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
@@ -32,7 +35,7 @@ polygon = PackedVector2Array(-10, 10, 10, 10, 10, -10, -10, -10)
 
 [node name="field" type="Sprite2D" parent="."]
 modulate = Color(0, 0, 0, 0.5)
-texture = ExtResource("1")
+texture = SubResource("CompressedTexture2D_61256")
 
 [node name="centre" type="CPUParticles2D" parent="."]
 z_index = 72

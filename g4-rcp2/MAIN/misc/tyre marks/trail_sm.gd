@@ -15,7 +15,7 @@ var inserting:bool = false
 var inserting2:bool = false
 
 var current_trail_node:ViVeWheelMark = null
-var current_trail :ImmediateMesh = null
+var current_trail:ImmediateMesh = null
 var drawers:Array[MeshInstance3D] = []
 
 var wheel_parent:ViVeWheel = null
@@ -33,7 +33,6 @@ func add_segment() -> void:
 		ppos.origin)
 		)
 	last_pos = ppos
-
 
 func _physics_process(_delta:float) -> void:
 	
@@ -58,7 +57,7 @@ func _process(_delta:float) -> void:
 	if not is_instance_valid(wheel_parent):
 		wheel_parent = get_parent().get_parent()
 	
-	inserting = wheel_parent.slip_perc.length() > wheel_parent.stress + 20.0 and wheel_parent.is_colliding()
+	inserting = wheel_parent.slip_perc.length() > wheel_parent.grip + 20.0 and wheel_parent.is_colliding()
 	
 	position.y = - wheel_parent.w_size + 0.025
 	wid = wheel_parent.TyreSettings.Width_mm / 750.0

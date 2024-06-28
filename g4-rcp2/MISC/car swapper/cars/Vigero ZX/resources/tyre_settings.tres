@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_p64rw")
 GripInfluence = 1.0
-Width_mm = 185
-Aspect_Ratio = 60.0
-Rim_Size_in = 17
-AirPressure = 75.0
+Width_mm = 200
+Aspect_Ratio = 55.0
+Rim_Size_in = 16
+AirPressure = 30.0

@@ -7,7 +7,8 @@ class_name ViVeCar
 #Any guesses or information on what these could actually be would be appreciated!
 ##Related to turbo.
 const turbo_magic_number:float = 0.609
-##Related to RevSpeed. Perhaps some weight conversion value?
+##Related to RevSpeed. 
+##According to Jreo, this is "nothing". Just an arbitrary scaler ig.
 const revspeed_magic_number:float = 1.475
 
 const keyboard_mouse_controls:ViVeCarControls = preload("res://MISC/controls config/presets/keyboard_and_mouse.tres")
@@ -65,6 +66,9 @@ enum TransmissionTypes {
 @export var Controlled:bool = true
 ##Whether or not debug mode is active.
 @export var Debug_Mode:bool = false
+##This locks RPM to the RPMLimit, disables differential locks,
+##and disables FloatReduction, in order to make static testing easier.
+@export var StaticRPMDebug:bool = false
 
 @export_group("Chassis")
 ##Vehicle weight in kilograms.
@@ -86,16 +90,14 @@ enum TransmissionTypes {
 @export var AckermannPoint:float = -3.8
 ##Minimum turning circle (measured in default unit scale).
 @export var Steer_Radius:float = 13.0
-#there's an upstream glitch where these values don't save properly when this is a PackedStringArray
-#@export var Powered_Wheels:PackedStringArray = ["fl", "fr"]
 ##The node names of the [ViVeWheels] actively driving (powering) the car.
 @export var Powered_Wheels:Array[String] = ["fl", "fr"]
 
 @export_group("Drivetrain")
+##The transmission of this [ViVeCar]
+@export var Transmission:ViVeTransmission = ViVeTransmissionManual.new()
 ##Final Drive Ratio refers to the last set of gears that connect a vehicle's engine to the driving axle.
 @export var FinalDriveRatio:float = 4.250
-#there's an upstream glitch where these values don't save properly when this is a PackedFloat32Array
-#@export var GearRatios:PackedFloat32Array = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
 ##A set of gears a vehicle's transmission has, in order from first to last. [br]
 ##A gear ratio is the ratio of the number of rotations of a driver gear  to the number of rotations of a driven gear .
 @export var GearRatios:Array[float] = [ 3.250, 1.894, 1.259, 0.937, 0.771 ]
@@ -107,14 +109,13 @@ enum TransmissionTypes {
 @export var StressFactor:float = 1.0
 ##A space between the teeth of all gears to perform clutchless gear shifts. Higher values means more noise. Compensate with StressFactor.
 @export var GearGap:float = 60.0
-## Leave this be, unless you know what you're doing.
-##Possibly driveshaft weight?
+##Driveshaft weight. Usually, you should leave this as is.
 @export var DSWeight:float = 150.0
 
 ##The [ViVeCar.TransmissionTypes] used for this car.
 @export_enum("Fully Manual", "Automatic", "Continuously Variable", "Semi-Auto") var TransmissionType:int = 0
 
-@export var AutoSettings:ViVeAutoSettings = ViVeAutoSettings.new()
+@export var AutoSettings:ViVeTransmissionAuto = ViVeTransmissionAuto.new()
 
 ## Settings for CVT.
 @export var CVTSettings:ViVeCVT = ViVeCVT.new()
@@ -147,7 +148,7 @@ enum TransmissionTypes {
 @export_range(0.0, 1.0) var Centre_Preload:float = 0.0
 
 @export_group("Engine")
-## Flywheel lightness.
+## Flywheel weight/lightness.
 @export var RevSpeed:float = 2.0
 ## Chance of stalling.
 @export var EngineFriction:float = 18000.0
@@ -170,7 +171,7 @@ enum TransmissionTypes {
 ## Throttle intake on idle.
 @export_range(0.0, 1.0) var ThrottleIdle:float = 0.25
 ## Timing on RPM.
-## Set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently.
+## Set this beyond the rev range to disable it, set it to 0 to use the vvt state permanently.
 @export var VVTRPM:float = 4500.0 
 
 @export_group("Torque")
@@ -181,7 +182,7 @@ enum TransmissionTypes {
 @export var torque_vvt:ViVeCarTorque = ViVeCarTorque.new("VVT")
 
 @export_group("Clutch")
-## Fix for engine's responses to friction. Higher values would make it sluggish.
+##This is how slippery the clutch plate is.
 @export var ClutchStable:float = 0.5
 ## Usually on a really short gear, the engine would jitter. This fixes it.
 @export var GearRatioRatioThreshold:float = 200.0
@@ -194,9 +195,9 @@ enum TransmissionTypes {
 @export var ClutchFloatReduction:float = 27.0
 ##The wobble rate of the clutch disc being in contact with the flywheel.
 @export var ClutchWobble:float = 2.5 * 0
-##Messing with this value makes rpm jitter when increasing/decreasing
+##This value is how much the clutch plate will wiggle rotationally when pressed to the flywheel.
 @export var ClutchElasticity:float = 0.2 * 0
-##Clutch wobble caused by the gear the transmission is in.
+##Clutch wobble caused by the movement of the drivetrain.
 @export var WobbleRate:float = 0.0
 
 @export_group("Forced Inductions")
@@ -255,9 +256,9 @@ var rpm:float = 0.0
 
 #var _rpmspeed:float = 0.0
 
-var lim_del:float = 0.0
+var throttle_limit_delay:float = 0.0
 
-var actualgear:int = 0
+var actual_gear:int = 0
 ##This value must be less than [GearGap] in order for clutch-less shifting to be possible.
 var gear_stress:float = 0.0
 
@@ -272,17 +273,15 @@ var shift_assist_step:int = 0
 var clutch_pedal:float = 0.0
 
 var abs_pump:float = 0.0
-
+##Unimplemented, related to [throttle]
 var tcs_weight:float = 0.0
 ##Used in the tachometer.
 var tcs_flash:bool = false
 ##Used in the tachometer.
 var esp_flash:bool = false
-##The gear ratio of the current gear.
-var current_gear_ratio:float = 0.0 #previously _ratio
-##Whether Variable Valve Timing stats for the torque will be used.
-##This is set to true when rpm exceeds VVTRPM.
-var vvt:bool = false
+##This is the overall multiplier from all the gears within 
+##the drivetrain which applies to the speed of the axles.
+var drive_axle_rpm:float = 0.0
 
 var brake_allowed:float = 0.0
 
@@ -300,36 +299,36 @@ var previous_power_bias_total:float = 0.0
 ##Related to Locking/CoastLocking
 var differential_lock_influence:float = 0.0
 
-var center_differential_lock_influence:float = 0.0
-
-var wv_difference:float = 0.0
-
-var rpm_force:float = 0.0
+var central_diff_lock_percent:float = 0.0
+##Overall inertial-resistance feedback to the drivetrain brought by the wheels.
+var drive_wheel_drivetrain_inertia:float = 0.0
+##This is the resistance factor of several physical parts,
+##acting in counter to the crankshaft RPM
+var rpm_resistance:float = 0.0
 
 var whine_pitch:float = 0.0
-
+##The PSI of forced inductions
 var turbo_psi:float = 0.0
-
+##RPM when influenced by the supercharger
 var sc_rpm:float = 0.0
 
 var boosting:float = 0.0
 
-var rpm_cs:float = 0.0
-##[rpm_cs] from the previous frame, subtracted by [resistance].
-var rpm_csm:float = 0.0
+var rpm_clutchslip:float = 0.0
+##[rpm_clutchslip] from the previous frame, subtracted by [resistance].
+var rpm_cs_m:float = 0.0
 
-var current_clutch_stability:float = 0.0
-
+var clutch_plate_slip:float = 0.0
+##Used by the wheels for steering
 var steer_to_direction:float 
-
-var resistance:float = 0.0
+##This is the power from all the drive wheels, 
+##taking into account limited-slip differentials
+var drive_wheel_diff_power:float = 0.0
 ##This is the overall "wobble" created by the clutch system.
 var clutch_wobble:float = 0.0
-##The rotational speed of the driveshaft, when the current gear and the driveshaft's weight are
-##taken into account
-var current_gear_driveshaft_inertia:float = 0.0
-
-#var _steer_torque:float = 0.0
+##This is the driveshaft's resistance to rotation. 
+##It is lessened by the current drive_axle_rpm.
+var driveshaft_weight_resistance:float = 0.0
 ##This is the average of [w_size] of all the drive wheel combined.
 var average_drivewheel_size:float = 1.0
 ##An array of the global_rotation.y values of each steering wheel at the current physics frame.
@@ -346,9 +345,9 @@ var gforce:Vector3 = Vector3.ZERO
 
 var clock_mult:float = 1.0
 ##This is the fastest wheel's 
-var fastest_wheel_distributed_power:float = 0.0
+var fastest_wheel_differed_wv:float = 0.0
 
-var stress_total:float = 0.0
+var overall_power_grip:float = 0.0
 
 var velocity:Vector3 = Vector3.ZERO
 
@@ -399,7 +398,9 @@ var brake_pedal:float = 0.0
 
 var handbrake_pull:float = 0.0
 ##This is how much contact the clutch plate is making with the flywheel, as a percent.
-var clutch_contact_percent:float = 0.0
+var clutch_engage_percent:float = 0.0
+
+var clutch_engage_squared:float = 0.0
 
 var effective_steer:float
 
@@ -441,7 +442,7 @@ func _enter_tree() -> void:
 	Performance.add_custom_monitor(car_name + &"/" + perf_rear_dist, get, ["rear_weight_distribution"])
 	Performance.add_custom_monitor(car_name + &"/" + perf_gear, get, ["gear"])
 	Performance.add_custom_monitor(car_name + &"/" + perf_torque, multivariate, [-1])
-	Performance.add_custom_monitor(car_name + &"/" + perf_resistance, get, ["resistance"])
+	Performance.add_custom_monitor(car_name + &"/" + perf_resistance, get, ["drive_wheel_diff_power"])
 
 
 func _exit_tree() -> void:
@@ -489,6 +490,7 @@ func update_wheel_arrays() -> void:
 	if steering_wheels.is_empty():
 		push_error("No steering wheels found for ", car_name)
 	
+	average_drivewheel_size = 0.0
 	for wheel:ViVeWheel in driving_wheels:
 		average_drivewheel_size += wheel.w_size / driving_wheels.size()
 		wheel.live_power_bias = wheel.W_PowerBias
@@ -553,21 +555,21 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 		#for front_wheel:ViVeWheel in front_wheels:
 		for front_wheel:ViVeWheel in steering_wheels:
 			steer_velocity += (front_wheel.directional_force.x * 0.00125) * front_wheel.Caster
-			#steer_velocity -= (front_wheel.stress * 0.0025) * (atan2(absf(front_wheel.wv), 1.0) * front_wheel.angle)
-			steer_velocity -= (front_wheel.stress * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
+			#steer_velocity -= (front_wheel.grip * 0.0025) * (atan2(absf(front_wheel.wv), 1.0) * front_wheel.angle)
+			steer_velocity -= (front_wheel.grip * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
 			
 			steer_velocity += effective_steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 			
 			steer_velocity += front_wheel.directional_force.z * 0.0001 * signf(front_wheel.position.x)
 			
-			steer_velocity /= front_wheel.stress / (front_wheel.slip_percpre * (front_wheel.slip_percpre * 100.0) + 1.0) + 1.0
+			steer_velocity /= front_wheel.grip / (front_wheel.slip_percent_pre * (front_wheel.slip_percent_pre * 100.0) + 1.0) + 1.0
 	
 	if not Controlled:
 		return
 	
 	match car_controls.ShiftingAssistance:
 		2: #automatically go "forwards" regardless of pedal pressed, using the current gear to decide direction.
-			if gear == -1: #going in reverse
+			if gear == ViVeTransmission.REVERSE: #going in reverse
 				gas_pedal = car_controls.get_throttle(brake_pressed or rev_match)
 				brake_pedal = car_controls.get_brake(gas_pressed)
 			else: #Forward moving gear 
@@ -613,7 +615,6 @@ func newer_controls(analog_axis:float = 0.0) -> void:
 		effective_steer = steer_from_input
 
 func old_controls() -> void:
-	#Tbh I don't see why these need to be divided, but...
 	if car_controls.UseAnalogSteering:
 		gas_pressed = Input.is_action_pressed("gas_mouse")
 		brake_pressed = Input.is_action_pressed("brake_mouse")
@@ -644,7 +645,7 @@ func old_controls() -> void:
 		#for front_wheel:ViVeWheel in [front_left,front_right]:
 		for front_wheel:ViVeWheel in front_wheels:
 			steer_velocity += (front_wheel.directional_force.x * 0.00125) * front_wheel.Caster
-			steer_velocity -= (front_wheel.stress * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
+			steer_velocity -= (front_wheel.grip * 0.0025) * (atan(absf(front_wheel.wv)) * front_wheel.angle)
 			
 			steer_velocity += effective_steer * (front_wheel.directional_force.z * 0.0005) * front_wheel.Caster
 			
@@ -652,16 +653,16 @@ func old_controls() -> void:
 				steer_velocity += front_wheel.directional_force.z * 0.0001
 			else:
 				steer_velocity -= front_wheel.directional_force.z * 0.0001
-		
-			steer_velocity /= front_wheel.stress / (front_wheel.slip_percpre * (front_wheel.slip_percpre * 100.0) + 1.0) + 1.0
+			
+			steer_velocity /= front_wheel.grip / (front_wheel.slip_percent_pre * (front_wheel.slip_percent_pre * 100.0) + 1.0) + 1.0
 	
 	if Controlled:
 		if car_controls.ShiftingAssistance == 2:
-			if (gas_pressed and not gas_restricted and not gear  == -1) or (brake_pressed and gear  == -1) or rev_match:
+			if (gas_pressed and not gas_restricted and not gear  == ViVeTransmission.REVERSE) or (brake_pressed and gear == ViVeTransmission.REVERSE) or rev_match:
 				gas_pedal += car_controls.OnThrottleRate / clock_mult
 			else:
 				gas_pedal -= car_controls.OffThrottleRate / clock_mult
-			if (brake_pressed and not gear  == -1) or (gas_pressed and gear  == -1):
+			if (brake_pressed and not gear  == ViVeTransmission.REVERSE) or (gas_pressed and gear == ViVeTransmission.REVERSE):
 				brake_pedal += car_controls.OnBrakeRate / clock_mult
 			else:
 				brake_pedal -= car_controls.OffBrakeRate / clock_mult
@@ -685,6 +686,10 @@ func old_controls() -> void:
 			handbrake_pull += car_controls.OnHandbrakeRate / clock_mult
 		else:
 			handbrake_pull -= car_controls.OffHandbrakeRate / clock_mult
+		
+		gas_pedal = clampf(gas_pedal, 0.0, car_controls.MaxThrottle)
+		brake_pedal = clampf(brake_pedal, 0.0, car_controls.MaxBrake)
+		handbrake_pull = clampf(handbrake_pull, 0.0, car_controls.MaxHandbrake)
 		
 		var siding:float = absf(velocity.x)
 		
@@ -761,6 +766,10 @@ func transmission() -> void:
 		clutch_pressed = handbrake_pressed
 	clutch_pressed = not clutch_pressed
 	
+	#TODO: Put clutch/torque converter calculations here
+	
+	#Transmission.transmission_callback(rpm)
+	
 	if TransmissionType == TransmissionTypes.full_manual:
 		full_manual_transmission()
 	elif TransmissionType == TransmissionTypes.auto:
@@ -770,29 +779,30 @@ func transmission() -> void:
 	elif TransmissionType == TransmissionTypes.semi_auto:
 		semi_auto_transmission()
 	
-	clutch_contact_percent = clampf(clutch_contact_percent, 0.0, 1.0)
+	clutch_engage_percent = clampf(clutch_engage_percent, 0.0, 1.0)
+	clutch_engage_squared = clutch_engage_percent * clutch_engage_percent
 
 func full_manual_transmission() -> void:
 	clutch_pedal = car_controls.get_clutch(not (clutch_pressed and not clutch_in))
 	
-	clutch_contact_percent = 1.0 - clutch_pedal
+	clutch_engage_percent = 1.0 - clutch_pedal
 	
 	if gear > 0:
-		current_gear_ratio = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
-	elif gear == -1:
-		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+		drive_axle_rpm = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
+	elif gear == ViVeTransmission.REVERSE:
+		drive_axle_rpm = ReverseRatio * FinalDriveRatio * RatioMult
 	
 	if car_controls.ShiftingAssistance == 0:
 		if shift_up_pressed:
 			shift_up_pressed = false
 			if gear < GearRatios.size():
 				if gear_stress < GearGap:
-					actualgear += 1
+					actual_gear += 1
 		if shift_down_pressed:
 			shift_down_pressed = false
-			if gear > -1:
+			if gear > ViVeTransmission.REVERSE:
 				if gear_stress < GearGap:
-					actualgear -= 1
+					actual_gear -= 1
 	
 	elif car_controls.ShiftingAssistance == 1:
 		if rpm < GearAssist.clutch_out_RPM:
@@ -805,15 +815,15 @@ func full_manual_transmission() -> void:
 			shift_up_pressed = false
 			if gear < GearRatios.size():
 				if rpm < GearAssist.clutch_out_RPM:
-					actualgear += 1
+					actual_gear += 1
 				else:
-					if actualgear < 1:
-						actualgear += 1
+					if actual_gear < 1:
+						actual_gear += 1
 						if rpm > GearAssist.clutch_out_RPM:
 							clutch_in = false
 					else:
 						if shift_assist_delay > 0:
-							actualgear += 1
+							actual_gear += 1
 						shift_assist_delay = GearAssist.shift_delay / 2.0
 						shift_assist_step = -4
 						
@@ -822,16 +832,16 @@ func full_manual_transmission() -> void:
 		
 		elif shift_down_pressed:
 			shift_down_pressed = false
-			if gear > -1:
+			if gear > ViVeTransmission.REVERSE:
 				if rpm < GearAssist.clutch_out_RPM:
-					actualgear -= 1
+					actual_gear -= 1
 				else:
-					if actualgear == 0 or actualgear == 1:
-						actualgear -= 1
+					if actual_gear == 0 or actual_gear == 1:
+						actual_gear -= 1
 						clutch_in = false
 					else:
 						if shift_assist_delay > 0:
-							actualgear -= 1
+							actual_gear -= 1
 						shift_assist_delay = GearAssist.shift_delay / 2.0
 						shift_assist_step = -2
 						
@@ -840,29 +850,29 @@ func full_manual_transmission() -> void:
 						gas_restricted = false
 	
 	elif car_controls.ShiftingAssistance == 2:
-		var assist_shift_speed:float = (GearAssist.upshift_RPM / current_gear_ratio) * GearAssist.speed_influence
+		var assist_shift_speed:float = (GearAssist.upshift_RPM / drive_axle_rpm) * GearAssist.speed_influence
 		var assist_down_shift_speed:float = (GearAssist.down_RPM / absf((GearRatios[gear - 2] * FinalDriveRatio) * RatioMult)) * GearAssist.speed_influence
 		if gear == 0:
 			if gas_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = 1
+					actual_gear = 1
 			elif brake_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = -1
+					actual_gear = ViVeTransmission.REVERSE
 			else:
 				shift_assist_delay = 60
 		elif linear_velocity.length() < 5:
-			if not gas_pressed and gear == 1 or not brake_pressed and gear == -1:
+			if not gas_pressed and gear == 1 or not brake_pressed and gear == ViVeTransmission.REVERSE:
 				shift_assist_delay = 60
-				actualgear = 0
+				actual_gear = 0
 		if shift_assist_step == 0:
 			if rpm < GearAssist.clutch_out_RPM:
 				clutch_pedal = minf(pow((GearAssist.clutch_out_RPM - rpm) / (GearAssist.clutch_out_RPM - IdleRPM), 2.0), 1.0)
 			else:
 				clutch_in = false
-			if gear != -1:
+			if gear != ViVeTransmission.REVERSE:
 				if gear < GearRatios.size() and linear_velocity.length() > assist_shift_speed:
 					shift_assist_delay = GearAssist.shift_delay / 2.0
 					shift_assist_step = -4
@@ -880,65 +890,68 @@ func full_manual_transmission() -> void:
 	if shift_assist_step == -4 and shift_assist_delay < 0:
 		shift_assist_delay = GearAssist.shift_delay / 2.0
 		if gear < GearRatios.size():
-			actualgear += 1
+			actual_gear += 1
 		shift_assist_step = -3
+	
 	elif shift_assist_step == -3 and shift_assist_delay < 0:
 		if rpm > GearAssist.clutch_out_RPM:
 			clutch_in = false
 		if shift_assist_delay < - GearAssist.input_delay:
 			shift_assist_step = 0
 			gas_restricted = false
+	
 	elif shift_assist_step == -2 and shift_assist_delay < 0:
 		shift_assist_step = 0
-		if gear > -1:
-			actualgear -= 1
+		if gear > ViVeTransmission.REVERSE:
+			actual_gear -= 1
 		if rpm > GearAssist.clutch_out_RPM:
 			clutch_in = false
 		gas_restricted = false
 		rev_match = false
-	gear = actualgear
+	
+	gear = actual_gear
 
 func automatic_transmission() -> void:
-	clutch_contact_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
+	clutch_engage_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
 	if not car_controls.ShiftingAssistance == 2:
 		if shift_up_pressed:
 			shift_up_pressed = false
 			if gear < 1:
-				actualgear += 1
+				actual_gear += 1
 		if shift_down_pressed:
 			shift_down_pressed = false
-			if gear > -1:
-				actualgear -= 1
+			if gear > ViVeTransmission.REVERSE:
+				actual_gear -= 1
 	else:
 		if gear == 0:
 			if gas_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = 1
+					actual_gear = 1
 			elif brake_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = -1
+					actual_gear = ViVeTransmission.REVERSE
 			else:
 				shift_assist_delay = 60
 		elif linear_velocity.length() < 5:
-			if not gas_pressed and gear == 1 or not brake_pressed and gear == -1:
+			if not gas_pressed and gear == 1 or not brake_pressed and gear == ViVeTransmission.REVERSE:
 				shift_assist_delay = 60
-				actualgear = 0
+				actual_gear = 0
 	
-	if actualgear == -1:
-		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+	if actual_gear == ViVeTransmission.REVERSE:
+		drive_axle_rpm = ReverseRatio * FinalDriveRatio * RatioMult
 	else:
-		current_gear_ratio = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
+		drive_axle_rpm = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
 	
-	if actualgear > 0:
+	if actual_gear > 0:
 		var last_gears_ratio:float = GearRatios[gear - 2] * FinalDriveRatio * RatioMult
 		
 		shift_up_pressed = false
 		shift_down_pressed = false
 		for i:ViVeWheel in driving_wheels:
-			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / current_gear_ratio:
+			if (i.wv / GearAssist.speed_influence) > (AutoSettings.shift_rpm * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / drive_axle_rpm:
 				shift_up_pressed = true
 			elif (i.wv / GearAssist.speed_influence) < ((AutoSettings.shift_rpm - AutoSettings.downshift_thresh) * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh))) / last_gears_ratio:
 				shift_down_pressed = true
@@ -950,41 +963,40 @@ func automatic_transmission() -> void:
 		
 		gear = clampi(gear , 1, GearRatios.size())
 	else:
-		gear = actualgear
-
+		gear = actual_gear
 
 func cvt_transmission() -> void:
-	clutch_contact_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
+	clutch_engage_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
-	#clutch_contact_percent = 1
+	#clutch_engage_percent = 1
 	
 	if not car_controls.ShiftingAssistance == 2:
 		if shift_up_pressed:
 			shift_up_pressed = false
 			if gear < 1:
-				actualgear += 1
+				actual_gear += 1
 		if shift_down_pressed:
 			shift_down_pressed = false
-			if gear > -1:
-				actualgear -= 1
+			if gear > ViVeTransmission.REVERSE:
+				actual_gear -= 1
 	else:
 		if gear == 0:
 			if gas_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = 1
+					actual_gear = 1
 			elif brake_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = -1
+					actual_gear = ViVeTransmission.REVERSE
 			else:
 				shift_assist_delay = 60
 		elif linear_velocity.length() < 5:
-			if not gas_pressed and gear == 1 or not brake_pressed and gear == -1:
+			if not gas_pressed and gear == 1 or not brake_pressed and gear == ViVeTransmission.REVERSE:
 				shift_assist_delay = 60
-				actualgear = 0
+				actual_gear = 0
 	
-	gear = actualgear
+	gear = actual_gear
 	var all_wheels_velocity:float = 0.0
 	
 	for i:ViVeWheel in driving_wheels:
@@ -994,75 +1006,73 @@ func cvt_transmission() -> void:
 	
 	var a:float = maxf(CVTSettings.iteration_3 / ((absf(all_wheels_velocity) / 10.0) * cvt_accel + 1.0), CVTSettings.iteration_4)
 	
-	current_gear_ratio = (CVTSettings.iteration_1 * 10000000.0) / (absf(all_wheels_velocity) * (rpm * a) + 1.0)
+	drive_axle_rpm = (CVTSettings.iteration_1 * 10000000.0) / (absf(all_wheels_velocity) * (rpm * a) + 1.0)
 	
-	current_gear_ratio = minf(current_gear_ratio, CVTSettings.iteration_2)
+	drive_axle_rpm = minf(drive_axle_rpm, CVTSettings.iteration_2)
 
 func semi_auto_transmission() -> void:
-	clutch_contact_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
+	clutch_engage_percent = (rpm - AutoSettings.engage_rpm_thresh * (gas_pedal * AutoSettings.throt_eff_thresh + (1.0 - AutoSettings.throt_eff_thresh)) ) / AutoSettings.engage_rpm
 	
 	if gear > 0:
-		current_gear_ratio = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
-	elif gear == -1:
-		current_gear_ratio = ReverseRatio * FinalDriveRatio * RatioMult
+		drive_axle_rpm = GearRatios[gear - 1] * FinalDriveRatio * RatioMult
+	elif gear == ViVeTransmission.REVERSE:
+		drive_axle_rpm = ReverseRatio * FinalDriveRatio * RatioMult
 	
 	if car_controls.ShiftingAssistance < 2:
 		if shift_up_pressed:
 			shift_up_pressed = false
 			if gear < GearRatios.size():
-				actualgear += 1
+				actual_gear += 1
 		if shift_down_pressed:
 			shift_down_pressed = false
-			if gear > -1:
-				actualgear -= 1
+			if gear > ViVeTransmission.REVERSE:
+				actual_gear -= 1
 	else:
-		var assist_shift_speed:float = (GearAssist.upshift_RPM / current_gear_ratio) * GearAssist.speed_influence
+		var assist_shift_speed:float = (GearAssist.upshift_RPM / drive_axle_rpm) * GearAssist.speed_influence
 		var assist_down_shift_speed:float = (GearAssist.down_RPM / absf((GearRatios[gear - 2] * FinalDriveRatio) * RatioMult)) * GearAssist.speed_influence
 		if gear == 0:
 			if gas_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = 1
+					actual_gear = 1
 			elif brake_pressed:
 				shift_assist_delay -= 1
 				if shift_assist_delay < 0:
-					actualgear = -1
+					actual_gear = ViVeTransmission.REVERSE
 			else:
 				shift_assist_delay = 60
 		elif linear_velocity.length() < 5:
-			if not gas_pressed and gear == 1 or not brake_pressed and gear == -1:
+			if not gas_pressed and gear == 1 or not brake_pressed and gear == ViVeTransmission.REVERSE:
 				shift_assist_delay = 60
-				actualgear = 0
+				actual_gear = 0
 		if shift_assist_step == 0:
-			if gear != -1:
+			if gear != ViVeTransmission.REVERSE:
 				if gear < GearRatios.size() and linear_velocity.length() > assist_shift_speed:
-					actualgear += 1
+					actual_gear += 1
 				if gear > 1 and linear_velocity.length() < assist_down_shift_speed:
-					actualgear -= 1
+					actual_gear -= 1
 	
-	gear = actualgear
+	gear = actual_gear
 
 func drivetrain() -> void:
-	rpm_csm -= (rpm_cs - resistance)
+	rpm_cs_m -= (rpm_clutchslip - drive_wheel_diff_power)
 	
-	rpm_cs += rpm_csm * ClutchElasticity
+	rpm_clutchslip += rpm_cs_m * ClutchElasticity
 	
-	#This applies more of this value the more of the clutch is in contact
-	rpm_cs -= rpm_cs * (1.0 - clutch_contact_percent)
+	#clutch slips more the less it is contact.
+	rpm_clutchslip -= rpm_clutchslip * (1.0 - clutch_engage_percent)
 	#clutch wobble is the flywheel contact wobble times current gear wobble
-	clutch_wobble = ClutchWobble * clutch_contact_percent * (current_gear_ratio * WobbleRate)
+	clutch_wobble = (ClutchWobble * clutch_engage_percent) * (drive_axle_rpm * WobbleRate)
 	
-	rpm_cs -= (rpm_cs - resistance) * (1.0 / (clutch_wobble + 1.0))
+	rpm_clutchslip -= (rpm_clutchslip - drive_wheel_diff_power) * (1.0 / (clutch_wobble + 1.0))
 	
-	#torquereadout = multivariate()
-	if gear < 0:
-		rpm -= ((rpm_cs / clock_mult) * (RevSpeed / revspeed_magic_number))
+	if gear == ViVeTransmission.REVERSE:
+		rpm -= ((rpm_clutchslip / clock_mult) * (RevSpeed / revspeed_magic_number))
 	else:
-		rpm += ((rpm_cs / clock_mult) * (RevSpeed / revspeed_magic_number))
+		rpm += ((rpm_clutchslip / clock_mult) * (RevSpeed / revspeed_magic_number))
 	
-	#I think this is here for testing
-	if false:
-		rpm = 7000.0
+	if StaticRPMDebug:
+		rpm = RPMLimit
 		Locking = 0.0
 		CoastLocking = 0.0
 		Centre_Locking = 0.0
@@ -1071,95 +1081,77 @@ func drivetrain() -> void:
 		Centre_Preload = 1.0
 		ClutchFloatReduction = 0.0
 	
-	gear_stress = (absf(resistance) * StressFactor) * clutch_contact_percent
-	current_gear_driveshaft_inertia = DSWeight / (current_gear_ratio * 0.9 + 0.1)
+	gear_stress = (absf(drive_wheel_diff_power) * StressFactor) * clutch_engage_percent
+	driveshaft_weight_resistance = DSWeight / float(drive_axle_rpm * 0.9 + 0.1)
 	
-	whine_pitch = absf(rpm / current_gear_ratio) * 1.5
+	whine_pitch = absf(rpm / drive_axle_rpm) * 1.5
 	
-	if resistance > 0.0:
-		differential_lock_influence = absf(resistance / current_gear_driveshaft_inertia) * (CoastLocking / 100.0) + Preload
+	if drive_wheel_diff_power > 0.0:
+		differential_lock_influence = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (CoastLocking / 100.0) + Preload
 	else:
-		differential_lock_influence = absf(resistance / current_gear_driveshaft_inertia) * (Locking / 100.0) + Preload
+		differential_lock_influence = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (Locking / 100.0) + Preload
 	
 	differential_lock_influence = clampf(differential_lock_influence, 0.0, 1.0)
 	
-	if wv_difference > 0.0:
-		center_differential_lock_influence = absf(wv_difference) * (Centre_CoastLocking / 10.0) + Centre_Preload
+	if drive_wheel_drivetrain_inertia > 0.0:
+		central_diff_lock_percent = absf(drive_wheel_drivetrain_inertia) * (Centre_CoastLocking / 10.0) + Centre_Preload
 	else:
-		center_differential_lock_influence = absf(wv_difference) * (Centre_Locking / 10.0) + Centre_Preload
+		central_diff_lock_percent = absf(drive_wheel_drivetrain_inertia) * (Centre_Locking / 10.0) + Centre_Preload
 	
-	center_differential_lock_influence = clampf(center_differential_lock_influence, 0.0, 1.0)
+	central_diff_lock_percent = clampf(central_diff_lock_percent, 0.0, 1.0)
 	if driving_wheels.size() < 4:
-		center_differential_lock_influence = 0.0
+		central_diff_lock_percent = 0.0
 	
 	var current_fastest_wheel:ViVeWheel = fastest_wheel()
-	
+	var effective_drivetrain_rpm:float = rpm
 	var powered_float_reduction:float = 0.0
 	
 	if previous_power_bias_total > 0.0:
 		powered_float_reduction = ClutchFloatReduction / previous_power_bias_total
-	#else:
-	#	powered_float_reduction = 0.0
 	
-	#best guess on what this *actually* is
-	var wheel_speed_stabilization:float = maxf(- (GearRatioRatioThreshold - (current_gear_ratio * average_drivewheel_size)) * ThresholdStable, 0.0)
+	var drivetrain_inertia_feedback:float = maxf(-(GearRatioRatioThreshold - (drive_axle_rpm * average_drivewheel_size)) * ThresholdStable, 0.0)
 	
-	current_clutch_stability = ClutchStable + wheel_speed_stabilization
-	current_clutch_stability *= (RevSpeed / revspeed_magic_number)
-	
-	var raw_drivetrain_rpm:float = rpm
+	clutch_plate_slip = (ClutchStable + drivetrain_inertia_feedback) * (RevSpeed / revspeed_magic_number)
 	
 	if previous_power_bias_total > 0.0:
-		#raw_drivetrain_rpm = (rpm -(((rpm_force * powered_float_reduction) * current_clutch_stability) / (current_gear_driveshaft_inertia / previous_power_bias_total)))
-		var reduction:float = ((rpm_force * powered_float_reduction) * current_clutch_stability) / (current_gear_driveshaft_inertia / previous_power_bias_total)
-		raw_drivetrain_rpm -= reduction
-	#else: #idling?
-	#	raw_drivetrain_rpm = rpm
+		effective_drivetrain_rpm = rpm - (((rpm_resistance * powered_float_reduction) * clutch_plate_slip) / (driveshaft_weight_resistance / previous_power_bias_total))
 	
-	var drivetrain_current_gear_rpm:float = raw_drivetrain_rpm / current_gear_ratio
+	#how much RPM the axle is losing in this frame
+	var axle_rpm:float = effective_drivetrain_rpm / drive_axle_rpm
 	
-	if gear < 0:
-		#fastest_wheel_distributed_power = current_fastest_wheel.wv + raw_drivetrain_rpm / current_gear_ratio
-		fastest_wheel_distributed_power = current_fastest_wheel.wv + drivetrain_current_gear_rpm
+	if gear == ViVeTransmission.NEUTRAL:
+		fastest_wheel_differed_wv = 0.0
+	elif gear == ViVeTransmission.REVERSE:
+		fastest_wheel_differed_wv = current_fastest_wheel.wv + axle_rpm
 	else:
-		#fastest_wheel_distributed_power = current_fastest_wheel.wv - raw_drivetrain_rpm / current_gear_ratio
-		fastest_wheel_distributed_power = current_fastest_wheel.wv - drivetrain_current_gear_rpm
+		fastest_wheel_differed_wv = current_fastest_wheel.wv - axle_rpm
 	
-	fastest_wheel_distributed_power *= pow(clutch_contact_percent, 2.0)
+	fastest_wheel_differed_wv *= clutch_engage_squared
 	
-	if gear == 0:
-		fastest_wheel_distributed_power = 0.0
-	
-	wv_difference = 0.0
-	
-	if Debug_Mode:
-		average_drivewheel_size = 0.0
+	drive_wheel_drivetrain_inertia = 0.0
+	average_drivewheel_size = 0.0
 	
 	#update stats of all the powered wheels
 	for wheel:ViVeWheel in driving_wheels:
-		if Debug_Mode:
-			average_drivewheel_size += wheel.w_size / driving_wheels.size()
-			wheel.live_power_bias = wheel.W_PowerBias
+		average_drivewheel_size += wheel.w_size / driving_wheels.size()
+		wheel.live_power_bias = wheel.W_PowerBias
 		
-		#wv_difference += ((wheel.wv - raw_drivetrain_rpm / current_gear_ratio) / driving_wheels.size()) * pow(clutch_contact_percent, 2.0)
-		wv_difference += ((wheel.wv - drivetrain_current_gear_rpm) / driving_wheels.size()) * pow(clutch_contact_percent, 2.0)
+		drive_wheel_drivetrain_inertia += ((wheel.wv - axle_rpm) / driving_wheels.size()) * clutch_engage_squared
 		
-		if gear < 0:
-			wheel.distributed_differential_power = fastest_wheel_distributed_power * (1 - center_differential_lock_influence) + (wheel.wv + drivetrain_current_gear_rpm) * center_differential_lock_influence
+		if gear == ViVeTransmission.NEUTRAL:
+			wheel.differential_distributed_wv = 0.0
+		elif gear == ViVeTransmission.REVERSE:
+			wheel.differential_distributed_wv = fastest_wheel_differed_wv * (1.0 - central_diff_lock_percent) + (wheel.wv + axle_rpm) * central_diff_lock_percent
 		else:
-			wheel.distributed_differential_power = fastest_wheel_distributed_power * (1 - center_differential_lock_influence) + (wheel.wv - drivetrain_current_gear_rpm) * center_differential_lock_influence
-		
-		if gear == 0:
-			wheel.distributed_differential_power = 0.0
+			wheel.differential_distributed_wv = fastest_wheel_differed_wv * (1.0 - central_diff_lock_percent) + (wheel.wv - axle_rpm) * central_diff_lock_percent
 	
-	if Debug_Mode:
-		GearAssist.speed_influence = average_drivewheel_size
-	
-	resistance = 0.0
+	#"end of frame" cleanup
+	GearAssist.speed_influence = average_drivewheel_size
+	drive_wheel_diff_power = 0.0
 	previous_power_bias_total = power_bias_total
 	power_bias_total = 0.0
 	tcs_weight = 0.0
-	stress_total = 0.0
+	overall_power_grip = 0.0
 
 ##Applies aerodynamics to the car.
 func aerodynamics() -> void:
@@ -1170,11 +1162,9 @@ func aerodynamics() -> void:
 	var drag_velocity:Vector3 = (normal_velocity * 0.15)
 	var drag_velocity_length:float = normal_velocity.length() * 0.15
 	
-	#drag_velocity.x = -drag_velocity.x * DragCoefficient
-	drag_velocity.x *= -DragCoefficient
+	drag_velocity.x = -drag_velocity.x * DragCoefficient
 	drag_velocity.y = -drag_velocity_length * Downforce - drag_velocity.y * DragCoefficient
-	#drag_velocity.z = -drag_velocity.z * DragCoefficient
-	drag_velocity.z *= -DragCoefficient
+	drag_velocity.z = -drag_velocity.z * DragCoefficient
 	
 	var air_drag_force:Vector3 = global_transform.basis.orthonormalized() * drag_velocity
 	
@@ -1216,14 +1206,14 @@ func _physics_process(_delta:float) -> void:
 	gforce *= global_transform.basis.orthonormalized().transposed()
 	
 	new_controls()
+	#old_controls()
 	
-	current_gear_ratio = 10.0
+	drive_axle_rpm = 10.0
 	
 	shift_assist_delay -= 1
 	
 	transmission()
 	
-	#limits()
 	effective_steer = clampf(effective_steer, -1.0, 1.0)
 	
 	#I graphed this function in a calculator, and it only curves significantly if max_steering_angle > 200
@@ -1247,21 +1237,19 @@ func _physics_process(_delta:float) -> void:
 	
 	brake_line = maxf(brake_pedal * brake_allowed, 0.0)
 	
-	lim_del -= 1
+	throttle_limit_delay -= 1
 	
-	if lim_del < 0:
-		throttle -= (throttle - (gas_pedal / (tcs_weight * clutch_contact_percent + 1.0))) * (ThrottleResponse / clock_mult)
+	if throttle_limit_delay < 0:
+		throttle -= (throttle - (gas_pedal / (tcs_weight * clutch_engage_percent + 1.0))) * (ThrottleResponse / clock_mult)
 	else:
 		throttle -= throttle * (ThrottleResponse / clock_mult)
 	
 	if rpm > RPMLimit:
 		if throttle > ThrottleLimit:
 			throttle = ThrottleLimit
-			lim_del = LimiterDelay
+			throttle_limit_delay = LimiterDelay
 	elif rpm < IdleRPM:
 		throttle = maxf(throttle, ThrottleIdle)
-	
-	#Determine power/torque output on specific rpm values, taking into account turbo and supercharger.
 	
 	if TurboEnabled:
 		var throttle_spooling:float = (throttle - SpoolThreshold) / (1 - SpoolThreshold)
@@ -1282,12 +1270,10 @@ func _physics_process(_delta:float) -> void:
 	else:
 		turbo_psi = 0.0
 	
-	vvt = rpm > VVTRPM
-	
 	var torque:float = 0.0
 	
 	var torque_local:ViVeCarTorque
-	if vvt:
+	if rpm > VVTRPM:
 		torque_local = torque_vvt
 	else:
 		torque_local = torque_norm
@@ -1295,30 +1281,33 @@ func _physics_process(_delta:float) -> void:
 	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
 	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	
-	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + (increased_rpm * increased_rpm) * (torque_local.TorqueRise / 10000000.0)) * throttle
 	
-	torque += ( (turbo_psi * TurboAmount) * (EngineCompressionRatio * turbo_magic_number) )
+	#Apply forced induction factors to the outpur torque
+	torque += ((turbo_psi * TurboAmount) * (EngineCompressionRatio * turbo_magic_number))
 	
 	#Apply rpm reductions to the torque
 	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
 	
-	torque /= pow(rpm, 2.0) * (torque_local.FloatRate / 10000000.0) + 1.0
+	torque /= (rpm * rpm) * (torque_local.FloatRate / 10000000.0) + 1.0
 	
-	rpm_force = (rpm / (pow(rpm, 2.0) / (EngineFriction / clock_mult) + 1.0))
+	rpm_resistance = (rpm / ((rpm * rpm) / (EngineFriction / clock_mult) + 1.0))
+	var new_rpm_force:float = (rpm * EngineFriction) / (EngineFriction + (rpm * rpm) * clock_mult)
+	assert(is_equal_approx(rpm_resistance, new_rpm_force))
 	
 	if rpm < DeadRPM:
 		torque = 0.0
-		rpm_force /= 5.0
+		rpm_resistance /= 5.0
 		stalled = 1.0 - rpm / DeadRPM
 	else:
 		stalled = 0.0
 	
-	#add the chance of stalling to the RPM force
-	rpm_force += (rpm * (EngineDrag / clock_mult))
+	#add the RPM drop to the rpm force
+	rpm_resistance += (rpm * (EngineDrag / clock_mult))
 	#reduce RPM force by the torque
-	rpm_force -= (torque / clock_mult)
+	rpm_resistance -= (torque / clock_mult)
 	#reduce RPM by the rpm force times the flywheel lightness
-	rpm -= rpm_force * RevSpeed
+	rpm -= rpm_resistance * RevSpeed
 	
 	drivetrain()
 
@@ -1341,9 +1330,7 @@ func _process(_delta:float) -> void:
 		
 		if total_load > 0:
 			front_weight_distribution = (front_load / total_load) * 0.5 + 0.5
-			rear_weight_distribution = 1.0 -  front_weight_distribution
-		
-		#readout_torque = multivariate()
+			rear_weight_distribution = 1.0 - front_weight_distribution
 
 const multivariation_inputs:PackedStringArray = [
 "RiseRPM","TorqueRise","BuildUpTorque","EngineFriction",
@@ -1357,10 +1344,12 @@ const multivariation_inputs:PackedStringArray = [
 ]
 
 ##Determine power/torque output on specific rpm values.
+##If no specific RPM is provided, or the provided RPM is 0, 
+##it will use the current RPM of the car
 func multivariate(extern_rpm:float = 0.0) -> float:
 	var test_rpm:float
 	
-	if extern_rpm > 0.0:
+	if not is_zero_approx(extern_rpm):
 		test_rpm = extern_rpm
 	else:
 		test_rpm = rpm
@@ -1408,20 +1397,6 @@ func fastest_wheel() -> ViVeWheel:
 	
 	for i:ViVeWheel in driving_wheels:
 		val = maxf(val, absf(i.absolute_wv))
-		
-		if is_equal_approx(val, absf(i.absolute_wv)):
-			obj = i
-	
-	return obj
-
-##Get the slowest wheel. Currently unused.
-##It gets the slowest of [driving_wheels], and uses [absolute_wv] to determine the slowest.
-func slowest_wheel() -> ViVeWheel:
-	var val:float = 10000000000000000000000000000000000.0
-	var obj:ViVeWheel
-	
-	for i:ViVeWheel in driving_wheels:
-		val = minf(val, absf(i.absolute_wv))
 		
 		if is_equal_approx(val, absf(i.absolute_wv)):
 			obj = i

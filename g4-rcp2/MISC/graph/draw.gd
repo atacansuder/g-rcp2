@@ -5,11 +5,6 @@ class_name ViVeInEngineTorqueGraph
 @export_enum("ft⋅lb", "nm", "kg/m") var Torque_Unit:int = 1
 @export_enum("hp", "bhp", "ps", "kW") var Power_Unit:int = 0
 
-#ECU
-@export var IdleRPM:float = 800.0 # set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently
-@export var RPMLimit:float = 7000.0 # set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently
-@export var VVTRPM:float = 4500.0 # set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently
-
 #torque normal state
 @export var TorqueNormal:ViVeCarTorque = ViVeCarTorque.new()
 
@@ -25,8 +20,6 @@ class_name ViVeInEngineTorqueGraph
 @onready var power:Line2D = $"power"
 @onready var power_peak:Polygon2D = $"power/peak"
 
-var peakcurrent_horsepower:Array[float] = [0.0,0.0]
-
 var peak_torque:float = 0.0
 var peak_torque_rpm:float = 0.0
 
@@ -38,13 +31,15 @@ var car:ViVeCar = ViVeCar.new()
 #This keeps getting re-called somewhere when it shouldn't be, when swapping cars
 func _ready() -> void:
 	ViVeEnvironment.get_singleton().connect("car_changed", draw_graph)
+	connect("resized", draw_graph) #This is inefficient but I didn't want to make a function to convert the points
 
 func draw_graph() -> void:
 	car = ViVeEnvironment.get_singleton().car
 	if not is_instance_valid(car):
 		return
 	
-	Generation_Range = float(int(car.RPMLimit / 1000.0) * 1000 + 1000) #???
+	Generation_Range = float(int(car.RPMLimit) + 1000.0)
+	
 	Draw_RPM = car.IdleRPM
 	calculate()
 	draw_scale = 1.0 / maxf(peak_torque, peak_horsepower)

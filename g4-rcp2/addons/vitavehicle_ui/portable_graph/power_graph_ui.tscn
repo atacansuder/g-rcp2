@@ -3,41 +3,59 @@
 [ext_resource type="PackedScene" uid="uid://tma76im8frc" path="res://addons/vitavehicle_ui/portable_graph/power_graph.tscn" id="1_687bf"]
 [ext_resource type="Script" path="res://addons/vitavehicle_ui/portable_graph/power_graph_ui.gd" id="1_wj437"]
 
-[node name="Control" type="Control"]
-layout_mode = 3
+[node name="Control" type="MarginContainer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 script = ExtResource("1_wj437")
 
-[node name="HSplitContainer" type="HSplitContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Split" type="HSplitContainer" parent="."]
+layout_mode = 2
 
-[node name="graph" parent="HSplitContainer" instance=ExtResource("1_687bf")]
+[node name="Graph" type="VBoxContainer" parent="Split"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer"]
+[node name="graph" parent="Split/Graph" node_paths=PackedStringArray("car") instance=ExtResource("1_687bf")]
+custom_minimum_size = Vector2(0, 57)
+layout_mode = 2
+size_flags_vertical = 3
+graph_scale = 0.00709615
+car = NodePath("")
+
+[node name="TorqueStats" type="Label" parent="Split/Graph"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Torque: 140.921389107567 nm @ 5417 RPM"
+
+[node name="HorsepowerStats" type="Label" parent="Split/Graph"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Power: 110.712473288243 hp @ 5776 RPM"
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="Split/Graph"]
+layout_mode = 2
+
+[node name="Options" type="VBoxContainer" parent="Split"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HSplitContainer/VBoxContainer"]
+[node name="Torque" type="HBoxContainer" parent="Split/Options"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="Split/Options/Torque"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Torque Unit"
 
-[node name="TorqueUnit" type="OptionButton" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="TorqueUnit" type="OptionButton" parent="Split/Options/Torque"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -50,16 +68,16 @@ popup/item_1/id = 1
 popup/item_2/text = "KG/M"
 popup/item_2/id = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="HSplitContainer/VBoxContainer"]
+[node name="Horsepower" type="HBoxContainer" parent="Split/Options"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="Split/Options/Horsepower"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Power Unit"
 
-[node name="PowerUnit" type="OptionButton" parent="HSplitContainer/VBoxContainer/HBoxContainer2"]
+[node name="PowerUnit" type="OptionButton" parent="Split/Options/Horsepower"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -74,23 +92,17 @@ popup/item_2/id = 2
 popup/item_3/text = "KW"
 popup/item_3/id = 3
 
-[node name="car_select" type="Button" parent="HSplitContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-text = "Select car"
-
-[node name="refresh" type="Button" parent="HSplitContainer/VBoxContainer"]
+[node name="ManualRefresh" type="Button" parent="Split/Options"]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Refresh"
 
-[node name="constant" type="CheckButton" parent="HSplitContainer/VBoxContainer"]
+[node name="AlwaysRefresh" type="CheckButton" parent="Split/Options"]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Constant Refresh"
 
-[connection signal="item_selected" from="HSplitContainer/VBoxContainer/HBoxContainer/TorqueUnit" to="." method="_on_torque_unit_item_selected"]
-[connection signal="item_selected" from="HSplitContainer/VBoxContainer/HBoxContainer2/PowerUnit" to="." method="_on_power_unit_item_selected"]
-[connection signal="pressed" from="HSplitContainer/VBoxContainer/car_select" to="." method="_on_car_select_pressed"]
-[connection signal="pressed" from="HSplitContainer/VBoxContainer/refresh" to="." method="_on_refresh_pressed"]
-[connection signal="toggled" from="HSplitContainer/VBoxContainer/constant" to="." method="_on_constant_toggled"]
+[connection signal="item_selected" from="Split/Options/Torque/TorqueUnit" to="." method="_on_torque_unit_item_selected"]
+[connection signal="item_selected" from="Split/Options/Horsepower/PowerUnit" to="." method="_on_power_unit_item_selected"]
+[connection signal="pressed" from="Split/Options/ManualRefresh" to="." method="_on_refresh_pressed"]
+[connection signal="toggled" from="Split/Options/AlwaysRefresh" to="." method="_on_constant_toggled"]

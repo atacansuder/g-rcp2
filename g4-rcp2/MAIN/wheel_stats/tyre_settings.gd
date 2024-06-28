@@ -1,3 +1,4 @@
+@tool
 extends Resource
 ##A [Resource] for tyre settings.
 class_name ViVeTyreSettings
@@ -34,7 +35,6 @@ class_name ViVeTyreSettings
 		if is_instance_valid(wheel_parent):
 			wheel_parent.set_physical_stats()
 ##Air pressure of the tire, in PSI (hypothetical).
-#previously [TyrePressure]
 @export var AirPressure:float = 30.0:
 	set(new_pressure):
 		AirPressure = new_pressure

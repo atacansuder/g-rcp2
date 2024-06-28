@@ -189,10 +189,6 @@ class ButtonWrapper:
 			strength -= off_rate / clock_mult
 		strength = clampf(strength, minimum, maximum)
 		return strength
-	
-	func automatic_poll() -> float:
-		update_press(false)
-		return poll(pressed)
 
 var throttle_button:ButtonWrapper = ButtonWrapper.new()
 var brake_button:ButtonWrapper = ButtonWrapper.new()

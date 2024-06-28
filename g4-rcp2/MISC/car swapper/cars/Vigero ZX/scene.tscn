@@ -1,4 +1,4 @@
-[gd_scene load_steps=138 format=3 uid="uid://dhbk681rmcw0p"]
+[gd_scene load_steps=144 format=3 uid="uid://dhbk681rmcw0p"]
 
 [ext_resource type="Script" path="res://MAIN/car.gd" id="1_oxppr"]
 [ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="2_4hi2m"]
@@ -8,11 +8,12 @@
 [ext_resource type="Script" path="res://MAIN/car_stats/gear_assistant.gd" id="3_4mwoo"]
 [ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3_utf86"]
 [ext_resource type="Texture2D" uid="uid://cs6siqjnwtp3t" path="res://MISC/car swapper/cars/Vigero ZX/assets/Camaro_vehiclegeneric256.png" id="3_xv14l"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/manual.gd" id="4_d1tf3"]
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="4_ewk3o"]
-[ext_resource type="Script" path="res://MAIN/car_stats/auto_settings.gd" id="4_rhfk0"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/auto_settings.gd" id="4_l56sg"]
 [ext_resource type="Material" uid="uid://bd751qkvshx4p" path="res://MISC/car swapper/cars/Vigero ZX/assets/glass.material" id="4_t0oow"]
-[ext_resource type="Script" path="res://MAIN/car_stats/cvt.gd" id="5_2la5e"]
 [ext_resource type="Resource" uid="uid://bifxfrn15mqoh" path="res://MISC/car swapper/cars/Vigero ZX/resources/front_tyre_comp.tres" id="5_dj1ls"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/cvt.gd" id="5_q54se"]
 [ext_resource type="Material" uid="uid://d31isohpqydl7" path="res://MISC/car swapper/cars/Vigero ZX/assets/chrome.material" id="5_v3qg7"]
 [ext_resource type="Script" path="res://MAIN/car_stats/abs.gd" id="6_jehnh"]
 [ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6_ldss1"]
@@ -23,7 +24,9 @@
 [ext_resource type="Script" path="res://MAIN/car_stats/ttcs.gd" id="9_pu4um"]
 [ext_resource type="Resource" uid="uid://d0lg3t82sevfy" path="res://MISC/car swapper/cars/Vigero ZX/resources/tyre_settings.tres" id="10_r0nem"]
 [ext_resource type="Resource" uid="uid://brixcpmlqd8j4" path="res://MISC/car swapper/cars/Vigero ZX/resources/axles.tres" id="13_fhwwn"]
-[ext_resource type="Resource" uid="uid://bp2w0pprgah38" path="res://MISC/car swapper/cars/Vigero ZX/resources/rear_suspension.tres" id="16_u8n46"]
+[ext_resource type="Resource" uid="uid://bp2w0pprgah38" path="res://MISC/car swapper/cars/Vigero ZX/resources/front_suspension.tres" id="16_u8n46"]
+[ext_resource type="Script" path="res://MAIN/wheel_stats/wheel_compound.gd" id="25_18aa3"]
+[ext_resource type="Resource" uid="uid://d3mywo58vejfn" path="res://MISC/car swapper/cars/Vigero ZX/resources/rear_suspension.tres" id="25_nebll"]
 
 [sub_resource type="Resource" id="Resource_g7ikb"]
 script = ExtResource("2_tyie6")
@@ -73,22 +76,45 @@ upshift_RPM = 6200.0
 clutch_out_RPM = 3000.0
 input_delay = 5
 
-[sub_resource type="Resource" id="Resource_ink45"]
-script = ExtResource("4_rhfk0")
+[sub_resource type="Resource" id="Resource_km2j6"]
+script = ExtResource("4_d1tf3")
+FinalDriveRatio = 4.25
+GearRatios = Array[float]([3.25, 1.894, 1.259, 0.937, 0.771])
+ReverseRatio = 3.153
+RatioMult = 9.5
+StressFactor = 1.0
+GearGap = 60.0
+ActionNameShiftUp = &""
+ActionNameShiftDown = &""
+ClutchOutRPM = 0.0
+ShiftDelay = 0.0
+InputDelay = 0.0
+AssistUpShiftRPM = 0.0
+AssistDownShiftRPM = 0.0
+
+[sub_resource type="Resource" id="Resource_76lt1"]
+script = ExtResource("4_l56sg")
 shift_rpm = 6500.0
 downshift_thresh = 300.0
 throt_eff_thresh = 0.5
 engage_rpm_thresh = 0.0
 engage_rpm = 4000.0
+FinalDriveRatio = 4.25
+GearRatios = Array[float]([3.25, 1.894, 1.259, 0.937, 0.771])
+ReverseRatio = 3.153
+RatioMult = 9.5
 
-[sub_resource type="Resource" id="Resource_ew4al"]
-script = ExtResource("5_2la5e")
+[sub_resource type="Resource" id="Resource_aqplh"]
+script = ExtResource("5_q54se")
 throt_eff_thresh = 0.75
 accel_rate = 0.025
 iteration_1 = 0.9
 iteration_2 = 500.0
 iteration_3 = 2.0
 iteration_4 = 0.2
+engage_rpm_thresh = 0.0
+engage_rpm = 0.0
+a_throt_eff_thresh = 0.0
 
 [sub_resource type="Resource" id="Resource_x18fu"]
 script = ExtResource("6_jehnh")
@@ -120,16 +146,16 @@ threshold = 5.0
 sensitivity = 1.0
 enabled = false
 
-[sub_resource type="Resource" id="Resource_y7446"]
+[sub_resource type="Resource" id="Resource_bka5p"]
 script = ExtResource("2_6h716")
-BuildUpTorque = 0.0035
+BuildUpTorque = 0.01
 TorqueRise = 30.0
-RiseRPM = 1000.0
-OffsetTorque = 110.0
-FloatRate = 0.1
-DeclineRate = 1.5
-DeclineRPM = 3500.0
-DeclineSharpness = 1.0
+RiseRPM = 5000.0
+OffsetTorque = 243.0
+FloatRate = 0.09
+DeclineRate = 0.5
+DeclineRPM = 3529.0
+DeclineSharpness = 3.0
 
 [sub_resource type="Resource" id="Resource_oj3bf"]
 script = ExtResource("2_6h716")
@@ -1452,6 +1478,30 @@ shadow_mesh = SubResource("ArrayMesh_2vx16")
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_wvi6p"]
 points = PackedVector3Array(-0.64316, 0.317831, -2.84738, 1.17867, -0.0463873, 2.25247, -1.09873, -0.410739, 2.61707, 0.905325, -0.593048, -1.20811, 0.631981, 0.773404, 0.248588, 1.08755, 0.226743, -2.57408, -1.09873, -0.410739, -2.39206, -1.09873, 0.317831, 1.88844, 1.08755, -0.410739, 2.61707, -0.64316, 0.773404, 0.248588, 0.94856, -0.300068, -2.71248, -0.916504, 0.226743, 2.70779, -1.09873, 0.226743, -2.48278, -0.916504, -0.593048, -1.20811, 0.176408, -0.501827, 2.79908, 0.905325, 0.226743, 2.70779, 0.235221, 0.692599, -1.22857, 1.17867, -0.228563, -2.30077, 1.08755, 0.317831, 1.88844, -1.18985, -0.0463873, 2.07045, 0.631981, 0.317831, -2.84738, -0.860336, -0.29438, -2.75843, -1.18985, -0.228563, -2.20948, -0.187587, 0.135655, 2.88981, -0.648802, 0.612741, -1.30998, 0.905325, 0.591094, 0.339881, -0.916504, 0.591094, 0.339881, -0.920206, -0.533446, 1.05652, 0.718517, 0.613079, -1.15004, 0.9174, -0.539156, 1.06642, 0.951345, -0.214219, -2.80697, 0.918298, -0.371676, -2.54305)
 
+[sub_resource type="Resource" id="Resource_u0nus"]
+script = ExtResource("25_18aa3")
+OptimumTemp = 50.0
+Stiffness = 1.0
+TractionFactor = 1.0
+DeformFactor = 1.0
+ForeFriction = 0.125
+ForeStiffness = 0.0
+GroundDragAffection = 1.0
+BuildupAffection = 1.0
+CoolRate = 7.5e-05
+
+[sub_resource type="Resource" id="Resource_1lh4c"]
+script = ExtResource("25_18aa3")
+OptimumTemp = 50.0
+Stiffness = 1.0
+TractionFactor = 1.0
+DeformFactor = 1.0
+ForeFriction = 0.125
+ForeStiffness = 0.0
+GroundDragAffection = 1.0
+BuildupAffection = 1.0
+CoolRate = 7.5e-05
+
 [node name="Vigero" type="RigidBody3D"]
 mass = 148.6
 script = ExtResource("1_oxppr")
@@ -1460,14 +1510,15 @@ GearAssist = SubResource("Resource_5vwol")
 car_name = &"Vigero ZX"
 Weight = 1486.0
 Powered_Wheels = Array[String](["rear_left", "rear_right"])
-AutoSettings = SubResource("Resource_ink45")
-CVTSettings = SubResource("Resource_ew4al")
+Transmission = SubResource("Resource_km2j6")
+AutoSettings = SubResource("Resource_76lt1")
+CVTSettings = SubResource("Resource_aqplh")
 ABS = SubResource("Resource_x18fu")
 ESP = SubResource("Resource_d8r8a")
 BTCS = SubResource("Resource_6l5nq")
 TTCS = SubResource("Resource_2txss")
 VVTRPM = 45000.0
-torque_norm = SubResource("Resource_y7446")
+torque_norm = SubResource("Resource_bka5p")
 torque_vvt = SubResource("Resource_oj3bf")
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="."]
@@ -1695,8 +1746,7 @@ shape = SubResource("ConvexPolygonShape3D_wvi6p")
 
 [node name="front_left" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 2.82, 0.2, 4.815)
-target_position = Vector3(0, -1.55, 0)
-Differed_Wheel_Path = NodePath("front_right")
+target_position = Vector3(0, -1.1, 0)
 SwayBarConnection = NodePath("front_right")
 TyreSettings = ExtResource("10_r0nem")
 CompoundSettings = ExtResource("5_dj1ls")
@@ -1710,8 +1760,7 @@ mesh = ExtResource("7_p6vyf")
 
 [node name="front_right" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -2.82, 0.2, 4.815)
-target_position = Vector3(0, -1.55, 0)
-Differed_Wheel_Path = NodePath("front_left")
+target_position = Vector3(0, -1.1, 0)
 SwayBarConnection = NodePath("front_left")
 TyreSettings = ExtResource("10_r0nem")
 CompoundSettings = ExtResource("5_dj1ls")
@@ -1726,12 +1775,14 @@ skeleton = NodePath("")
 
 [node name="rear_left" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 2.82, 0.2, -4.491)
-target_position = Vector3(0, -1.55, 0)
+target_position = Vector3(0, -1.1, 0)
 Steer = false
+Differed_Wheel_Path = NodePath("rear_right")
 SwayBarConnection = NodePath("rear_right")
 TyreSettings = ExtResource("10_r0nem")
+CompoundSettings = SubResource("Resource_u0nus")
 AxleSettings = ExtResource("13_fhwwn")
-Suspension = ExtResource("16_u8n46")
+Suspension = ExtResource("25_nebll")
 Camber = -2.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="rear_left/animation/camber/wheel" index="0"]
@@ -1741,12 +1792,13 @@ skeleton = NodePath("")
 
 [node name="rear_right" parent="." instance=ExtResource("4_ewk3o")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -2.82, 0.2, -4.491)
-target_position = Vector3(0, -1.55, 0)
 Steer = false
+Differed_Wheel_Path = NodePath("rear_left")
 SwayBarConnection = NodePath("rear_left")
 TyreSettings = ExtResource("10_r0nem")
+CompoundSettings = SubResource("Resource_1lh4c")
 AxleSettings = ExtResource("13_fhwwn")
-Suspension = ExtResource("16_u8n46")
+Suspension = ExtResource("25_nebll")
 Camber = -2.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="rear_right/animation/camber/wheel" index="0"]

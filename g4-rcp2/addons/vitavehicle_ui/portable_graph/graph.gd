@@ -1,83 +1,99 @@
 @tool
-extends Control
+extends PanelContainer
 
 class_name ViVeTorqueGraph
 
-@export_category("Graph")
 @export_group("Display Units")
 @export_enum("ft⋅lb", "nm", "kg/m") var Torque_Unit:int = 1
-@export_enum("hp", "bhp", "ps", "kW") var Power_Unit:int = 0
-
-@export_group("ECU")
-## Set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently.
-@export var IdleRPM:float = 800.0
-## Set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently.
-@export var RPMLimit:float = 7000.0 
-## Set this beyond the rev range to disable it, set it to 0 to use this vvt state permanently.
-@export var VVTRPM:float = 4500.0
+@export_enum("current_horsepower", "bcurrent_horsepower", "ps", "kW") var Power_Unit:int = 0
 
 @export_group("Graph settings")
 @export var graph_scale:float = 0.005
 ## How many points will be rendered to the graph. 
 ##Higher numbers will take longer to "render", but you get a more precise and detailed result.
 @export var Generation_Range:float = 7000.0
-@export var Draw_RPM:float = 800.0
 
-var peakhp:Array[float] = [0.0,0.0]
-var peaktq:Array[float] = [0.0,0.0]
+@export var car:ViVeCar = ViVeCar.new()
 
-@export var car:ViVeCar = null
+@onready var torque:Line2D = $torque
+@onready var torque_peak_position:Polygon2D = $torque/peak
+@onready var power:Line2D = $power
+@onready var power_peak_point:Polygon2D = $power/peak
 
-@onready var torque:Line2D = $power_graph/torque
-@onready var torque_p:Polygon2D = $power_graph/torque/peak
-@onready var power:Line2D = $power_graph/power
-@onready var power_p:Polygon2D = $power_graph/power/peak
+var peak_torque:float = 0.0
+var peak_torque_rpm:float = 0.0
 
-var temp_rpm_fix:float = 0.0
+var peak_horsepower:float 
+var peak_horsepower_rpm:float
+
+signal graph_updated
+
+func _ready() -> void:
+	connect("resized", draw_graph) #This is inefficient but I didn't want to make a function to convert the points
 
 func draw_graph() -> void:
-	#Some checks ive've found are necessary
 	if not is_instance_valid(car):
 		push_warning("Car instance is not valid for graph calculations")
 		return
 	
-	peakhp = [0.0,0.0]
-	peaktq = [0.0,0.0]
+	find_peak_values()
+	graph_scale = 1.0 / maxf(peak_torque, peak_horsepower)
+	full_graph_calculation()
+	emit_signal("graph_updated")
+
+func find_peak_values() -> void:
+	for ranged_rpm:int in range(Generation_Range):
+		if ranged_rpm > car.IdleRPM:
+			var current_torque:float = car.multivariate(ranged_rpm)
+			var current_horsepower:float = (ranged_rpm / 5252.0) * current_torque
+			if current_horsepower > peak_horsepower:
+				peak_horsepower = current_horsepower
+			if current_torque > peak_torque:
+				peak_torque = current_torque
+
+func full_graph_calculation() -> void:
+	peak_horsepower = 0.0
+	peak_horsepower_rpm = 0.0
+	peak_torque = 0.0
+	peak_torque_rpm = 0.0
 	torque.clear_points()
 	power.clear_points()
+	
 	var skip:int = 0
 	#var draw_scale:Vector2 = Vector2(size.x / Generation_Range, size.y / Generation_Range) 
 	for ranged_rpm:int in range(Generation_Range):
-		if ranged_rpm > Draw_RPM:
-			var trq:float = car.multivariate(ranged_rpm)
-			var hp:float = (ranged_rpm / 5252.0) * trq
+		if ranged_rpm > car.IdleRPM:
+			var current_torque:float = car.multivariate(ranged_rpm)
+			var current_horsepower:float = (ranged_rpm / 5252.0) * current_torque
 			
 			if Torque_Unit == 1:
-				trq *= 1.3558179483
+				current_torque *= 1.3558179483
 			elif Torque_Unit == 2:
-				trq *= 0.138255
+				current_torque *= 0.138255
 			
 			match Power_Unit:
 				1:
-					hp *= 0.986
+					current_horsepower *= 0.986
 				2:
-					hp *= 1.01387
+					current_horsepower *= 1.01387
 				3:
-					hp *= 0.7457
+					current_horsepower *= 0.7457
 			
-			var tr_p:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (trq * size.y) * graph_scale)
-			var hp_p:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (hp * size.y) * graph_scale)
+			var torque_position:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (current_torque * size.y) * graph_scale)
+			var horsepower_position:Vector2 = Vector2((ranged_rpm / Generation_Range) * size.x, size.y - (current_horsepower * size.y) * graph_scale)
 			
-			if hp > peakhp[0]:
-				peakhp = [hp, ranged_rpm]
-				power_p.position = hp_p
+			if current_horsepower > peak_horsepower:
+				peak_horsepower = current_horsepower
+				peak_horsepower_rpm = ranged_rpm
+				power_peak_point.position = horsepower_position
 			
-			if trq > peaktq[0]:
-				peaktq = [trq, ranged_rpm]
-				torque_p.position = tr_p
+			if current_torque > peak_torque:
+				peak_torque = current_torque
+				peak_torque_rpm = ranged_rpm
+				torque_peak_position.position = torque_position
 			
 			skip -= 1
 			if skip <= 0:
-				torque.add_point(tr_p)
-				power.add_point(hp_p)
+				torque.add_point(torque_position)
+				power.add_point(horsepower_position)
 				skip = 100

@@ -10,7 +10,8 @@ const default_sky:Environment = preload("res://default_env.tres")
 static var singleton:ViVeEnvironment = null
 ##The current environment.
 var current_sky:Environment = environment
-
+##Debug mode for the car. This enables certain things that are, good for debugging or configuring cars,
+##but otherwise would be needlessly taking performance away from the simulation.
 var Debug_Mode:bool = true
 ##An internal multiplier for changing the effective speed of the simulation.
 var clock_mult:float = 1.0

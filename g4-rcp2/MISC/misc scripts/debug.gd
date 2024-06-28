@@ -99,6 +99,8 @@ func _process(delta:float) -> void:
 	
 	var car_current_rpm:float = Performance.get_custom_monitor(car_rpm)
 	
+	$power_graph/rpm.size.y = power_graph.size.y
+	$power_graph/redline.size.y = power_graph.size.y
 	$power_graph/rpm.position.x = (car_current_rpm / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	$power_graph/redline.position.x = (car_node.RPMLimit / power_graph.Generation_Range) * power_graph.size.x - 1.0
 	
@@ -118,7 +120,7 @@ func _process(delta:float) -> void:
 	
 	if current_gear == 0:
 		tacho_gear.text = "N"
-	elif current_gear == -1:
+	elif current_gear == ViVeTransmission.REVERSE:
 		tacho_gear.text = "R"
 	else:
 		if car_node.TransmissionType == 1 or car_node.TransmissionType == 2:
@@ -145,7 +147,7 @@ func _old_process(delta:float) -> void:
 	else:
 		weight_dist.text = "[ enable Debug_Mode or press F to\nfetch weight distribution ]"
 	
-	if not changed_graph_size == power_graph.size:
+	if changed_graph_size != power_graph.size:
 		changed_graph_size = power_graph.size
 		power_graph.draw_graph()
 	
@@ -177,8 +179,10 @@ func _old_process(delta:float) -> void:
 	
 	if car_node.gear == 0:
 		tacho_gear.text = "N"
-	elif car_node.gear == -1:
+	elif car_node.gear == ViVeTransmission.REVERSE:
 		tacho_gear.text = "R"
+	#elif car_node.Transmission.get_current_gear() == -2:
+	#	tacho_gear.text = "D"
 	else:
 		if car_node.TransmissionType == 1 or car_node.TransmissionType == 2:
 			tacho_gear.text = "D"

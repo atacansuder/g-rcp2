@@ -1,4 +1,4 @@
-[gd_scene load_steps=60 format=3 uid="uid://bafwwdeygykke"]
+[gd_scene load_steps=62 format=3 uid="uid://bafwwdeygykke"]
 
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
 [ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
@@ -6,9 +6,10 @@
 [ext_resource type="Script" path="res://MAIN/car_stats/gear_assistant.gd" id="2_6y44o"]
 [ext_resource type="PackedScene" uid="uid://c7m04qiimdydw" path="res://MAIN/misc/engine sound/engine.tscn" id="3"]
 [ext_resource type="Script" path="res://MAIN/car_stats/abs.gd" id="4_e2i64"]
-[ext_resource type="Script" path="res://MAIN/car_stats/auto_settings.gd" id="4_wbjpd"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/manual.gd" id="4_laaxy"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/auto_settings.gd" id="4_wbjpd"]
 [ext_resource type="PackedScene" uid="uid://d1vmrvs3aj84o" path="res://MAIN/misc/tyre sounds/tyres.tscn" id="5"]
-[ext_resource type="Script" path="res://MAIN/car_stats/cvt.gd" id="5_2v56i"]
+[ext_resource type="Script" path="res://MAIN/car_stats/transmissions/cvt.gd" id="5_2v56i"]
 [ext_resource type="PackedScene" uid="uid://bvqp2v3vmlgcn" path="res://MAIN/misc/mechanical sounds/other_sounds.tscn" id="6"]
 [ext_resource type="Script" path="res://MAIN/car_stats/esp.gd" id="7_ipk6o"]
 [ext_resource type="Script" path="res://MAIN/car_stats/torque.gd" id="8_fopge"]
@@ -75,6 +76,22 @@ upshift_RPM = 7500.0
 clutch_out_RPM = 4000.0
 input_delay = 2
 
+[sub_resource type="Resource" id="Resource_53x7l"]
+script = ExtResource("4_laaxy")
+FinalDriveRatio = 4.25
+GearRatios = Array[float]([3.25, 1.894, 1.259, 0.937, 0.771])
+ReverseRatio = 3.153
+RatioMult = 9.5
+StressFactor = 1.0
+GearGap = 60.0
+ActionNameShiftUp = &""
+ActionNameShiftDown = &""
+ClutchOutRPM = 0.0
+ShiftDelay = 0.0
+InputDelay = 0.0
+AssistUpShiftRPM = 0.0
+AssistDownShiftRPM = 0.0
+
 [sub_resource type="Resource" id="Resource_v3oiu"]
 script = ExtResource("4_wbjpd")
 shift_rpm = 6500.0
@@ -82,6 +99,10 @@ downshift_thresh = 300.0
 throt_eff_thresh = 0.5
 engage_rpm_thresh = 0.0
 engage_rpm = 4000.0
+FinalDriveRatio = 4.25
+GearRatios = Array[float]([3.25, 1.894, 1.259, 0.937, 0.771])
+ReverseRatio = 3.153
+RatioMult = 9.5
 
 [sub_resource type="Resource" id="Resource_aijry"]
 script = ExtResource("5_2v56i")
@@ -91,6 +112,9 @@ iteration_1 = 0.9
 iteration_2 = 500.0
 iteration_3 = 2.0
 iteration_4 = 0.2
+engage_rpm_thresh = 0.0
+engage_rpm = 0.0
+a_throt_eff_thresh = 0.0
 
 [sub_resource type="Resource" id="Resource_r76k1"]
 script = ExtResource("4_e2i64")
@@ -502,6 +526,7 @@ DragCoefficient = 0.49
 Downforce = 1.0
 AckermannPoint = -4.067
 Powered_Wheels = Array[String](["fl", "fr", "rl", "rr"])
+Transmission = SubResource("Resource_53x7l")
 FinalDriveRatio = 4.4
 GearRatios = Array[float]([3.75, 2.7, 2.0, 1.55, 1.25, 1.0])
 GearGap = 300.0
@@ -549,11 +574,7 @@ SwayBarConnection = NodePath("fl")
 TyreSettings = ExtResource("12_vyhmi")
 CompoundSettings = ExtResource("13_ji7rs")
 AxleSettings = ExtResource("14_wwtq5")
-Suspension = ExtResource("12_g51a6")
-S_Stiffness = 70.0
-S_Damping = 4.0
-S_ReboundDamping = 12.0
-S_MaxCompression = 1.0
+Suspension = ExtResource("13_0ioyb")
 B_Torque = 30.0
 B_Bias = 0.8
 
@@ -577,10 +598,6 @@ TyreSettings = ExtResource("12_vyhmi")
 CompoundSettings = ExtResource("13_ji7rs")
 AxleSettings = ExtResource("14_wwtq5")
 Suspension = ExtResource("13_0ioyb")
-S_Stiffness = 70.0
-S_Damping = 4.0
-S_ReboundDamping = 12.0
-S_MaxCompression = 1.0
 B_Torque = 30.0
 B_Bias = 0.8
 
@@ -604,12 +621,6 @@ TyreSettings = ExtResource("12_vyhmi")
 CompoundSettings = ExtResource("13_ji7rs")
 AxleSettings = ExtResource("14_wwtq5")
 Suspension = ExtResource("12_g51a6")
-S_Stiffness = 45.0
-S_Damping = 3.0
-S_ReboundDamping = 12.0
-S_MaxCompression = 1.0
-AR_Stiff = 0.25
-AR_Elast = 0.05
 B_Torque = 30.0
 B_Bias = 0.2
 HB_Bias = 1.0
@@ -633,13 +644,7 @@ SwayBarConnection = NodePath("rr")
 TyreSettings = ExtResource("12_vyhmi")
 CompoundSettings = ExtResource("13_ji7rs")
 AxleSettings = ExtResource("14_wwtq5")
-Suspension = ExtResource("13_0ioyb")
-S_Stiffness = 45.0
-S_Damping = 3.0
-S_ReboundDamping = 12.0
-S_MaxCompression = 1.0
-AR_Stiff = 0.25
-AR_Elast = 0.05
+Suspension = ExtResource("12_g51a6")
 B_Torque = 30.0
 B_Bias = 0.2
 HB_Bias = 1.0
@@ -675,6 +680,8 @@ script = ExtResource("14")
 tire_gravel = ExtResource("12_vyhmi")
 compound_gravel = ExtResource("13_ji7rs")
 axle_gravel = ExtResource("14_wwtq5")
+suspension_gravel_front = ExtResource("13_0ioyb")
+suspension_gravel_rear = ExtResource("12_g51a6")
 tire_tarmac = ExtResource("14_4q3x6")
 compound_tarmac = ExtResource("17_uk4lo")
 axle_tarmac = ExtResource("18_bco03")

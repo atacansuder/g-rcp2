@@ -13,3 +13,4 @@ AntiRollStiffness = 0.5
 AntiRollElasticity = 0.1
 InclineArea = 0.2
 ImpactForce = 1.5
+RestPosition = -2.7

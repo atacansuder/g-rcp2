@@ -1,3 +1,4 @@
+@tool
 extends Resource
 
 ##Compound settings for tires.

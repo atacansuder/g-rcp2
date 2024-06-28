@@ -1,3 +1,4 @@
+@tool
 extends Resource
 ##A resource for suspension values for a ViVeWheel
 class_name ViVeWheelSuspension
@@ -18,14 +19,35 @@ class_name ViVeWheelSuspension
 @export var AntiRollElasticity:float = 0.1 #AR_Elast
 ##Used in calculating suspension.
 @export var InclineArea:float = 0.2
-##Used in calculating suspension.
+##This amplifies the effect that slopes have on suspension.
 @export var ImpactForce:float = 1.5
+##The rest position for the wheel, ie. where it will sit with no counter force applied.
+##This is an alias for the wheel's RayCast3D.target_position, for convenience.
+@export var RestPosition:float = -2.7:
+	set(new_pos):
+		RestPosition = new_pos
+		if is_instance_valid(parent_wheel):
+			parent_wheel.target_position.y = new_pos
 
-func get_elasticity(sway_bar_compression_offset:float) -> float:
-	return SpringStiffness * (AntiRollElasticity * sway_bar_compression_offset + 1.0)
+var parent_wheel:ViVeWheel = null
 
-func get_dampening(sway_bar_compression_offset:float) -> float:
-	return CompressionDampening * (AntiRollStiffness * sway_bar_compression_offset + 1.0)
+##This gets the total suspension elasticity being applied to the wheel.
+##When [sway_bar_influence] is passed in, the effects of the wheel's linked
+##sway bar partner will be taken into account for the return value.
+##Otherwise, this will just return [SpringStiffness].
+func get_elasticity(sway_bar_influence:float = 0.0) -> float:
+	return SpringStiffness * (AntiRollElasticity * sway_bar_influence + 1.0)
 
-func get_rebound_dampening(sway_bar_compression_offset:float) -> float:
-	return ReboundDampening * (AntiRollStiffness * sway_bar_compression_offset + 1.0)
+##This gets the total compression dampening being applied to the wheel.
+##When [sway_bar_influence] is passed in, the effects of the wheel's linked
+##sway bar partner will be taken into account for the return value.
+##Otherwise, this will just return [CompressionDampening].
+func get_compression_dampening(sway_bar_influence:float = 0.0) -> float:
+	return CompressionDampening * (AntiRollStiffness * sway_bar_influence + 1.0)
+
+##This gets the total rebound dampening being applied to the wheel.
+##When [sway_bar_influence] is passed in, the effects of the wheel's linked
+##sway bar partner will be taken into account for the return value.
+##Otherwise, this will just return [ReboundDampening].
+func get_rebound_dampening(sway_bar_influence:float = 0.0) -> float:
+	return ReboundDampening * (AntiRollStiffness * sway_bar_influence + 1.0)

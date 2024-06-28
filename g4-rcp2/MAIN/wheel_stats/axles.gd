@@ -1,3 +1,4 @@
+@tool
 extends Resource
 
 ##An axle for a [ViVeWheel].

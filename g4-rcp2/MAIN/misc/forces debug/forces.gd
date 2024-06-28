@@ -22,9 +22,12 @@ func _physics_process(_delta:float) -> void:
 		longi.visible = wheel_parent.is_colliding()
 		lateral.visible = wheel_parent.is_colliding()
 		
-		compress.scale = Vector3(0.02, wheel_parent.directional_force.y * (Scale / 1.0), 0.02)
+		#compress.scale = Vector3(0.02, wheel_parent.directional_force.y * (Scale / 1.0), 0.02)
+		compress.scale.y = wheel_parent.directional_force.y * (Scale / 1.0)
 		compress.position.y = compress.scale.y / 2.0
-		longi.scale = Vector3(0.02, 0.02, wheel_parent.directional_force.z * (Scale / 1.0))
+		#longi.scale = Vector3(0.02, 0.02, wheel_parent.directional_force.z * (Scale / 1.0))
+		longi.scale.z = wheel_parent.directional_force.z * (Scale / 1.0)
 		longi.position.z = longi.scale.z / 2.0
-		lateral.scale = Vector3(wheel_parent.directional_force.x * (Scale / 1.0), 0.02, 0.02)
+		#lateral.scale = Vector3(wheel_parent.directional_force.x * (Scale / 1.0), 0.02, 0.02)
+		lateral.scale.x = wheel_parent.directional_force.x * (Scale / 1.0)
 		lateral.position.x = lateral.scale.x / 2.0

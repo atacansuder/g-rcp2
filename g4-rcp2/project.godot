@@ -16,8 +16,7 @@ config/tags=PackedStringArray("engine")
 run/main_scene="res://world.tscn"
 config/features=PackedStringArray("4.2")
 boot_splash/bg_color=Color(0.141176, 0.141176, 0.141176, 1)
-boot_splash/image="res://logo.png"
-boot_splash/fullsize=false
+boot_splash/image="res://splash.png"
 boot_splash/use_filter=false
 config/icon="res://vlogo.png"
 
@@ -204,6 +203,7 @@ common/enable_pause_aware_picking=true
 renderer/rendering_method="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 textures/lossless_compression/force_png=true
+occlusion_culling/use_occlusion_culling=true
 environment/defaults/default_environment="res://default_env.tres"
 quality/intended_usage/framebuffer_allocation.mobile=2
 threads/thread_model=2

@@ -69,7 +69,7 @@ func _physics_process(_delta:float) -> void:
 	
 	volume = 0.5 + car.throttle * 0.5
 	
-	fade = (snd_8.pitch_scale - 0.22222) * (crossfade_influence + car.throttle * crossfade_throttle + float(car.vvt) * crossfade_vvt)
+	fade = (snd_8.pitch_scale - 0.22222) * (crossfade_influence + car.throttle * crossfade_throttle + float(car.rpm > car.VVTRPM) * crossfade_vvt)
 	
 	fade = clampf(fade, childcount - 1, 0.0)
 	
