@@ -1,4 +1,4 @@
-[gd_scene load_steps=51 format=3 uid="uid://crtwme8ggggra"]
+[gd_scene load_steps=57 format=3 uid="uid://crtwme8ggggra"]
 
 [ext_resource type="PackedScene" uid="uid://df2i30irlljkl" path="res://MAIN/wheel.tscn" id="1"]
 [ext_resource type="Script" path="res://MAIN/car.gd" id="2"]
@@ -14,7 +14,10 @@
 [ext_resource type="Script" path="res://MAIN/car_stats/abs.gd" id="6_44ix1"]
 [ext_resource type="Resource" uid="uid://bsdgxdg8heuby" path="res://MISC/car swapper/misc_resources/base_car_front_suspension.tres" id="6_ai02f"]
 [ext_resource type="PackedScene" uid="uid://kb7hq7qvuul3" path="res://MAIN/misc/backfire_particles/fire.tscn" id="7"]
+[ext_resource type="Script" path="res://MAIN/car_stats/esp.gd" id="8_e7s6g"]
 [ext_resource type="Texture2D" uid="uid://1a0k3s3amej8" path="res://MAIN/misc/backfire_particles/backfire.png" id="8_tk2wk"]
+[ext_resource type="Script" path="res://MAIN/car_stats/btcs.gd" id="9_2mnhh"]
+[ext_resource type="Script" path="res://MAIN/car_stats/ttcs.gd" id="10_gx6up"]
 [ext_resource type="Script" path="res://MAIN/car_stats/torque.gd" id="10_j1lxw"]
 [ext_resource type="Script" path="res://MAIN/wheel_stats/tyre_settings.gd" id="14_k6jwd"]
 [ext_resource type="Script" path="res://MAIN/wheel_stats/wheel_compound.gd" id="15_3sl2f"]
@@ -118,6 +121,26 @@ enabled = true
 pump_force = 0.5
 lat_thresh = 500.0
 lat_pump_time = 2.0
+
+[sub_resource type="Resource" id="Resource_jsugr"]
+script = ExtResource("8_e7s6g")
+stab_thresh = 0.5
+stab_rate = 1.5
+yaw_thresh = 1.0
+yaw_rate = 3.0
+enabled = false
+
+[sub_resource type="Resource" id="Resource_b5wvo"]
+script = ExtResource("9_2mnhh")
+threshold = 10.0
+sensitivity = 0.05
+enabled = true
+
+[sub_resource type="Resource" id="Resource_g3ise"]
+script = ExtResource("10_gx6up")
+threshold = 5.0
+sensitivity = 1.0
+enabled = false
 
 [sub_resource type="Resource" id="Resource_aa6xv"]
 script = ExtResource("10_j1lxw")
@@ -504,6 +527,9 @@ Transmission = SubResource("Resource_j10xu")
 AutoSettings = SubResource("Resource_v6c03")
 CVTSettings = SubResource("Resource_a4y0t")
 ABS = SubResource("Resource_j0n0h")
+ESP = SubResource("Resource_jsugr")
+BTCS = SubResource("Resource_b5wvo")
+TTCS = SubResource("Resource_g3ise")
 torque_norm = SubResource("Resource_aa6xv")
 torque_vvt = SubResource("Resource_v7npc")
 

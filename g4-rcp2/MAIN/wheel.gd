@@ -111,7 +111,7 @@ const div_by_0_fix:float = 1.0
 const external_ground_vars:StringName = &"ground_vars"
 
 #identifiers for the performance singleton
-const perf_stress:StringName = &"Stress"
+const perf_grip:StringName = &"Grip"
 const perf_wv:StringName = &"Wheel Spin Velocity"
 const perf_suspension:StringName = &"Suspension Force"
 const perf_wheelpower:StringName = &"Wheel Power"
@@ -134,8 +134,8 @@ var w_weight_read:float = 0.0
 var tyre_maxgrip:float = 0.0
 ##Cached value of "physics/common/physics_ticks_per_second", for compensating for varying physics ticks.
 var physics_tick:float = 60.0
-##The difference tolerance on differential distributed power. 
-##This is computed using some magic numbers and ClutchGrip.
+##The limited-slip-differential tolerance(?).
+##This is computed using some magic numbers (related to rev speed?) and ClutchGrip.
 var differential_wheel_velocity_limit:float = 0.0
 ##The name of the wheel in the Performance singleton
 var wheel_name:StringName
@@ -172,7 +172,7 @@ var live_power_bias:float = 0.0
 var wheelpower:float = 0.0
 ##This is set to the absolute value of [wheelpower] after braking calculations are applied, and is used in differentials.
 var global_abs_wheelpower:float = 0.0
-##This is related to the [grip] of the wheel, and is tied to the overall_power_grip var on the parent [ViVeCar].
+##This is the grip of the wheel on the ground, based on surface variables and suspension.
 var grip:float = 0.0
 ##Set in SwayBar calculations using [suspension_compression], and is used in calculating some values for suspension().
 ##This value is clamped between -1 and 1
@@ -271,7 +271,7 @@ func register_debug() -> void:
 	
 	wheel_name = car.car_name + &": " + name
 	
-	Performance.add_custom_monitor(wheel_name + &"/" + perf_stress, get, ["grip"])
+	Performance.add_custom_monitor(wheel_name + &"/" + perf_grip, get, ["grip"])
 	#Performance.add_custom_monitor(wheel_name + &"/" + perf_suspension, suspension)
 	Performance.add_custom_monitor(wheel_name + &"/" + perf_wv, get, ["wv"])
 	Performance.add_custom_monitor(wheel_name + &"/" + perf_wheelpower, get, ["wheelpower"])
@@ -282,7 +282,7 @@ func _exit_tree() -> void:
 	if Engine.is_editor_hint():
 		return
 	
-	Performance.remove_custom_monitor(wheel_name + &"/" + perf_stress)
+	Performance.remove_custom_monitor(wheel_name + &"/" + perf_grip)
 	#Performance.remove_custom_monitor(wheel_name + &"/" + perf_suspension)
 	Performance.remove_custom_monitor(wheel_name + &"/" + perf_wv)
 	Performance.remove_custom_monitor(wheel_name + &"/" + perf_wheelpower)
@@ -303,8 +303,8 @@ func power() -> void:
 
 ##This runs computations for differentials between two wheels.
 func differentials() -> void:
-	if car.differential_lock_influence > 0.0 and is_instance_valid(differed_wheel_node):
-		var diff_lock_influence_amplified:float = (car.differential_lock_influence * 16.0)
+	if car.differential_lock_percent > 0.0 and is_instance_valid(differed_wheel_node):
+		var diff_lock_influence_amplified:float = (car.differential_lock_percent * 16.0)
 		
 		differed_wheel_lock = differed_wheel_node.global_abs_wheelpower / diff_lock_influence_amplified + div_by_0_fix
 		
@@ -430,7 +430,6 @@ func _physics_process(_delta:float) -> void:
 	cache_tyrestiffness = tyre_stiffness
 	
 	absolute_wv = output_wv + (offset * differed_wheel_lock) - slope_force * magic_number_a
-	#so, wv from last frame
 	
 	wheelpower = 0.0
 	
@@ -476,6 +475,7 @@ func _physics_process(_delta:float) -> void:
 		#times the ground and fore friction times the compound fore friction
 		grip = (directional_force.y * tyre_maxgrip) * (surface_vars.ground_friction + surface_vars.fore_friction * CompoundSettings.ForeFriction)
 		
+		wv += (wheelpower * (1.0 - (1.0 / tyre_stiffness)))
 		
 		#the deformation from the tyre being pressed when factoring in its velocity counteracting that
 		var rolling_deformation_y:float = velocity2.z - (wv * w_size)
@@ -483,13 +483,11 @@ func _physics_process(_delta:float) -> void:
 		var tire_scrub_y:float = velocity2.z - (wv * w_size) / (surface_vars.drag + div_by_0_fix)
 		var mutual_x:float = velocity2.x
 		
-		wv += (wheelpower * (1.0 - (1.0 / tyre_stiffness)))
-		
-		offset = clampf(rolling_deformation_y / w_size, -grip, grip)
-		#offset = clampf((velocity2.z / w_size) - wv, -grip, grip)
-		
 		if is_instance_valid(differed_wheel_node):
-			tire_scrub_y = velocity2.z - ((wv * (1.0 - car.differential_lock_influence) + differed_wheel_node.wv_diff * car.differential_lock_influence) * w_size) / (surface_vars.drag + div_by_0_fix)
+			tire_scrub_y = velocity2.z - ((wv * (1.0 - car.differential_lock_percent) + differed_wheel_node.wv_diff * car.differential_lock_percent) * w_size) / (surface_vars.drag + div_by_0_fix)
+		
+		#rolling_deformation_y / w_size == (velocity2.z / w_size) - wv
+		offset = clampf(rolling_deformation_y / w_size, -grip, grip)
 		
 		var gravity_incline:Vector3 = (geometry.global_transform.basis.orthonormalized().transposed() * Vector3.UP)
 		

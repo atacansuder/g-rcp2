@@ -10,7 +10,7 @@ class_name ViVeTransmissionAuto
 ## Downshift threshold (auto).
 @export var downshift_thresh:float = 300.0 #1
 ## Throttle efficiency threshold (auto/dct).
-@export_range(0, 1) var throt_eff_thresh:float = 0.5 #2
+@export_range(0.0, 1.0) var throt_eff_thresh:float = 0.5 #2
 ## Engagement rpm threshold (auto/dct/cvt).
 @export var engage_rpm_thresh:float = 0.0 #3
 ## Engagement rpm (auto/dct/cvt).

@@ -10,6 +10,8 @@ const turbo_magic_number:float = 0.609
 ##Related to RevSpeed. 
 ##According to Jreo, this is "nothing". Just an arbitrary scaler ig.
 const revspeed_magic_number:float = 1.475
+##Used in torque calculations as a divider value.
+const torque_fractional:float = 10000000.0
 
 const keyboard_mouse_controls:ViVeCarControls = preload("res://MISC/controls config/presets/keyboard_and_mouse.tres")
 const keyboard_controls:ViVeCarControls = preload("res://MISC/controls config/presets/keyboard.tres")
@@ -160,9 +162,10 @@ enum TransmissionTypes {
 @export var DeadRPM:float = 100.0
 
 @export_group("ECU")
-## Throttle Cutoff RPM.
+##The maximum RPM at which the engine can still recieve throttle.
 @export var RPMLimit:float = 7000.0
-## Throttle cutoff time.
+##How long throttle will be cut off when the 
+##RPM limit is reached, in physics frames.
 @export var LimiterDelay:float = 4
 ##The idling RPM.
 @export var IdleRPM:float = 800.0
@@ -170,8 +173,8 @@ enum TransmissionTypes {
 @export_range(0.0, 1.0) var ThrottleLimit:float = 0.0
 ## Throttle intake on idle.
 @export_range(0.0, 1.0) var ThrottleIdle:float = 0.25
-## Timing on RPM.
-## Set this beyond the rev range to disable it, set it to 0 to use the vvt state permanently.
+##The RPM at which the engine will switch to variable valve timing mode.
+##Set this beyond the rev range to disable it, set it to 0 to use the vvt state permanently.
 @export var VVTRPM:float = 4500.0 
 
 @export_group("Torque")
@@ -251,17 +254,15 @@ var steering_wheels:Array[ViVeWheel]
 
 ##This is value compared to determine if the control scheme should be changed.
 var car_controls_cache:ControlType
-
+##The engine RPM, specifically the raw output (crankshaft RPM)
 var rpm:float = 0.0
-
-#var _rpmspeed:float = 0.0
 
 var throttle_limit_delay:float = 0.0
 
 var actual_gear:int = 0
 ##This value must be less than [GearGap] in order for clutch-less shifting to be possible.
 var gear_stress:float = 0.0
-
+##Engine throttle, ie. the air-fuel mixture being allowed into the engine.
 var throttle:float = 0.0
 ##Acceleration if the car is using a Continuously Variable Transmission
 var cvt_accel:float = 0.0
@@ -282,23 +283,18 @@ var esp_flash:bool = false
 ##This is the overall multiplier from all the gears within 
 ##the drivetrain which applies to the speed of the axles.
 var drive_axle_rpm:float = 0.0
-
-var brake_allowed:float = 0.0
-
-#var readout_torque:float = 0.0
-
+##The amount of brake, allowed by the ABS system.
+var abs_brake_allowed:float = 0.0
+##Brake power when ABS is factored in.
 var brake_line:float = 0.0
 ##The total power bias of all powered wheels together.
 var power_bias_total:float = 0.0
 ##[power_bias_total] from the last physics frame.
 var previous_power_bias_total:float = 0.0
-
-#var _diffspeed:float = 0.0
-
-#var _diffspeedun:float = 0.0
-##Related to Locking/CoastLocking
-var differential_lock_influence:float = 0.0
-
+##This is how locked regular differentials are.
+var differential_lock_percent:float = 0.0
+##This is how locked the center differential is.
+##Will be set to 0 if the car is not 4+WD.
 var central_diff_lock_percent:float = 0.0
 ##Overall inertial-resistance feedback to the drivetrain brought by the wheels.
 var drive_wheel_drivetrain_inertia:float = 0.0
@@ -317,7 +313,8 @@ var boosting:float = 0.0
 var rpm_clutchslip:float = 0.0
 ##[rpm_clutchslip] from the previous frame, subtracted by [resistance].
 var rpm_cs_m:float = 0.0
-
+##This is how much the clutch plate is slipping at current RPM,
+##affected by values such as the feedback inertia of the drivetrain.
 var clutch_plate_slip:float = 0.0
 ##Used by the wheels for steering
 var steer_to_direction:float 
@@ -342,11 +339,11 @@ var max_steering_angle:float = 0.0
 var past_velocity:Vector3 = Vector3.ZERO
 ##The force of gravity on the car.
 var gforce:Vector3 = Vector3.ZERO
-
+##A multiplier used in order to increase the speed of the simulation.
 var clock_mult:float = 1.0
 ##This is the fastest wheel's 
 var fastest_wheel_differed_wv:float = 0.0
-
+##This is the overall grip of all the powered wheels combined.
 var overall_power_grip:float = 0.0
 
 var velocity:Vector3 = Vector3.ZERO
@@ -356,14 +353,17 @@ var r_velocity:Vector3 = Vector3.ZERO
 var stalled:float = 0.0
 
 var front_load:float = 0.0
-
+##This is the total suspension load on the car from all the wheels.
 var total_load:float = 0.0
-
+##This is the distribution of weight onto the front of the car.
 var front_weight_distribution:float
+##This is the distribution of weight onto the back of the car.
 var rear_weight_distribution:float
-
+##The physics tick, stored as a cache value and (eventually)
+##a changeable value in order to account for changed physics tick
+##in order to maintain proper simulation behavior.
 var physics_tick:float = 60.0
-
+##Current gear of the car.
 var gear:int
 
 var steer_velocity:float
@@ -379,32 +379,34 @@ var gas_restricted:bool = false
 var left:bool = false
 
 var right:bool = false
-
+##This is if shift up is pressed.
 var shift_up_pressed:bool = false
-
+##This is if shift down is pressed.
 var shift_down_pressed:bool = false
-
+##This is if gas is pressed.
 var gas_pressed:bool = false
-
+##This is if brake is pressed.
 var brake_pressed:bool = false
-
+##This is if handbrake is pressed.
 var handbrake_pressed:bool = false
-
+##This is if clutch is pressed.
 var clutch_pressed:bool = false
-
+##This is how pushed down the gas pedal is.
 var gas_pedal:float = 0.0
-
+##This is how pushed down the brake pedal is.
 var brake_pedal:float = 0.0
-
+##This is how far the handbrake is pulled.
 var handbrake_pull:float = 0.0
+##This is the steer value used by the engine, as opposed to the raw input value.
+var effective_steer:float
+##This is the raw input value for steering.
+var steer_from_input:float
+
 ##This is how much contact the clutch plate is making with the flywheel, as a percent.
 var clutch_engage_percent:float = 0.0
-
+##Several parts of the engine use the clutch engage percent squared, so this is a 
+##cache value for that to (slightly) increase performance.
 var clutch_engage_squared:float = 0.0
-
-var effective_steer:float
-
-var steer_from_input:float
 
 ## Emitted when the wheel arrays are updated.
 signal wheels_updated
@@ -426,7 +428,7 @@ func _ready() -> void:
 	
 	swap_controls()
 	
-	rpm = IdleRPM
+	fix_engine_stall()
 	
 	update_wheel_arrays()
 	
@@ -1087,11 +1089,11 @@ func drivetrain() -> void:
 	whine_pitch = absf(rpm / drive_axle_rpm) * 1.5
 	
 	if drive_wheel_diff_power > 0.0:
-		differential_lock_influence = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (CoastLocking / 100.0) + Preload
+		differential_lock_percent = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (CoastLocking / 100.0) + Preload
 	else:
-		differential_lock_influence = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (Locking / 100.0) + Preload
+		differential_lock_percent = absf(drive_wheel_diff_power / driveshaft_weight_resistance) * (Locking / 100.0) + Preload
 	
-	differential_lock_influence = clampf(differential_lock_influence, 0.0, 1.0)
+	differential_lock_percent = clampf(differential_lock_percent, 0.0, 1.0)
 	
 	if drive_wheel_drivetrain_inertia > 0.0:
 		central_diff_lock_percent = absf(drive_wheel_drivetrain_inertia) * (Centre_CoastLocking / 10.0) + Centre_Preload
@@ -1229,13 +1231,13 @@ func _physics_process(_delta:float) -> void:
 	abs_pump -= 1
 	
 	if abs_pump < 0:
-		brake_allowed += ABS.pump_force
+		abs_brake_allowed += ABS.pump_force
 	else:
-		brake_allowed -= ABS.pump_force
+		abs_brake_allowed -= ABS.pump_force
 	
-	brake_allowed = clampf(brake_allowed, 0.0, 1.0)
+	abs_brake_allowed = clampf(abs_brake_allowed, 0.0, 1.0)
 	
-	brake_line = maxf(brake_pedal * brake_allowed, 0.0)
+	brake_line = maxf(brake_pedal * abs_brake_allowed, 0.0)
 	
 	throttle_limit_delay -= 1
 	
@@ -1281,15 +1283,15 @@ func _physics_process(_delta:float) -> void:
 	var increased_rpm:float = maxf(rpm - torque_local.RiseRPM, 0.0)
 	var reduced_rpm:float = maxf(rpm - torque_local.DeclineRPM, 0.0)
 	
-	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + (increased_rpm * increased_rpm) * (torque_local.TorqueRise / 10000000.0)) * throttle
+	torque = (rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque + (increased_rpm * increased_rpm) * (torque_local.TorqueRise / torque_fractional)) * throttle
 	
 	#Apply forced induction factors to the outpur torque
 	torque += ((turbo_psi * TurboAmount) * (EngineCompressionRatio * turbo_magic_number))
 	
 	#Apply rpm reductions to the torque
-	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
+	torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / torque_fractional) + 1.0
 	
-	torque /= (rpm * rpm) * (torque_local.FloatRate / 10000000.0) + 1.0
+	torque /= (rpm * rpm) * (torque_local.FloatRate / torque_fractional) + 1.0
 	
 	rpm_resistance = (rpm / ((rpm * rpm) / (EngineFriction / clock_mult) + 1.0))
 	var new_rpm_force:float = (rpm * EngineFriction) / (EngineFriction + (rpm * rpm) * clock_mult)
@@ -1370,19 +1372,19 @@ func multivariate(extern_rpm:float = 0.0) -> float:
 	else:
 		torque_local = torque_norm
 	
-	var increased_rpm:float = maxf(test_rpm - torque_local.RiseRPM, 0.0) #f
-	var reduced_rpm:float = maxf(test_rpm - torque_local.DeclineRPM, 0.0) #j
+	var increased_rpm:float = maxf(test_rpm - torque_local.RiseRPM, 0.0)
+	var reduced_rpm:float = maxf(test_rpm - torque_local.DeclineRPM, 0.0)
 	var return_torque:float = 0.0
 	
 	return_torque = (test_rpm * torque_local.BuildUpTorque + torque_local.OffsetTorque)
 	
 	return_torque += (psi * TurboAmount) * (EngineCompressionRatio * turbo_magic_number)
 	
-	return_torque += pow(increased_rpm, 2.0) * (torque_local.TorqueRise / 10000000.0)
+	return_torque += pow(increased_rpm, 2.0) * (torque_local.TorqueRise / torque_fractional)
 	
-	return_torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / 10000000.0) + 1.0
+	return_torque /= (reduced_rpm * (reduced_rpm * torque_local.DeclineSharpness + (1.0 - torque_local.DeclineSharpness))) * (torque_local.DeclineRate / torque_fractional) + 1.0
 	
-	return_torque /= pow(test_rpm, 2.0) * (torque_local.FloatRate / 10000000.0) + 1.0
+	return_torque /= pow(test_rpm, 2.0) * (torque_local.FloatRate / torque_fractional) + 1.0
 	
 	return_torque -= test_rpm / (pow(test_rpm, 2.0) / EngineFriction + 1.0)
 	return_torque -= test_rpm * EngineDrag

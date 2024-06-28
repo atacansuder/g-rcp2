@@ -39,7 +39,7 @@ class_name ViVeCarControls
 ##This helps with understeer.
 @export var SteerAmountDecay:float = 0.015
 ## Enable Steering Assistance.
-@export var EnableSteeringAssistance:bool = false
+@export var EnableSteeringAssistance:bool = true
 ## Drift Help. The higher the value, the more the car will automatically center itself when drifting.
 @export var SteeringAssistance:float = 1.0
 ## Drift Stability Help.
